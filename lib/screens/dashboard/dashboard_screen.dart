@@ -4,6 +4,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/shifts_provider.dart';
 import '../../../providers/notification_provider.dart';
 import '../../../providers/task_provider.dart';
+import '../../../providers/geolocation_provider.dart';
 import '../attendance/mark_attendance_screen.dart';
 import '../attendance/view_attendance_screen.dart';
 import '../children/children_list_screen.dart';
@@ -14,6 +15,7 @@ import '../../components/staff_attendance_button.dart';
 import '../../components/staff_shift_status_manager.dart';
 import '../../components/birthdays_widget.dart'; // Импорт виджета дней рождения
 import '../../components/tasks_widget.dart'; // Импорт виджета задач
+import '../../components/geolocation_status_widget.dart'; // Импорт виджета статуса геолокации
 import '../../core/services/notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -24,6 +26,16 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load geolocation settings on dashboard load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
+      geoProvider.loadSettings();
+    });
+  }
+  
   @override
  Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -127,6 +139,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
+                
+                // Geolocation status widget (for all users)
+                const GeolocationStatusWidget(),
                 
                 // Staff attendance button (for staff members)
                 if (isStaff) ...[

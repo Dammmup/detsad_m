@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/shifts_provider.dart';
+import '../providers/geolocation_provider.dart';
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 
@@ -25,6 +26,11 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     // Проверяем время каждую минуту
     _timer = Timer.periodic(const Duration(minutes: 1), (timer) {
       _checkTime();
+    });
+    // Load geolocation settings
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
+      geoProvider.loadSettings();
     });
  }
 
@@ -53,6 +59,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
   Widget build(BuildContext context) {
     final shiftsProvider = Provider.of<ShiftsProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final geolocationProvider = Provider.of<GeolocationProvider>(context);
     final user = authProvider.user;
 
     // Загружаем статус смены при инициализации или изменении пользователя - это должно происходить вне build метода
@@ -84,6 +91,60 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        // Geolocation status indicator
+        if (geolocationProvider.enabled)
+          FutureBuilder<Position?>(
+            future: _getCurrentPositionSilent(),
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                final position = snapshot.data!;
+                final isInZone = geolocationProvider.isWithinGeofence(
+                  position.latitude,
+                  position.longitude,
+                );
+                final statusText = geolocationProvider.getStatusText(
+                  position.latitude,
+                  position.longitude,
+                );
+                
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isInZone ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isInZone ? Colors.green : Colors.red,
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        isInZone ? Icons.check_circle : Icons.error,
+                        color: isInZone ? Colors.green : Colors.red,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          statusText,
+                          style: TextStyle(
+                            color: isInZone ? Colors.green : Colors.red,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
+          ),
         SizedBox(
           width: 200,
           height: 50,
@@ -186,12 +247,54 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
    }
  }
 
+ // Get current position silently (for status display)
+ Future<Position?> _getCurrentPositionSilent() async {
+   try {
+     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+     if (!serviceEnabled) return null;
+
+     LocationPermission permission = await Geolocator.checkPermission();
+     if (permission == LocationPermission.denied || 
+         permission == LocationPermission.deniedForever) {
+       return null;
+     }
+
+     return await Geolocator.getCurrentPosition(
+       desiredAccuracy: LocationAccuracy.high
+     );
+   } catch (e) {
+     return null;
+   }
+ }
+
 Future<void> _handleCheckIn(BuildContext context, String userId) async {
     // Get current location
     Map<String, double>? location = await _getCurrentLocation();
     if (location == null) {
       _showSnackbar(context, 'Не удалось получить геолокацию. Отметка не будет сохранена.', Colors.red);
       return;
+    }
+    
+    // Check geofence before sending request
+    final geolocationProvider = Provider.of<GeolocationProvider>(context, listen: false);
+    if (geolocationProvider.enabled) {
+      final isInZone = geolocationProvider.isWithinGeofence(
+        location['latitude']!,
+        location['longitude']!,
+      );
+      
+      if (!isInZone) {
+        final distance = geolocationProvider.calculateDistance(
+          location['latitude']!,
+          location['longitude']!,
+        );
+        _showSnackbar(
+          context, 
+          'Вы находитесь вне геозоны (${distance.toStringAsFixed(0)}м от офиса). Разрешено в радиусе ${geolocationProvider.radius.toStringAsFixed(0)}м.',
+          Colors.red,
+        );
+        return;
+      }
     }
     
     final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
@@ -207,7 +310,12 @@ Future<void> _handleCheckIn(BuildContext context, String userId) async {
       }
       _showSnackbar(context, 'Отметка о приходе успешно сохранена', Colors.green);
     } else {
-      _showSnackbar(context, shiftsProvider.errorMessage!, Colors.red);
+      // Parse error message for better display
+      String errorMsg = shiftsProvider.errorMessage!;
+      if (errorMsg.contains('геозон')) {
+        errorMsg = 'Отметка запрещена: вы находитесь вне разрешенной зоны';
+      }
+      _showSnackbar(context, errorMsg, Colors.red);
     }
   }
 
@@ -217,6 +325,28 @@ Future<void> _handleCheckIn(BuildContext context, String userId) async {
     if (location == null) {
       _showSnackbar(context, 'Не удалось получить геолокацию. Отметка не будет сохранена.', Colors.red);
       return;
+    }
+    
+    // Check geofence before sending request
+    final geolocationProvider = Provider.of<GeolocationProvider>(context, listen: false);
+    if (geolocationProvider.enabled) {
+      final isInZone = geolocationProvider.isWithinGeofence(
+        location['latitude']!,
+        location['longitude']!,
+      );
+      
+      if (!isInZone) {
+        final distance = geolocationProvider.calculateDistance(
+          location['latitude']!,
+          location['longitude']!,
+        );
+        _showSnackbar(
+          context, 
+          'Вы находитесь вне геозоны (${distance.toStringAsFixed(0)}м от офиса). Разрешено в радиусе ${geolocationProvider.radius.toStringAsFixed(0)}м.',
+          Colors.red,
+        );
+        return;
+      }
     }
     
     final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
@@ -232,7 +362,12 @@ Future<void> _handleCheckIn(BuildContext context, String userId) async {
       }
       _showSnackbar(context, 'Отметка об уходе успешно сохранена', Colors.green);
     } else {
-      _showSnackbar(context, shiftsProvider.errorMessage!, Colors.red);
+      // Parse error message for better display
+      String errorMsg = shiftsProvider.errorMessage!;
+      if (errorMsg.contains('геозон')) {
+        errorMsg = 'Отметка запрещена: вы находитесь вне разрешенной зоны';
+      }
+      _showSnackbar(context, errorMsg, Colors.red);
     }
   }
 

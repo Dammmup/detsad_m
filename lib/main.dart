@@ -11,6 +11,7 @@ import 'providers/documents_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/groups_provider.dart';
 import 'providers/task_provider.dart';
+import 'providers/geolocation_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/attendance/mark_attendance_screen.dart';
@@ -47,6 +48,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => GroupsProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
+        ChangeNotifierProvider(create: (_) => GeolocationProvider()),
       ],
       child: MaterialApp(
         title: 'Attendance App',
