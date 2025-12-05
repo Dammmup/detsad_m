@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/services/auth_service.dart';
 import '../models/user_model.dart';
+import '../core/services/storage_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
@@ -15,12 +16,19 @@ class AuthProvider with ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
 
+  AuthProvider() {
+    // Initialize automatically when the provider is created
+    _autoInitialize();
+  }
+
   // Initialize - check if user is already logged in
   Future<void> initialize() async {
     _isLoading = true;
     notifyListeners();
 
     try {
+      // Ensure storage service is initialized
+      await StorageService().init();
       _isLoggedIn = await _authService.isLoggedIn();
       if (_isLoggedIn) {
         _user = await _authService.getStoredUser();
@@ -37,6 +45,11 @@ class AuthProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  // Auto-initialize when provider is created
+  Future<void> _autoInitialize() async {
+    // Не запускаем автоматическую инициализацию, так как она будет вызвана в SplashScreen
   }
 
   // Login
@@ -96,6 +109,7 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = e.toString();
+      notifyListeners();
     }
  }
 

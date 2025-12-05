@@ -7,7 +7,7 @@ import '../core/services/children_service.dart';
 import '../screens/birthdays/birthdays_screen.dart';
 
 class BirthdaysWidget extends StatefulWidget {
-  const BirthdaysWidget({Key? key}) : super(key: key);
+  const BirthdaysWidget({super.key});
 
   @override
   State<BirthdaysWidget> createState() => _BirthdaysWidgetState();
@@ -16,7 +16,7 @@ class BirthdaysWidget extends StatefulWidget {
 class _BirthdaysWidgetState extends State<BirthdaysWidget> {
   Child? _nextBirthdayChild;
   bool _isLoading = true;
- String? _errorMessage;
+  String? _errorMessage;
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
       final currentUser = authProvider.user;
-      
+
       final childrenService = ChildrenService();
 
       if (currentUser != null && currentUser.role == 'teacher') {
@@ -43,7 +43,10 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
         final teacherGroups = groupsProvider.groups;
 
         // Получаем ID групп, в которых воспитатель является учителем
-        List<String> groupIds = teacherGroups.map((group) => group['_id'] ?? group['id']).toList().cast<String>();
+        List<String> groupIds = teacherGroups
+            .map((group) => group['_id'] ?? group['id'])
+            .toList()
+            .cast<String>();
 
         // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
         List<Child> allChildren = await childrenService.getAllChildren();
@@ -67,58 +70,61 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
         // Фильтруем детей с днями рождения и получаем самого ближайшего
         _nextBirthdayChild = _getNextBirthdayChild(childrenInTeacherGroups);
       } else {
-          // Для других ролей (администратор и т.д.) загружаем всех детей с днями рождения
-          List<Child> allChildren = await childrenService.getAllChildren();
-          _nextBirthdayChild = _getNextBirthdayChild(allChildren);
-        }
-      } catch (e) {
-        _errorMessage = 'Ошибка загрузки дней рождения: $e';
-      } finally {
-        setState(() {
-          _isLoading = false;
-        });
+        // Для других ролей (администратор и т.д.) загружаем всех детей с днями рождения
+        List<Child> allChildren = await childrenService.getAllChildren();
+        _nextBirthdayChild = _getNextBirthdayChild(allChildren);
       }
-   }
+    } catch (e) {
+      _errorMessage = 'Ошибка загрузки дней рождения: $e';
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   Child? _getNextBirthdayChild(List<Child> children) {
     final now = DateTime.now();
-    
+
     // Фильтруем детей с датами рождения
-    List<Child> childrenWithBirthdays = children.where((child) => child.birthday != null).toList();
-    
+    List<Child> childrenWithBirthdays =
+        children.where((child) => child.birthday != null).toList();
+
     if (childrenWithBirthdays.isEmpty) {
       return null;
     }
-    
+
     // Сортируем по ближайшим дням рождения
     childrenWithBirthdays.sort((child1, child2) {
       DateTime? date1 = _getNextBirthdayDate(child1.birthday, now);
       DateTime? date2 = _getNextBirthdayDate(child2.birthday, now);
-      
+
       if (date1 == null) return 1;
       if (date2 == null) return -1;
-      
+
       return date1.compareTo(date2);
     });
-    
+
     // Возвращаем только самого ближайшего ребенка с днем рождения
     return childrenWithBirthdays.first;
   }
 
   DateTime? _getNextBirthdayDate(String? birthdayString, DateTime currentDate) {
     if (birthdayString == null) return null;
-    
+
     try {
       DateTime birthday = DateTime.parse(birthdayString);
-      
+
       // Создаем дату дня рождения в текущем году
-      DateTime birthdayThisYear = DateTime(currentDate.year, birthday.month, birthday.day);
-      
+      DateTime birthdayThisYear =
+          DateTime(currentDate.year, birthday.month, birthday.day);
+
       // Если день рождения уже прошел в этом году, берем следующий год
       if (birthdayThisYear.isBefore(currentDate)) {
-        birthdayThisYear = DateTime(currentDate.year + 1, birthday.month, birthday.day);
+        birthdayThisYear =
+            DateTime(currentDate.year + 1, birthday.month, birthday.day);
       }
-      
+
       return birthdayThisYear;
     } catch (e) {
       return null;
@@ -127,14 +133,24 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
 
   String _formatBirthdayDate(DateTime date) {
     const List<String> months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря'
     ];
-    
+
     int day = date.day;
     int monthIndex = date.month - 1;
     int year = date.year;
-    
+
     return '$day ${months[monthIndex]}, $year';
   }
 
@@ -146,10 +162,10 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha((0.1 * 255).round()),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -160,7 +176,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
           children: [
             Row(
               children: [
-                Icon(Icons.cake, color: Colors.orange),
+                const Icon(Icons.cake, color: Colors.orange),
                 const SizedBox(width: 8),
                 Text(
                   'Предстоящие дни рождения',
@@ -178,7 +194,8 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
             else if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text(_errorMessage!, style: TextStyle(color: Colors.red)),
+                child:
+                    Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
               )
             else if (_nextBirthdayChild == null)
               const Padding(
@@ -208,7 +225,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.orange,
                           shape: BoxShape.circle,
                         ),
@@ -235,7 +252,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                           ],
                         ),
                       ),
-                      Icon(
+                      const Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
                         color: Colors.grey,

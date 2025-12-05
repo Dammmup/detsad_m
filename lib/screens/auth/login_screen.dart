@@ -51,9 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         // Logo or app title
-                        Container(
+                        const Padding(
                           padding: EdgeInsets.only(bottom: 24),
-                          child: const Text(
+                          child: Text(
                             'Attendance App',
                             style: TextStyle(
                               fontSize: 32,
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                        
+
                         // Phone field
                         TextFormField(
                           controller: _phoneController,
@@ -70,17 +70,20 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Телефон',
                             hintText: 'Введите ваш телефон',
-                            prefixIcon: Icon(Icons.phone, color: Colors.blue),
+                            prefixIcon:
+                                const Icon(Icons.phone, color: Colors.blue),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.blue, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.blue, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -91,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-                        
+
                         // Password field
                         TextFormField(
                           controller: _passwordController,
@@ -99,10 +102,13 @@ class _LoginScreenState extends State<LoginScreen> {
                           decoration: InputDecoration(
                             labelText: 'Пароль',
                             hintText: 'Введите ваш пароль',
-                            prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                            prefixIcon:
+                                const Icon(Icons.lock, color: Colors.blue),
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                                 color: Colors.grey,
                               ),
                               onPressed: () {
@@ -116,11 +122,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.grey.shade300),
+                              borderSide:
+                                  BorderSide(color: Colors.grey.shade300),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.blue, width: 2),
+                              borderSide: const BorderSide(
+                                  color: Colors.blue, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -131,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
-                        
+
                         // Login button
                         SizedBox(
                           width: double.infinity,
@@ -141,22 +149,35 @@ class _LoginScreenState extends State<LoginScreen> {
                               : ElevatedButton(
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
+                                      final ctx =
+                                          context; // ← сохраняем контекст
+
                                       final success = await authProvider.login(
                                         _phoneController.text.trim(),
                                         _passwordController.text,
                                       );
-                                      
+
+                                      if (!ctx.mounted) {
+                                        return;
+                                      }
+
                                       if (success) {
-                                        Navigator.of(context).pushReplacement(
+                                        Navigator.of(ctx).pushReplacement(
                                           MaterialPageRoute(
-                                            builder: (context) => const DashboardScreen(),
+                                            builder: (_) =>
+                                                const DashboardScreen(),
                                           ),
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
+                                        final errorColor =
+                                            Theme.of(ctx).colorScheme.error;
+
+                                        ScaffoldMessenger.of(ctx).showSnackBar(
                                           SnackBar(
-                                            content: Text(authProvider.errorMessage ?? 'Ошибка входа'),
-                                            backgroundColor: Theme.of(context).colorScheme.error,
+                                            content: Text(
+                                                authProvider.errorMessage ??
+                                                    'Ошибка входа'),
+                                            backgroundColor: errorColor,
                                           ),
                                         );
                                       }
@@ -169,10 +190,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  child: const Text('Войти', style: TextStyle(fontSize: 16)),
+                                  child: const Text('Войти',
+                                      style: TextStyle(fontSize: 16)),
                                 ),
                         ),
-                        
+
                         // Error message if any
                         if (authProvider.errorMessage != null)
                           Padding(

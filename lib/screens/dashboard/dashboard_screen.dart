@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/shifts_provider.dart';
 import '../../../providers/notification_provider.dart';
-import '../../../providers/task_provider.dart';
 import '../../../providers/geolocation_provider.dart';
 import '../attendance/mark_attendance_screen.dart';
 import '../attendance/view_attendance_screen.dart';
@@ -19,7 +18,7 @@ import '../../components/geolocation_status_widget.dart'; // Импорт вид
 import '../../core/services/notification_service.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -31,52 +30,61 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     // Load geolocation settings on dashboard load
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
-      geoProvider.loadSettings();
+      if (mounted) {
+        final geoProvider =
+            Provider.of<GeolocationProvider>(context, listen: false);
+        geoProvider.loadSettings();
+      }
     });
   }
-  
+
   @override
- Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final shiftsProvider = Provider.of<ShiftsProvider>(context);
     final notificationProvider = Provider.of<NotificationProvider>(context);
     final user = authProvider.user;
 
     bool isStaff = user != null && user.role != 'admin';
-    bool isAdmin = user != null && user.role == 'admin';
     bool canManageChildren = user != null &&
-        (user.role == 'admin' || user.role == 'teacher' || user.role == 'substitute');
+        (user.role == 'admin' ||
+            user.role == 'teacher' ||
+            user.role == 'substitute');
 
     // Планируем уведомления при загрузке экрана, если они еще не запланированы
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Проверяем, были ли уже запланированы уведомления
-      if (!shiftsProvider.areNotificationsScheduled) {
-        // Уведомления о приходе в 8:00
-        notificationProvider.scheduleDailyArrivalNotification(id: 1, time: Time(hour: 8, minute: 0));
-        // Уведомления об уходе в 18:00
-        notificationProvider.scheduleDailyDepartureNotification(id: 2, time: Time(hour: 18, minute: 0));
-        // Уведомления о посещаемости детей в 9:00
-        notificationProvider.scheduleDailyAttendanceNotification(id: 3, time: Time(hour: 9, minute: 0));
-        
-        // Устанавливаем флаг, что уведомления запланированы
-        shiftsProvider.setNotificationsScheduled();
+      if (mounted) {
+        // Проверяем, были ли уже запланированы уведомления
+        if (!shiftsProvider.areNotificationsScheduled) {
+          // Уведомления о приходе в 8:00
+          notificationProvider.scheduleDailyArrivalNotification(
+              id: 1, time: Time(hour: 8, minute: 0));
+          // Уведомления об уходе в 18:00
+          notificationProvider.scheduleDailyDepartureNotification(
+              id: 2, time: Time(hour: 18, minute: 0));
+          // Уведомления о посещаемости детей в 9:00
+          notificationProvider.scheduleDailyAttendanceNotification(
+              id: 3, time: Time(hour: 9, minute: 0));
+
+          // Устанавливаем флаг, что уведомления запланированы
+          shiftsProvider.setNotificationsScheduled();
+        }
       }
     });
 
     return StaffShiftStatusManager(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Дашборд'),
+          title: const Text('Дашборд'),
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.black,
           elevation: 0,
           actions: [
             IconButton(
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
               onPressed: () async {
                 await authProvider.logout();
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
@@ -96,118 +104,116 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 1,
-                        blurRadius: 5,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Добро пожаловать,',
-                        style: TextStyle(fontSize: 16, color: Colors.grey[60]),
-                      ),
-                      Text(
-                        '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Роль: ${user?.role ?? ''}',
-                        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Geolocation status widget (for all users)
-                const GeolocationStatusWidget(),
-                
-                // Staff attendance button (for staff members)
-                if (isStaff) ...[
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Container(
-                    margin: EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
+                          color: Colors.grey.withAlpha((0.1 * 255).round()),
                           spreadRadius: 1,
                           blurRadius: 5,
-                          offset: Offset(0, 2),
+                          offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Отметка посещения',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.grey[800],
-                                  ),
-                                ),
-                                Text(
-                                  'Отметьте ваш приход или уход',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Добро пожаловать,',
+                          style: TextStyle(fontSize: 16, color: Colors.grey[60]),
+                        ),
+                        Text(
+                          '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue,
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Container(
-                              constraints: BoxConstraints(maxWidth: 150),
-                              child: StaffAttendanceButton(
-                                onStatusChange: () {
-                                  // Обновляем статус
-                                  setState(() {});
-                                },
-                              ),
-                            ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Роль: ${user?.role ?? ''}',
+                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Geolocation status widget (for all users)
+                  const GeolocationStatusWidget(),
+                  const SizedBox(height: 16),
+
+                  // Staff attendance button (for staff members)
+                  if (isStaff) ...[
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withAlpha((0.1 * 255).round()),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
                           ),
                         ],
                       ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Отметка посещения',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.grey[800],
+                                    ),
+                                  ),
+                                  Text(
+                                    'Отметьте ваш приход или уход',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey[600],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            const Expanded(
+                              child: SizedBox(
+                                // constraints: BoxConstraints(maxWidth: 150),
+                                child: StaffAttendanceButton(),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                
-                // Grid of main functions
-                Expanded(
-                  child: GridView.count(
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Grid of main functions
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
@@ -222,12 +228,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => const MarkAttendanceScreen(),
+                                builder: (context) =>
+                                    const MarkAttendanceScreen(),
                               ),
                             );
                           },
                         ),
-                      
+
                       // View children attendance
                       _buildDashboardCard(
                         context,
@@ -237,12 +244,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => const ViewAttendanceScreen(),
+                              builder: (context) =>
+                                  const ViewAttendanceScreen(),
                             ),
                           );
                         },
                       ),
-                      
+
                       // Children list
                       _buildDashboardCard(
                         context,
@@ -257,7 +265,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           );
                         },
                       ),
-                      
+
                       // Add child (for those who can manage children)
                       if (canManageChildren)
                         _buildDashboardCard(
@@ -273,7 +281,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           },
                         ),
-                      
+
                       // Birthdays (replaces calendar)
                       _buildDashboardCard(
                         context,
@@ -290,14 +298,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-                // Добавляем виджет дней рождения
-                const BirthdaysWidget(),
-                const SizedBox(height: 16),
-                // Добавляем виджет задач
-                const TasksWidget(),
-              ],
+                  const SizedBox(height: 16),
+
+                  // Добавляем виджет дней рождения
+                  const BirthdaysWidget(),
+                  const SizedBox(height: 16),
+
+                  // Добавляем виджет задач
+                  const TasksWidget(),
+                  const SizedBox(height: 16),
+                ],
+              ),
             ),
           ),
         ),
@@ -318,10 +329,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha((0.1 * 255).round()),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -334,9 +345,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withAlpha((0.1 * 255).round()),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

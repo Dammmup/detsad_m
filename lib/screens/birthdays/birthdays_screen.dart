@@ -6,7 +6,7 @@ import '../../providers/groups_provider.dart';
 import '../../core/services/children_service.dart';
 
 class BirthdaysScreen extends StatefulWidget {
-  const BirthdaysScreen({Key? key}) : super(key: key);
+  const BirthdaysScreen({super.key});
 
   @override
   State<BirthdaysScreen> createState() => _BirthdaysScreenState();
@@ -31,9 +31,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       });
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+      final groupsProvider =
+          Provider.of<GroupsProvider>(context, listen: false);
       final currentUser = authProvider.user;
-      
+
       final childrenService = ChildrenService();
 
       if (currentUser != null && currentUser.role == 'teacher') {
@@ -42,7 +43,10 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
         final teacherGroups = groupsProvider.groups;
 
         // Получаем ID групп, в которых воспитатель является учителем
-        List<String> groupIds = teacherGroups.map((group) => group['_id'] ?? group['id']).toList().cast<String>();
+        List<String> groupIds = teacherGroups
+            .map((group) => group['_id'] ?? group['id'])
+            .toList()
+            .cast<String>();
 
         // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
         List<Child> allChildren = await childrenService.getAllChildren();
@@ -70,50 +74,77 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
         List<Child> allChildren = await childrenService.getAllChildren();
         _upcomingBirthdays = _filterAndSortBirthdays(allChildren);
       }
+    } on Exception catch (e) {
+      String errorMessage = e.toString();
+      
+      // Check for specific error messages
+      if (errorMessage.contains('Нет подключения к интернету')) {
+        errorMessage = 'Нет подключения к интернету';
+      } else if (errorMessage.contains('Нет прав для просмотра') ||
+                 errorMessage.contains('unauthorized') ||
+                 errorMessage.contains('403')) {
+        errorMessage = 'Нет прав для просмотра дней рождения детей';
+      } else if (errorMessage.contains('Данные не найдены') ||
+                 errorMessage.contains('not found') ||
+                 errorMessage.contains('404')) {
+        errorMessage = 'Данные о детях не найдены';
+      } else {
+        errorMessage = 'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
+      }
+      
+      setState(() {
+        _errorMessage = errorMessage;
+      });
     } catch (e) {
-      _errorMessage = 'Ошибка загрузки дней рождения: $e';
+      String errorMessage = 'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
+      
+      setState(() {
+        _errorMessage = errorMessage;
+      });
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
- }
+  }
 
   List<Child> _filterAndSortBirthdays(List<Child> children) {
     final now = DateTime.now();
-    final currentYear = now.year;
-    
+
     // Фильтруем детей с датами рождения
-    List<Child> childrenWithBirthdays = children.where((child) => child.birthday != null).toList();
-    
+    List<Child> childrenWithBirthdays =
+        children.where((child) => child.birthday != null).toList();
+
     // Сортируем по ближайшим дням рождения
     childrenWithBirthdays.sort((child1, child2) {
       DateTime? date1 = _getNextBirthdayDate(child1.birthday, now);
       DateTime? date2 = _getNextBirthdayDate(child2.birthday, now);
-      
+
       if (date1 == null) return 1;
       if (date2 == null) return -1;
-      
+
       return date1.compareTo(date2);
     });
-    
+
     return childrenWithBirthdays;
   }
 
   DateTime? _getNextBirthdayDate(String? birthdayString, DateTime currentDate) {
     if (birthdayString == null) return null;
-    
+
     try {
       DateTime birthday = DateTime.parse(birthdayString);
-      
+
       // Создаем дату дня рождения в текущем году
-      DateTime birthdayThisYear = DateTime(currentDate.year, birthday.month, birthday.day);
-      
+      DateTime birthdayThisYear =
+          DateTime(currentDate.year, birthday.month, birthday.day);
+
       // Если день рождения уже прошел в этом году, берем следующий год
       if (birthdayThisYear.isBefore(currentDate)) {
-        birthdayThisYear = DateTime(currentDate.year + 1, birthday.month, birthday.day);
+        birthdayThisYear =
+            DateTime(currentDate.year + 1, birthday.month, birthday.day);
       }
-      
+
       return birthdayThisYear;
     } catch (e) {
       return null;
@@ -122,14 +153,24 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
   String _formatBirthdayDate(DateTime date) {
     const List<String> months = [
-      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+      'января',
+      'февраля',
+      'марта',
+      'апреля',
+      'мая',
+      'июня',
+      'июля',
+      'августа',
+      'сентября',
+      'октября',
+      'ноября',
+      'декабря'
     ];
-    
+
     int day = date.day;
     int monthIndex = date.month - 1;
     int year = date.year;
-    
+
     return '$day ${months[monthIndex]}, $year';
   }
 
@@ -137,7 +178,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Дни рождения'),
+        title: const Text('Дни рождения'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -167,19 +208,20 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                           itemCount: _upcomingBirthdays.length,
                           itemBuilder: (context, index) {
                             final child = _upcomingBirthdays[index];
-                            final birthdayDate = _getNextBirthdayDate(child.birthday, DateTime.now());
-                            
+                            final birthdayDate = _getNextBirthdayDate(
+                                child.birthday, DateTime.now());
+
                             return Container(
-                              margin: EdgeInsets.only(bottom: 8),
+                              margin: const EdgeInsets.only(bottom: 8),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withOpacity(0.1),
+                                    color: Colors.grey.withAlpha((0.1 * 255).round()),
                                     spreadRadius: 1,
                                     blurRadius: 5,
-                                    offset: Offset(0, 2),
+                                    offset: const Offset(0, 2),
                                   ),
                                 ],
                               ),
@@ -200,10 +242,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                     if (child.parentName != null) ...[
                                       Row(
                                         children: [
-                                          Icon(Icons.person, size: 16, color: Colors.grey),
+                                          const Icon(Icons.person,
+                                              size: 16, color: Colors.grey),
                                           const SizedBox(width: 4),
                                           Text('Родитель: ${child.parentName}',
-                                               style: TextStyle(color: Colors.grey[700])),
+                                              style: TextStyle(
+                                                  color: Colors.grey[700])),
                                         ],
                                       ),
                                       const SizedBox(height: 4),
@@ -211,11 +255,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                     if (birthdayDate != null) ...[
                                       Row(
                                         children: [
-                                          Icon(Icons.cake, size: 16, color: Colors.orange),
+                                          const Icon(Icons.cake,
+                                              size: 16, color: Colors.orange),
                                           const SizedBox(width: 4),
                                           Text(
                                             'День рождения: ${_formatBirthdayDate(birthdayDate)}',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               color: Colors.orange,
                                               fontWeight: FontWeight.w500,
                                             ),
@@ -226,14 +271,17 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                     if (child.groupId != null) ...[
                                       const SizedBox(height: 8),
                                       Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
-                                          color: Colors.blue.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                         child: Text(
                                           _getChildGroupInfo(child),
-                                          style: TextStyle(color: Colors.blue),
+                                          style:
+                                              const TextStyle(color: Colors.blue),
                                         ),
                                       ),
                                     ],
@@ -249,18 +297,18 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   }
 
   // Helper method to get child group info
- String _getChildGroupInfo(Child child) {
+  String _getChildGroupInfo(Child child) {
     if (child.groupId == null) {
       return 'Группа не указана';
     }
-    
+
     // If groupId is a map (object), extract the name
     if (child.groupId is Map) {
       final groupMap = child.groupId as Map;
       return groupMap['name'] ?? 'Группа не указана';
     }
-    
+
     // If groupId is a string, return it directly
     return 'Группа: ${child.groupId.toString()}';
- }
+  }
 }

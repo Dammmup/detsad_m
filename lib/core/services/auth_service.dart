@@ -24,7 +24,8 @@ class AuthService {
         final token = data['token'];
         final user = User.fromJson(data['user']);
 
-        // Save token and user
+        // Ensure storage is initialized before saving
+        await _storageService.init();
         await _storageService.saveToken(token);
         await _storageService.saveUser(user);
 
@@ -61,6 +62,7 @@ class AuthService {
  Future<bool> logout() async {
     try {
       await _apiService.post(ApiConstants.logout);
+      await _storageService.init();
       await _storageService.clearAll();
       return true;
     } catch (e) {
@@ -71,10 +73,10 @@ class AuthService {
   }
 
   // Validate Token
- Future<bool> validateToken() async {
+  Future<bool> validateToken() async {
     try {
       final response = await _apiService.get(ApiConstants.validateToken);
-      return response.statusCode == 20 && response.data['valid'] == true;
+      return response.statusCode == 200 && response.data['valid'] == true;
     } catch (e) {
       return false;
     }
@@ -86,6 +88,7 @@ class AuthService {
       final response = await _apiService.get(ApiConstants.currentUser);
       if (response.statusCode == 200) {
         final user = User.fromJson(response.data);
+        await _storageService.init();
         await _storageService.saveUser(user);
         return user;
       }
@@ -97,6 +100,7 @@ class AuthService {
 
  // Check if user is logged in
   Future<bool> isLoggedIn() async {
+    await _storageService.init();
     final token = await _storageService.getToken();
     if (token == null) return false;
     return await validateToken();
@@ -104,6 +108,7 @@ class AuthService {
 
   // Get stored user
   Future<User?> getStoredUser() async {
+    await _storageService.init();
     return await _storageService.getUser();
   }
 }

@@ -20,7 +20,7 @@ class DocumentsService {
     } catch (e) {
       throw Exception('Ошибка получения данных: $e');
     }
- }
+  }
 
   // Get document by ID
   Future<Map<String, dynamic>?> getDocumentById(String id) async {
@@ -31,13 +31,13 @@ class DocumentsService {
       }
       return null;
     } catch (e) {
-      print('Ошибка получения документа: $e');
       return null;
     }
   }
 
   // Upload document
-  Future<Map<String, dynamic>?> uploadDocument(String filePath, {Map<String, dynamic>? additionalData}) async {
+  Future<Map<String, dynamic>?> uploadDocument(String filePath,
+      {Map<String, dynamic>? additionalData}) async {
     try {
       final response = await _apiService.uploadFile(
         ApiConstants.children,
@@ -49,15 +49,15 @@ class DocumentsService {
       }
       return null;
     } catch (e) {
-      print('Ошибка загрузки документа: $e');
       return null;
     }
   }
 
- // Download document
+  // Download document
   Future<bool> downloadDocument(String documentId, String savePath) async {
     try {
-      final response = await _apiService.get('${ApiConstants.children}/$documentId/download');
+      final response =
+          await _apiService.get('${ApiConstants.children}/$documentId/download');
       if (response.statusCode == 200) {
         final file = File(savePath);
         await file.writeAsBytes(response.data);
@@ -65,7 +65,6 @@ class DocumentsService {
       }
       return false;
     } catch (e) {
-      print('Ошибка скачивания документа: $e');
       return false;
     }
   }
@@ -73,10 +72,10 @@ class DocumentsService {
   // Delete document
   Future<bool> deleteDocument(String id) async {
     try {
-      final response = await _apiService.delete('${ApiConstants.children}/$id');
+      final response =
+          await _apiService.delete('${ApiConstants.children}/$id');
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
-      print('Ошибка удаления документа: $e');
       return false;
     }
   }

@@ -29,20 +29,12 @@ class ApiService {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          print('📤 Запрос: ${options.method} ${options.uri}');
-          if (options.data != null) {
-            print('📥 Тело запроса: ${options.data}');
-          }
           return handler.next(options);
         },
         onResponse: (response, handler) {
-          print('✅ Ответ: ${response.statusCode} для ${response.requestOptions.path}');
-          print('📤 Тело ответа: ${response.data}');
           return handler.next(response);
         },
         onError: (DioException error, handler) async {
-          print('❌ Ошибка: ${error.message}');
-          print('📝 Детали ошибки: ${error.response?.data ?? error.message}');
           // Handle 401 Unauthorized
           if (error.response?.statusCode == 401) {
             // Clear token and redirect to login
@@ -67,13 +59,12 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка GET запроса: $e');
       rethrow;
     }
- }
+  }
 
   // POST request
- Future<Response> post(
+  Future<Response> post(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -86,13 +77,12 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка POST запроса: $e');
       rethrow;
     }
   }
 
- // PUT request
- Future<Response> put(
+  // PUT request
+  Future<Response> put(
     String path, {
     dynamic data,
     Map<String, dynamic>? queryParameters,
@@ -105,12 +95,11 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка PUT запроса: $e');
       rethrow;
     }
   }
 
- // PATCH request
+  // PATCH request
   Future<Response> patch(
     String path, {
     dynamic data,
@@ -124,7 +113,6 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка PATCH запроса: $e');
       rethrow;
     }
   }
@@ -141,10 +129,9 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка DELETE запроса: $e');
       rethrow;
     }
- }
+  }
 
   // Upload file
   Future<Response> uploadFile(
@@ -152,7 +139,7 @@ class ApiService {
     String filePath, {
     String fieldName = 'file',
     Map<String, dynamic>? additionalData,
- }) async {
+  }) async {
     try {
       final formData = FormData.fromMap({
         fieldName: await MultipartFile.fromFile(filePath),
@@ -165,7 +152,6 @@ class ApiService {
       );
       return response;
     } catch (e) {
-      print('❌ Ошибка загрузки файла: $e');
       rethrow;
     }
   }

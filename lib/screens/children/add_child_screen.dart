@@ -7,7 +7,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/groups_provider.dart';
 
 class AddChildScreen extends StatefulWidget {
-  const AddChildScreen({Key? key}) : super(key: key);
+  const AddChildScreen({super.key});
 
   @override
   State<AddChildScreen> createState() => _AddChildScreenState();
@@ -16,7 +16,7 @@ class AddChildScreen extends StatefulWidget {
 class _AddChildScreenState extends State<AddChildScreen> {
   final _formKey = GlobalKey<FormState>();
   final _childrenService = ChildrenService();
-  
+
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _iinController = TextEditingController();
   final TextEditingController _birthdayController = TextEditingController();
@@ -24,36 +24,40 @@ class _AddChildScreenState extends State<AddChildScreen> {
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
   final TextEditingController _clinicController = TextEditingController();
- final TextEditingController _bloodGroupController = TextEditingController();
- final TextEditingController _rhesusController = TextEditingController();
+  final TextEditingController _bloodGroupController = TextEditingController();
+  final TextEditingController _rhesusController = TextEditingController();
   final TextEditingController _disabilityController = TextEditingController();
- final TextEditingController _dispensaryController = TextEditingController();
+  final TextEditingController _dispensaryController = TextEditingController();
   final TextEditingController _diagnosisController = TextEditingController();
   final TextEditingController _allergyController = TextEditingController();
- final TextEditingController _infectionsController = TextEditingController();
-  final TextEditingController _hospitalizationsController = TextEditingController();
- final TextEditingController _incapacityController = TextEditingController();
+  final TextEditingController _infectionsController = TextEditingController();
+  final TextEditingController _hospitalizationsController =
+      TextEditingController();
+  final TextEditingController _incapacityController = TextEditingController();
   final TextEditingController _checkupsController = TextEditingController();
- final TextEditingController _notesController = TextEditingController();
-  
+  final TextEditingController _notesController = TextEditingController();
+
   String? _selectedGroupId;
   String? _selectedGender;
   bool _isLoading = false;
-  
+
   @override
- void initState() {
+  void initState() {
     super.initState();
     // Загружаем группы при инициализации экрана
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadGroups();
+      if (mounted) {
+        _loadGroups();
+      }
     });
   }
-  
+
   Future<void> _loadGroups() async {
+    if (!mounted) return;
     final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final User? currentUser = authProvider.user;
-    
+
     if (currentUser != null && currentUser.role == 'teacher') {
       // Если пользователь - воспитатель, загружаем только его группы
       await groupsProvider.loadGroupsByTeacherId(currentUser.id);
@@ -62,7 +66,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
       await groupsProvider.loadGroups();
     }
   }
-  
+
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -76,20 +80,20 @@ class _AddChildScreenState extends State<AddChildScreen> {
       });
     }
   }
-  
+
   Future<void> _addChild() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isLoading = true;
     });
-    
+
     try {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final currentUser = authProvider.user;
-      
+
       final child = Child(
         id: '', // будет сгенерирован на сервере
         fullName: _fullNameController.text.trim(),
@@ -115,22 +119,51 @@ class _AddChildScreenState extends State<AddChildScreen> {
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         active: true,
       );
-      
+
       await _childrenService.createChild(child);
-      
+
       // Показываем сообщение об успешном добавлении
-      if (context.mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ребенок успешно добавлен')),
+          const SnackBar(content: Text('Ребенок успешно добавлен')),
         );
-        
+
         // Возвращаемся назад к списку детей
         Navigator.pop(context, true); // Передаем true как индикатор успешного добавления
       }
-    } catch (e) {
-      if (context.mounted) {
+    } on Exception catch (e) {
+      String errorMessage = e.toString();
+      
+      // Check for specific error messages
+      if (errorMessage.contains('Нет подключения к интернету')) {
+        errorMessage = 'Нет подключения к интернету';
+      } else if (errorMessage.contains('Нет прав для добавления') ||
+                 errorMessage.contains('unauthorized') ||
+                 errorMessage.contains('403')) {
+        errorMessage = 'Нет прав для добавления ребенка';
+      } else if (errorMessage.contains('Некорректные данные') ||
+                 errorMessage.contains('invalid data') ||
+                 errorMessage.contains('400')) {
+        errorMessage = 'Некорректные данные. Проверьте правильность введенной информации';
+      } else if (errorMessage.contains('Ребенок уже существует') ||
+                 errorMessage.contains('child already exists') ||
+                 errorMessage.contains('duplicate')) {
+        errorMessage = 'Ребенок с такими данными уже существует';
+      } else {
+        errorMessage = 'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
+      }
+
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка при добавлении ребенка: $e')),
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
+    } catch (e) {
+      String errorMessage = 'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
         );
       }
     } finally {
@@ -139,12 +172,12 @@ class _AddChildScreenState extends State<AddChildScreen> {
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Добавить ребенка'),
+        title: const Text('Добавить ребенка'),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -185,7 +218,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле ИИН
                 TextFormField(
                   controller: _iinController,
@@ -199,7 +232,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Дата рождения
                 TextFormField(
                   controller: _birthdayController,
@@ -211,7 +244,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                     filled: true,
                     fillColor: Colors.white,
                     suffixIcon: IconButton(
-                      icon: Icon(Icons.calendar_today),
+                      icon: const Icon(Icons.calendar_today),
                       onPressed: _selectDate,
                     ),
                   ),
@@ -224,7 +257,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Адрес
                 TextFormField(
                   controller: _addressController,
@@ -238,7 +271,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Имя родителя
                 TextFormField(
                   controller: _parentNameController,
@@ -252,7 +285,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Телефон родителя
                 TextFormField(
                   controller: _parentPhoneController,
@@ -266,12 +299,12 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Выбор пола
                 Consumer<GroupsProvider>(
                   builder: (context, groupsProvider, child) {
                     return DropdownButtonFormField<String>(
-                      value: _selectedGender,
+                      initialValue: _selectedGender,
                       decoration: InputDecoration(
                         labelText: 'Пол',
                         border: OutlineInputBorder(
@@ -295,20 +328,20 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Выбор группы
                 Consumer<GroupsProvider>(
                   builder: (context, groupsProvider, child) {
                     if (groupsProvider.isLoading) {
                       return const Center(child: CircularProgressIndicator());
                     }
-                    
+
                     if (groupsProvider.groups.isEmpty) {
                       return const Text('Нет доступных групп');
                     }
-                    
+
                     return DropdownButtonFormField<String>(
-                      value: _selectedGroupId,
+                      initialValue: _selectedGroupId,
                       decoration: InputDecoration(
                         labelText: 'Группа',
                         border: OutlineInputBorder(
@@ -344,7 +377,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Группа крови
                 TextFormField(
                   controller: _bloodGroupController,
@@ -358,7 +391,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Резус-фактор
                 TextFormField(
                   controller: _rhesusController,
@@ -372,7 +405,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Инвалидность
                 TextFormField(
                   controller: _disabilityController,
@@ -386,7 +419,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Диспансер
                 TextFormField(
                   controller: _dispensaryController,
@@ -400,7 +433,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Диагноз
                 TextFormField(
                   controller: _diagnosisController,
@@ -414,7 +447,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Аллергии
                 TextFormField(
                   controller: _allergyController,
@@ -428,7 +461,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Перенесенные инфекции
                 TextFormField(
                   controller: _infectionsController,
@@ -442,7 +475,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Госпитализации
                 TextFormField(
                   controller: _hospitalizationsController,
@@ -456,7 +489,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Периоды нетрудоспособности
                 TextFormField(
                   controller: _incapacityController,
@@ -470,7 +503,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Обследования
                 TextFormField(
                   controller: _checkupsController,
@@ -484,7 +517,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Поле Примечания
                 TextFormField(
                   controller: _notesController,
@@ -498,21 +531,22 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Кнопка добавить
                 ElevatedButton(
                   onPressed: _isLoading ? null : _addChild,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white)
-                      : Text('Добавить ребенка', style: TextStyle(fontSize: 16)),
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Добавить ребенка',
+                          style: TextStyle(fontSize: 16)),
                 ),
               ],
             ),
@@ -521,9 +555,9 @@ class _AddChildScreenState extends State<AddChildScreen> {
       ),
     );
   }
-  
+
   @override
- void dispose() {
+  void dispose() {
     _fullNameController.dispose();
     _iinController.dispose();
     _birthdayController.dispose();

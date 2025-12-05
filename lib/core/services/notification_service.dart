@@ -4,7 +4,7 @@ import 'package:timezone/timezone.dart' as tz;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
- factory NotificationService() => _instance;
+  factory NotificationService() => _instance;
   NotificationService._internal();
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -34,7 +34,6 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse payload) {
         // Обработка нажатия на уведомление
-        print('Notification tapped: ${payload.payload}');
       },
     );
   }
@@ -109,15 +108,15 @@ class NotificationService {
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );
- }
+  }
 
   // Метод для планирования ежедневных уведомлений о приходе
- Future<void> scheduleDailyArrivalNotification({
+  Future<void> scheduleDailyArrivalNotification({
     required int id,
     required Time time,
   }) async {
     tz.TZDateTime scheduledTime = _getNextOccurrence(time);
-    
+
     await scheduleNotification(
       id: id,
       title: 'Напоминание о приходе',
@@ -133,7 +132,7 @@ class NotificationService {
     required Time time,
   }) async {
     tz.TZDateTime scheduledTime = _getNextOccurrence(time);
-    
+
     await scheduleNotification(
       id: id,
       title: 'Напоминание об уходе',
@@ -149,7 +148,7 @@ class NotificationService {
     required Time time,
   }) async {
     tz.TZDateTime scheduledTime = _getNextOccurrence(time);
-    
+
     await scheduleNotification(
       id: id,
       title: 'Напоминание о посещаемости детей',
@@ -171,11 +170,11 @@ class NotificationService {
       time.minute,
       time.second,
     );
-    
+
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
     }
-    
+
     return scheduledDate;
   }
 }

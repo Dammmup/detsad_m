@@ -30,24 +30,25 @@ class GroupsService {
       }
       return null;
     } catch (e) {
-      print('Ошибка получения группы: $e');
       return null;
     }
   }
 
- // Get groups by teacher ID
- Future<List<Map<String, dynamic>>> getGroupsByTeacherId(String teacherId) async {
-   try {
-     final response = await _apiService.get('${ApiConstants.groups}?teacherId=$teacherId');
-     if (response.statusCode == 200) {
-       final List<dynamic> data = response.data;
-       return data.cast<Map<String, dynamic>>();
-     }
-     return [];
-   } on SocketException {
-     throw Exception('Нет подключения к интернету');
-   } catch (e) {
-     throw Exception('Ошибка получения данных: $e');
-   }
- }
+  // Get groups by teacher ID
+  Future<List<Map<String, dynamic>>> getGroupsByTeacherId(
+      String teacherId) async {
+    try {
+      final response =
+          await _apiService.get('${ApiConstants.groups}?teacherId=$teacherId');
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.cast<Map<String, dynamic>>();
+      }
+      return [];
+    } on SocketException {
+      throw Exception('Нет подключения к интернету');
+    } catch (e) {
+      throw Exception('Ошибка получения данных: $e');
+    }
+  }
 }

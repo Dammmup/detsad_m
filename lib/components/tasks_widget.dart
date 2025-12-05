@@ -5,10 +5,10 @@ import '../providers/task_provider.dart';
 import '../providers/auth_provider.dart';
 
 class TasksWidget extends StatefulWidget {
-  const TasksWidget({Key? key}) : super(key: key);
+  const TasksWidget({super.key});
 
   @override
- State<TasksWidget> createState() => _TasksWidgetState();
+  State<TasksWidget> createState() => _TasksWidgetState();
 }
 
 class _TasksWidgetState extends State<TasksWidget> {
@@ -16,12 +16,12 @@ class _TasksWidgetState extends State<TasksWidget> {
   void initState() {
     super.initState();
     _loadTasks();
- }
+  }
 
   Future<void> _loadTasks() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-    
+
     if (authProvider.user != null) {
       await taskProvider.loadTasksForUser(authProvider.user!.id);
     }
@@ -29,9 +29,8 @@ class _TasksWidgetState extends State<TasksWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
     final taskProvider = Provider.of<TaskProvider>(context);
-    
+
     List<Task> pendingTasks = taskProvider.tasks
         .where((task) => task.status == 'pending' || task.status == 'in_progress')
         .take(3) // Показываем только первые 3 задачи
@@ -43,10 +42,10 @@ class _TasksWidgetState extends State<TasksWidget> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.grey.withAlpha((0.1 * 255).round()),
             spreadRadius: 1,
             blurRadius: 5,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -57,7 +56,7 @@ class _TasksWidgetState extends State<TasksWidget> {
           children: [
             Row(
               children: [
-                Icon(Icons.task, color: Colors.orange),
+                const Icon(Icons.task, color: Colors.orange),
                 const SizedBox(width: 8),
                 Text(
                   'Задачи',
@@ -77,7 +76,7 @@ class _TasksWidgetState extends State<TasksWidget> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   taskProvider.errorMessage!,
-                  style: TextStyle(color: Colors.red),
+                  style: const TextStyle(color: Colors.red),
                 ),
               )
             else if (pendingTasks.isEmpty)
@@ -93,7 +92,7 @@ class _TasksWidgetState extends State<TasksWidget> {
             else
               ListView.builder(
                 shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: pendingTasks.length,
                 itemBuilder: (context, index) {
                   final task = pendingTasks[index];
@@ -111,8 +110,8 @@ class _TasksWidgetState extends State<TasksWidget> {
     IconData statusIcon = _getStatusIcon(task.status);
 
     return Container(
-      margin: EdgeInsets.only(bottom: 8),
-      padding: EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         border: Border(
           left: BorderSide(
@@ -120,8 +119,8 @@ class _TasksWidgetState extends State<TasksWidget> {
             color: statusColor,
           ),
         ),
-        color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.horizontal(right: Radius.circular(8)),
+        color: statusColor.withAlpha((0.1 * 255).round()),
+        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
       ),
       child: Row(
         children: [
@@ -162,7 +161,7 @@ class _TasksWidgetState extends State<TasksWidget> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.access_time, size: 12, color: Colors.grey),
+                      const Icon(Icons.access_time, size: 12, color: Colors.grey),
                       const SizedBox(width: 2),
                       Text(
                         'До: ${_formatDate(task.dueDate!)}',
@@ -181,8 +180,8 @@ class _TasksWidgetState extends State<TasksWidget> {
           IconButton(
             onPressed: () => _toggleTaskStatus(task.id, taskProvider),
             icon: task.status == 'completed'
-                ? Icon(Icons.check_circle, color: Colors.green)
-                : Icon(Icons.radio_button_unchecked, color: Colors.grey),
+                ? const Icon(Icons.check_circle, color: Colors.green)
+                : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
             iconSize: 24,
           ),
         ],
@@ -219,7 +218,7 @@ class _TasksWidgetState extends State<TasksWidget> {
   Color _getDueDateColor(DateTime dueDate) {
     final now = DateTime.now();
     final difference = dueDate.difference(now).inDays;
-    
+
     if (difference < 0) {
       return Colors.red; // Просрочено
     } else if (difference == 0) {

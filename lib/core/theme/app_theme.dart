@@ -8,14 +8,14 @@ class AppTheme {
         seedColor: Colors.blue,
         brightness: Brightness.light,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      cardTheme: CardThemeData(
+      cardTheme: const CardThemeData(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
         elevation: 4,
       ),
@@ -26,7 +26,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -39,15 +39,15 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
         ),
       ),
-      snackBarTheme: SnackBarThemeData(
+      snackBarTheme: const SnackBarThemeData(
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
       ),
     );
- }
+  }
 
   static ThemeData get darkTheme {
     return ThemeData(
@@ -75,7 +75,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          padding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -88,10 +88,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: Colors.blue, width: 2),
         ),
       ),
-      snackBarTheme: SnackBarThemeData(
+      snackBarTheme: const SnackBarThemeData(
         backgroundColor: Colors.blue,
         behavior: SnackBarBehavior.floating,
       ),

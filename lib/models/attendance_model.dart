@@ -2,7 +2,9 @@ import 'dart:convert';
 
 class Attendance {
   final String id;
-  final String userId;
+  final String userId; // For backward compatibility
+  final String? childId; // Primary field for child attendance (matches backend)
+  final String groupId; // Added groupId
   final String date;
   final String checkIn;
   final String? checkOut;
@@ -13,7 +15,9 @@ class Attendance {
 
   Attendance({
     required this.id,
-    required this.userId,
+    this.userId = '',
+    this.childId,
+    required this.groupId,
     required this.date,
     required this.checkIn,
     this.checkOut,
@@ -27,30 +31,43 @@ class Attendance {
   factory Attendance.fromJson(Map<String, dynamic> json) {
     return Attendance(
       id: json['_id'] ?? json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      date: json['date'] ?? '',
-      checkIn: json['checkIn'] ?? '',
-      checkOut: json['checkOut'],
+      userId: json['userId'] ?? json['childId'] ?? '',
+      childId: json['childId'] ?? json['userId'],
+      groupId: json['groupId']?.toString() ?? '', // Added groupId
+      date: json['date']?.toString() ?? '',
+      checkIn: json['checkIn']?.toString() ?? json['actualStart']?.toString() ?? '',
+      checkOut: json['checkOut']?.toString() ?? json['actualEnd']?.toString(),
       status: json['status'] ?? 'absent',
       notes: json['notes'],
-      createdAt: json['createdAt'],
-      updatedAt: json['updatedAt'],
+      createdAt: json['createdAt']?.toString(),
+      updatedAt: json['updatedAt']?.toString(),
     );
   }
 
  // Convert to JSON
   Map<String, dynamic> toJson() {
-    return {
+    final json = <String, dynamic>{
       '_id': id,
-      'userId': userId,
+      'groupId': groupId,
       'date': date,
-      'checkIn': checkIn,
-      'checkOut': checkOut,
       'status': status,
-      'notes': notes,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
     };
+    
+    // Use childId if available, otherwise userId (for backward compatibility)
+    if (childId != null && childId!.isNotEmpty) {
+      json['childId'] = childId;
+    } else if (userId.isNotEmpty) {
+      json['childId'] = userId;
+    }
+    
+    // Add optional fields
+    if (checkIn.isNotEmpty) json['checkIn'] = checkIn;
+    if (checkOut != null && checkOut!.isNotEmpty) json['checkOut'] = checkOut;
+    if (notes != null && notes!.isNotEmpty) json['notes'] = notes;
+    if (createdAt != null && createdAt!.isNotEmpty) json['createdAt'] = createdAt;
+    if (updatedAt != null && updatedAt!.isNotEmpty) json['updatedAt'] = updatedAt;
+    
+    return json;
   }
 
   // Convert to JSON string
@@ -72,6 +89,8 @@ class Attendance {
   Attendance copyWith({
     String? id,
     String? userId,
+    String? childId,
+    String? groupId,
     String? date,
     String? checkIn,
     String? checkOut,
@@ -83,6 +102,8 @@ class Attendance {
     return Attendance(
       id: id ?? this.id,
       userId: userId ?? this.userId,
+      childId: childId ?? this.childId,
+      groupId: groupId ?? this.groupId,
       date: date ?? this.date,
       checkIn: checkIn ?? this.checkIn,
       checkOut: checkOut ?? this.checkOut,

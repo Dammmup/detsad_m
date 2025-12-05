@@ -7,19 +7,27 @@ class GroupsProvider with ChangeNotifier {
   List<Map<String, dynamic>> _groups = [];
   bool _isLoading = false;
   String? _errorMessage;
-
+  bool _hasLoaded = false; // Флаг для отслеживания, были ли данные загружены
+  
   List<Map<String, dynamic>> get groups => _groups;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-
+  bool get hasLoaded => _hasLoaded;
+  
   // Load all groups
   Future<void> loadGroups() async {
+    // Если данные уже были загружены, не загружаем снова
+    if (_hasLoaded) {
+      return;
+    }
+    
     _isLoading = true;
     notifyListeners();
-
+    
     try {
       _groups = await _groupsService.getAllGroups();
       _errorMessage = null;
+      _hasLoaded = true; // Отмечаем, что данные были загружены
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -27,15 +35,21 @@ class GroupsProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
+  
   // Load groups by teacher ID
   Future<void> loadGroupsByTeacherId(String teacherId) async {
+    // Если данные уже были загружены, не загружаем снова
+    if (_hasLoaded) {
+      return;
+    }
+    
     _isLoading = true;
     notifyListeners();
-
+    
     try {
       _groups = await _groupsService.getGroupsByTeacherId(teacherId);
       _errorMessage = null;
+      _hasLoaded = true; // Отмечаем, что данные были загружены
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -43,15 +57,24 @@ class GroupsProvider with ChangeNotifier {
       notifyListeners();
     }
   }
-
+  
  // Get group by ID
   Map<String, dynamic>? getGroupById(String id) {
     return _groups.firstWhere((group) => group['_id'] == id || group['id'] == id, orElse: () => _groups.first);
   }
-
+  
   // Clear error message
   void clearError() {
     _errorMessage = null;
+    notifyListeners();
+  }
+  
+  // Reset provider to allow reloading
+  void reset() {
+    _groups = [];
+    _isLoading = false;
+    _errorMessage = null;
+    _hasLoaded = false;
     notifyListeners();
   }
 }

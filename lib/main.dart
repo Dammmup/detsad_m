@@ -14,13 +14,11 @@ import 'providers/task_provider.dart';
 import 'providers/geolocation_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
-import 'screens/attendance/mark_attendance_screen.dart';
-import 'screens/attendance/view_attendance_screen.dart';
-import 'screens/children/children_list_screen.dart';
 import 'core/navigation/app_router.dart';
+import 'pages/splash_screen_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+ WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize storage
   await StorageService().init();
@@ -28,27 +26,32 @@ void main() async {
   // Initialize notification service
   await NotificationService().init();
 
-  runApp(const MyApp());
+ runApp(const MyApp());
 }
-
-// Оставляем функцию main после импорта, как определено ранее
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
- Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ChildrenProvider()),
         ChangeNotifierProvider(create: (_) => AttendanceProvider()),
-        ChangeNotifierProvider(create: (_) => ShiftsProvider()),
         ChangeNotifierProvider(create: (_) => DocumentsProvider()),
         ChangeNotifierProvider(create: (_) => NotificationProvider()),
         ChangeNotifierProvider(create: (_) => GroupsProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => GeolocationProvider()),
+        ChangeNotifierProxyProvider<GeolocationProvider, ShiftsProvider>(
+          create: (context) => ShiftsProvider(),
+          update: (context, geoProvider, shiftsProvider) {
+            if (shiftsProvider == null) return ShiftsProvider();
+            shiftsProvider.setGeolocationProvider(geoProvider);
+            return shiftsProvider;
+          },
+        ),
       ],
       child: MaterialApp(
         title: 'Attendance App',
@@ -56,49 +59,10 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         home: const SplashScreen(),
         onGenerateRoute: AppRouter.generateRoute,
-      ),
-    );
- }
-}
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
- State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkAuth();
-    });
-  }
-
-  Future<void> _checkAuth() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    await authProvider.initialize();
-
-    if (mounted) {
-      if (authProvider.isLoggedIn) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
-    }
- }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
+        routes: {
+          'login': (context) => const LoginScreen(),
+          'home': (context) => const DashboardScreen(),
+        },
       ),
     );
   }

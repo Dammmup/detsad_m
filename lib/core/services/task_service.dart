@@ -7,7 +7,8 @@ class TaskService {
   final ApiService _apiService = ApiService();
 
   // Get all tasks
-  Future<List<Task>> getAllTasks({String? assignedTo, String? status, String? category}) async {
+  Future<List<Task>> getAllTasks(
+      {String? assignedTo, String? status, String? category}) async {
     try {
       String url = ApiConstants.taskList;
       List<String> queryParams = [];
@@ -36,9 +37,8 @@ class TaskService {
   // Get tasks by user
   Future<List<Task>> getTasksByUser(String userId) async {
     try {
-      final response = await _apiService.get(
-        '${ApiConstants.taskList}/user/$userId'
-      );
+      final response =
+          await _apiService.get('${ApiConstants.taskList}/user/$userId');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Task.fromJson(json)).toList();
@@ -70,7 +70,8 @@ class TaskService {
   // Get task by ID
   Future<Task> getTaskById(String taskId) async {
     try {
-      final response = await _apiService.get('${ApiConstants.taskList}/$taskId');
+      final response =
+          await _apiService.get('${ApiConstants.taskList}/$taskId');
       if (response.statusCode == 200) {
         return Task.fromJson(response.data);
       }
@@ -80,7 +81,7 @@ class TaskService {
     } catch (e) {
       throw Exception('Ошибка получения задачи: $e');
     }
- }
+  }
 
   // Create task
   Future<Task> createTask(Task task) async {
@@ -96,7 +97,7 @@ class TaskService {
     } catch (e) {
       throw Exception('Ошибка создания задачи: $e');
     }
- }
+  }
 
   // Update task
   Future<Task> updateTask(String taskId, Task task) async {
@@ -115,7 +116,7 @@ class TaskService {
   }
 
   // Toggle task status
- Future<Task> toggleTaskStatus(String taskId, String userId) async {
+  Future<Task> toggleTaskStatus(String taskId, String userId) async {
     try {
       final response = await _apiService.patch(
         ApiConstants.taskListToggle(taskId),
@@ -133,10 +134,10 @@ class TaskService {
   // Delete task
   Future<bool> deleteTask(String taskId) async {
     try {
-      final response = await _apiService.delete('${ApiConstants.taskList}/$taskId');
+      final response =
+          await _apiService.delete('${ApiConstants.taskList}/$taskId');
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
-      print('Ошибка удаления задачи: $e');
       return false;
     }
   }

@@ -35,11 +35,11 @@ class User {
     String firstName = '';
     String lastName = '';
     String? middleName;
-    
+
     if (json.containsKey('fullName') && json['fullName'] != null) {
       // Split fullName into firstName, lastName, and middleName
       List<String> nameParts = (json['fullName'] as String).split(' ');
-      if (nameParts.length >= 1) {
+      if (nameParts.isNotEmpty) {
         lastName = nameParts[0]; // In many systems, the first part is the last name
       }
       if (nameParts.length >= 2) {
@@ -50,11 +50,11 @@ class User {
       }
     } else {
       // Use the original fields if fullName is not present
-      firstName = json['firstName'] as String ?? '';
-      lastName = json['lastName'] as String ?? '';
+      firstName = json['firstName'] as String;
+      lastName = json['lastName'] as String;
       middleName = json['middleName'] as String?;
     }
-    
+
     return User(
       id: json['id'] as String,
       firstName: firstName,
@@ -66,7 +66,9 @@ class User {
       position: json['position'] as String?,
       department: json['department'] as String?,
       isActive: json['isActive'] as bool? ?? true,
-      lastLoginAt: json['lastLoginAt'] != null ? DateTime.parse(json['lastLoginAt'] as String) : null,
+      lastLoginAt: json['lastLoginAt'] != null
+          ? DateTime.parse(json['lastLoginAt'] as String)
+          : null,
       email: json['email'] as String?,
     );
   }
@@ -135,7 +137,7 @@ class User {
       email: email ?? this.email,
     );
   }
-  
+
   // Helper method to generate full name from first, last, and middle names
   String _getFullName() {
     List<String> parts = [lastName, firstName];

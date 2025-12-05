@@ -6,7 +6,7 @@ import '../providers/shifts_provider.dart';
 class StaffShiftStatusManager extends StatefulWidget {
   final Widget child;
 
-  const StaffShiftStatusManager({Key? key, required this.child}) : super(key: key);
+  const StaffShiftStatusManager({super.key, required this.child});
 
   @override
   State<StaffShiftStatusManager> createState() => _StaffShiftStatusManagerState();
