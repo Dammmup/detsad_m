@@ -88,7 +88,16 @@ class ShiftsProvider with ChangeNotifier {
       }
 
       if (myShift != null) {
-        _status = myShift['status'] ?? 'scheduled';
+        // Get shift status - handle both 'in_progress' and 'late' statuses
+        String shiftStatus = myShift['status'] ?? 'scheduled';
+        // If status is 'late', we still want to show it as 'in_progress' for UI purposes
+        // because 'late' means the shift has started (they checked in)
+        if (shiftStatus == 'late') {
+          _status = 'in_progress';
+        } else {
+          _status = shiftStatus;
+        }
+        
         // Get shift ID - MongoDB uses _id, but API might return id as well
         _shiftId = myShift['_id']?.toString() ?? myShift['id']?.toString();
         
@@ -184,7 +193,9 @@ class ShiftsProvider with ChangeNotifier {
 
       if (_shiftId != null) {
         await _shiftsService.checkIn(_shiftId!, latitude: latitude, longitude: longitude, status: status);
-        _status = 'in_progress';
+        
+        // Reload shift status from server to get the actual updated status
+        await fetchShiftStatus(userId);
         _errorMessage = null;
       } else {
         _errorMessage = 'Смена не найдена на сегодня. Возможно, смена не запланирована или данные о смене еще не загружены. Попробуйте обновить страницу.';
@@ -252,7 +263,9 @@ class ShiftsProvider with ChangeNotifier {
 
       if (_shiftId != null) {
         await _shiftsService.checkOut(_shiftId!, latitude: latitude, longitude: longitude, status: status);
-        _status = 'completed';
+        
+        // Reload shift status from server to get the actual updated status
+        await fetchShiftStatus(userId);
         _errorMessage = null;
       } else {
         _errorMessage = 'Смена не найдена на сегодня. Возможно, смена не запланирована или данные о смене еще не загружены. Попробуйте обновить страницу.';

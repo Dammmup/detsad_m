@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/attendance_model.dart';
+import '../../../models/attendance_record_model.dart';
 import '../../../core/services/attendance_service.dart';
 
 class ViewAttendanceScreen extends StatefulWidget {
@@ -11,7 +11,7 @@ class ViewAttendanceScreen extends StatefulWidget {
 }
 
 class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
-  List<Attendance> attendanceRecords = [];
+  List<AttendanceRecord> attendanceRecords = [];
   bool isLoading = true;
   DateTime selectedDate = DateTime.now();
   final AttendanceService _attendanceService = AttendanceService();
@@ -29,7 +29,7 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
       });
 
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      attendanceRecords = await _attendanceService.getAttendanceByDate(date);
+      attendanceRecords = await _attendanceService.getAttendanceRecords(date);
     } on Exception catch (e) {
       String errorMessage = e.toString();
       
@@ -242,10 +242,10 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                               itemBuilder: (context, index) {
                                 final record = attendanceRecords[index];
 
-                                // Заглушка для получения имени ребенка и группы
-                                // В реальной реализации нужно будет получить эти данные через сервис
-                                String childName = 'Ребенок ${record.userId}';
-                                String childGroup = 'Группа не указана';
+                                String childName = record.child.fullName;
+                                String childGroup = record.child.groupId is Map 
+                                    ? (record.child.groupId as Map)['name'] ?? 'Группа не указана' 
+                                    : 'Группа не указана';
 
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 8),

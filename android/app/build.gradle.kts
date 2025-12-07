@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -9,10 +11,14 @@ android {
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
-sourceCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-                isCoreLibraryDesugaringEnabled = true
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -20,10 +26,7 @@ sourceCompatibility = JavaVersion.VERSION_11
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.aldamiram"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -31,10 +34,16 @@ sourceCompatibility = JavaVersion.VERSION_11
     }
 
     buildTypes {
+        val localProperties = Properties()
+        localProperties.load(rootProject.file("local.properties").inputStream())
+        val googleApiKey = localProperties.getProperty("GOOGLE_MAPS_API_KEY") ?: ""
+
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+            buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleApiKey\"")
+        }
+        debug {
+            buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleApiKey\"")
         }
     }
 }

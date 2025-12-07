@@ -110,3 +110,4 @@ async checkIn(shiftId: string, userId: string, role: string, locationData?: { la
 2. Улучшить обработку ошибок на бэкенде - возвращать более понятные сообщения
 3. Добавить логирование на бэкенде для отладки проблем
 
+

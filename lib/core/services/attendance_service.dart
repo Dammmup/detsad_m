@@ -1,6 +1,10 @@
+import '../../models/child_model.dart';
+
 import '../constants/api_constants.dart';
 import '../../models/attendance_model.dart';
+import '../../models/attendance_record_model.dart';
 import 'api_service.dart';
+import 'children_service.dart';
 import 'dart:io';
 
 class AttendanceService {
@@ -38,11 +42,11 @@ class AttendanceService {
     }
   }
 
-  // Get attendance by date
+  // Get attendance by date (child attendance)
   Future<List<Attendance>> getAttendanceByDate(String date) async {
     try {
       final response = await _apiService.get(
-        '${ApiConstants.attendanceEntries}?date=$date',
+        '${ApiConstants.childAttendance}?date=$date',
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -51,6 +55,31 @@ class AttendanceService {
       return [];
     } catch (e) {
       return [];
+    }
+  }
+
+  Future<List<AttendanceRecord>> getAttendanceRecords(String date) async {
+    try {
+      final attendanceData = await getAttendanceByDate(date);
+      if (attendanceData.isEmpty) {
+        return [];
+      }
+
+      final childrenService = ChildrenService();
+      final allChildren = await childrenService.getAllChildren();
+      final childrenMap = {for (var child in allChildren) child.id: child};
+
+      final records = attendanceData.map((att) {
+        final child = childrenMap[att.childId];
+        if (child != null) {
+          return AttendanceRecord(attendance: att, child: child);
+        }
+        return null;
+      }).whereType<AttendanceRecord>().toList();
+
+      return records;
+    } catch (e) {
+      throw Exception('Ошибка загрузки записей посещаемости: $e');
     }
   }
 

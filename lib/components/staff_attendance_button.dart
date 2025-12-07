@@ -17,10 +17,17 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
   @override
   void initState() {
     super.initState();
-    // Load geolocation settings when the widget is first created
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        Provider.of<GeolocationProvider>(context, listen: false).loadSettings();
+        final authProvider = Provider.of<AuthProvider>(context, listen: false);
+        final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
+        final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
+        
+        geoProvider.loadSettings();
+        
+        if (authProvider.user != null) {
+          shiftsProvider.fetchShiftStatus(authProvider.user!.id);
+        }
       }
     });
   }
