@@ -44,9 +44,14 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
 
         // Получаем ID групп, в которых воспитатель является учителем
         List<String> groupIds = teacherGroups
-            .map((group) => group['_id'] ?? group['id'])
-            .toList()
-            .cast<String>();
+            .map((group) => group.id)
+            .toList();
+            
+        // Проверяем, есть ли у воспитателя назначенные группы
+        if (groupIds.isEmpty) {
+          _nextBirthdayChild = null; // Показываем, что нет детей, если нет назначенных групп
+          return; // Ранний выход, чтобы не загружать всех детей
+        }
 
         // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
         List<Child> allChildren = await childrenService.getAllChildren();

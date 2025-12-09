@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class Task {
   final String id;
   final String title;
@@ -88,31 +90,15 @@ class Task {
   }
 
   String toJsonString() {
-    return toJson().toString();
+    return jsonEncode(toJson());
   }
 
   factory Task.fromJsonString(String jsonString) {
-    // This is a simplified implementation - in a real app you would use json.decode
-    // For now, returning a default instance
-    return Task(
-      id: '',
-      title: '',
-      description: null,
-      assignedTo: '',
-      assignedBy: '',
-      assignedToSpecificUser: null,
-      dueDate: null,
-      priority: 'medium',
-      status: 'pending',
-      category: '',
-      attachments: null,
-      notes: null,
-      completedAt: null,
-      cancelledAt: null,
-      completedBy: null,
-      cancelledBy: null,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    try {
+      final Map<String, dynamic> json = jsonDecode(jsonString);
+      return Task.fromJson(json);
+    } catch (e) {
+      throw Exception('Failed to parse task data from JSON string: $e');
+    }
   }
 }

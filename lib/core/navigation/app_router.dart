@@ -8,6 +8,8 @@ import '../../pages/forgot_password_page.dart';
 import '../../screens/documents/documents_list_screen.dart';
 import '../../screens/children/children_list_screen.dart';
 import '../../pages/map_view_page.dart';
+import '../../screens/staff/staff_profile_screen.dart';
+import '../../screens/staff/staff_schedule_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -47,6 +49,10 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const DocumentsListScreen());
       case '/map':
         return MaterialPageRoute(builder: (_) => const MapViewPage());
+      case '/staff-profile':
+        return MaterialPageRoute(builder: (_) => const StaffProfileScreen());
+      case '/staff-schedule':
+        return MaterialPageRoute(builder: (_) => const StaffScheduleScreen());
       default:
         return MaterialPageRoute(builder: (_) => const HomePage());
     }

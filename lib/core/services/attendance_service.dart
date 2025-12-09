@@ -1,8 +1,8 @@
-import '../../models/child_model.dart';
 
 import '../constants/api_constants.dart';
 import '../../models/attendance_model.dart';
 import '../../models/attendance_record_model.dart';
+import '../../models/child_model.dart';
 import 'api_service.dart';
 import 'children_service.dart';
 import 'dart:io';
@@ -65,9 +65,27 @@ class AttendanceService {
         return [];
       }
 
+      // Получаем только детей, для которых есть посещаемость
       final childrenService = ChildrenService();
-      final allChildren = await childrenService.getAllChildren();
-      final childrenMap = {for (var child in allChildren) child.id: child};
+      final uniqueChildIds = attendanceData
+          .where((att) => att.childId != null)
+          .map((att) => att.childId!)
+          .toSet();
+          
+      // Загружаем только нужных детей вместо всех
+      final childrenList = <Child>[];
+      for (final childId in uniqueChildIds) {
+        try {
+          final child = await childrenService.getChildById(childId);
+          if (child != null) {
+            childrenList.add(child);
+          }
+        } catch (e) {
+          // Логируем ошибку загрузки ребенка (в продакшене лучше использовать специализированный логгер)
+        }
+      }
+      
+      final childrenMap = {for (var child in childrenList) child.id: child};
 
       final records = attendanceData.map((att) {
         final child = childrenMap[att.childId];
@@ -154,11 +172,11 @@ class AttendanceService {
    } on SocketException {
      throw Exception('Нет подключения к интернету');
    } catch (e) {
-     // Re-throw if already an Exception, otherwise wrap it
+     // Re-throw if already an Exception, otherwise wrap it with more specific message
      if (e is Exception) {
        rethrow;
      }
-     throw Exception('Ошибка отметки посещаемости: $e');
+     throw Exception('Ошибка отметки посещаемости: ${e.toString()}');
    }
  }
 

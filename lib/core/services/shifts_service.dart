@@ -23,8 +23,10 @@ class ShiftsService {
       }
 
       final response = await _apiService.get(url);
+      
       if (response.statusCode == 200) {
         final data = response.data;
+        
         if (data is List) {
           return data;
         } else if (data is Map) {
@@ -36,8 +38,9 @@ class ShiftsService {
           return [];
         }
         return [];
+      } else {
+        throw Exception('Ошибка получения данных: статус ${response.statusCode}');
       }
-      return [];
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {

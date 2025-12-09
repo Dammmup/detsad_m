@@ -17,6 +17,8 @@ class ChildrenListScreen extends StatefulWidget {
 
 class _ChildrenListScreenState extends State<ChildrenListScreen> {
   List<Child> children = [];
+  List<Child> _filteredChildren = [];
+  String _selectedFilter = 'all';
   bool isLoading = true;
   bool _initialLoadComplete = false; // Флаг для отслеживания завершения начальной загрузки
   final ChildrenService _childrenService = ChildrenService();
@@ -44,8 +46,8 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       final authProvider = Provider.of<AuthProvider>(ctx, listen: false);
       final User? currentUser = authProvider.user;
 
-      if (currentUser != null && currentUser.role == 'teacher') {
-        // Если пользователь - воспитатель, загружаем только детей из его групп
+      if (currentUser != null && (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
+        // Если пользователь - воспитатель или заменитель, загружаем только детей из его групп
         await groupsProvider.loadGroupsByTeacherId(currentUser.id);
         if (!ctx.mounted) return; // проверяем контекст после await
 
@@ -53,9 +55,14 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
 
         // Получаем ID групп, в которых воспитатель является учителем
         List<String> groupIds = teacherGroups
-            .map((group) => group['_id'] ?? group['id'])
-            .toList()
-            .cast<String>();
+            .map((group) => group.id)
+            .toList();
+        
+        // Проверяем, есть ли у воспитателя назначенные группы
+        if (groupIds.isEmpty) {
+          children = []; // Показываем пустой список, если нет назначенных групп
+          return; // Ранний выход, чтобы не загружать всех детей
+        }
 
         // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
         List<Child> allChildren = await _childrenService.getAllChildren();
@@ -123,8 +130,22 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     }
  }
 
-  @override
-  Widget build(BuildContext context) {
+void _applyFilters() {
+   if (_selectedFilter == 'all') {
+     _filteredChildren = children;
+   } else if (_selectedFilter == 'by_group') {
+     // For now, just show all children, but in a real implementation
+     // this would filter by the user's assigned group
+     _filteredChildren = children;
+   }
+   setState(() {
+     // Update filtered list
+     _filteredChildren = List.from(_filteredChildren);
+   });
+ }
+
+ @override
+ Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Дети'),
@@ -174,6 +195,71 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                     color: Colors.grey[800]),
               ),
               const SizedBox(height: 16),
+              
+              // Filter controls
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withAlpha((0.1 * 255).round()),
+                      spreadRadius: 1,
+                      blurRadius: 5,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Фильтры',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilterChip(
+                          label: const Text('Все'),
+                          selected: _selectedFilter == 'all',
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedFilter = selected ? 'all' : 'all';
+                            });
+                            _applyFilters();
+                          },
+                          selectedColor: Colors.blue.shade200, // Changed from purple to blue
+                          backgroundColor: Colors.grey.shade200,
+                          checkmarkColor: Colors.blue.shade700,
+                        ),
+                        FilterChip(
+                          label: const Text('По группам'),
+                          selected: _selectedFilter == 'by_group',
+                          onSelected: (bool selected) {
+                            setState(() {
+                              _selectedFilter = selected ? 'by_group' : 'all';
+                            });
+                            _applyFilters();
+                          },
+                          selectedColor: Colors.blue.shade200, // Changed from purple to blue
+                          backgroundColor: Colors.grey.shade200,
+                          checkmarkColor: Colors.blue.shade700,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
               Expanded(
                 child: isLoading && children.isEmpty
                     ? const Center(child: CircularProgressIndicator())
@@ -211,9 +297,9 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: children.length,
+                            itemCount: _filteredChildren.length,
                             itemBuilder: (context, index) {
-                              final child = children[index];
+                              final child = _filteredChildren[index];
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
                                 decoration: BoxDecoration(
@@ -348,7 +434,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       return 'Группа не указана';
     }
 
-    // If groupId is a map (object), extract the name
+    // If groupId is a Group object, extract the name
     if (child.groupId is Map) {
       final groupMap = child.groupId as Map;
       return groupMap['name'] ?? 'Группа не указана';
@@ -356,7 +442,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
 
     // If groupId is a string, return it directly
     return 'Группа: ${child.groupId.toString()}';
-  }
+ }
 
   // Helper method to format birthday in the format: day, month (in words), year
   String _formatBirthday(String birthdayString) {

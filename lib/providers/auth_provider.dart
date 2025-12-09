@@ -30,8 +30,10 @@ class AuthProvider with ChangeNotifier {
       // Ensure storage service is initialized
       await StorageService().init();
       _isLoggedIn = await _authService.isLoggedIn();
+      
       if (_isLoggedIn) {
         _user = await _authService.getStoredUser();
+        
         // Refresh user data from server
         final updatedUser = await _authService.getCurrentUser();
         if (updatedUser != null) {
@@ -111,7 +113,13 @@ class AuthProvider with ChangeNotifier {
       _errorMessage = e.toString();
       notifyListeners();
     }
- }
+  }
+
+  // Update user in provider
+  void updateUser(User updatedUser) {
+    _user = updatedUser;
+    notifyListeners();
+  }
 
   // Clear error
   void clearError() {

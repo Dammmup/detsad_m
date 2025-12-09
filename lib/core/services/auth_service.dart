@@ -87,7 +87,8 @@ class AuthService {
     try {
       final response = await _apiService.get(ApiConstants.currentUser);
       if (response.statusCode == 200) {
-        final user = User.fromJson(response.data);
+        final userData = response.data;
+        final user = User.fromJson(userData);
         await _storageService.init();
         await _storageService.saveUser(user);
         return user;
@@ -110,5 +111,56 @@ class AuthService {
   Future<User?> getStoredUser() async {
     await _storageService.init();
     return await _storageService.getUser();
+  }
+
+  // Update profile
+  Future<bool> updateProfile({
+    required String userId,
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatar,
+  }) async {
+    try {
+      final response = await _apiService.put(
+        '${ApiConstants.users}/$userId',
+        data: {
+          if (firstName != null) 'firstName': firstName,
+          if (lastName != null) 'lastName': lastName,
+          if (phone != null) 'phone': phone,
+          if (avatar != null) 'avatar': avatar,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final updatedUser = User.fromJson(response.data);
+        await _storageService.saveUser(updatedUser);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      // Log error for debugging purposes
+      // print('Error updating profile: $e');
+      return false;
+    }
+  }
+
+  // Change password
+  Future<bool> changePassword({
+    required String userId,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _apiService.post(
+        '${ApiConstants.users}/$userId/change-password',
+        data: {'newPassword': newPassword},
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      // Log error for debugging purposes
+      // print('Error changing password: $e');
+      return false;
+    }
   }
 }

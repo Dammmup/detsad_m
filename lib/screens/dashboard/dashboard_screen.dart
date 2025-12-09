@@ -16,6 +16,9 @@ import '../../components/birthdays_widget.dart'; // Импорт виджета 
 import '../../components/tasks_widget.dart'; // Импорт виджета задач
 import '../../components/geolocation_status_widget.dart'; // Импорт виджета статуса геолокации
 import '../../core/services/notification_service.dart';
+import '../staff/staff_profile_screen.dart';
+import '../staff/staff_schedule_screen.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -282,6 +285,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           },
                         ),
 
+                      // Staff profile (for staff members)
+                      if (isStaff)
+                        _buildDashboardCard(
+                          context,
+                          'Мой профиль',
+                          Icons.person,
+                          Colors.blue.shade600,
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const StaffProfileScreen(),
+                              ),
+                            );
+                          },
+                        ),
+
+                      // Staff schedule (for staff members)
+                      if (isStaff)
+                        _buildDashboardCard(
+                          context,
+                          'Мой график',
+                          Icons.schedule,
+                          Colors.indigo.shade600,
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const StaffScheduleScreen(),
+                              ),
+                            );
+                          },
+                        ),
+
                       // Birthdays (replaces calendar)
                       _buildDashboardCard(
                         context,
@@ -300,12 +335,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Добавляем виджет дней рождения
-                  const BirthdaysWidget(),
+                  // Добавляем виджет дней рождения только для администраторов
+                  if (!isStaff)
+                    const BirthdaysWidget(),
                   const SizedBox(height: 16),
 
-                  // Добавляем виджет задач
-                  const TasksWidget(),
+                  // Добавляем виджет задач только для администраторов
+                  if (!isStaff)
+                    const TasksWidget(),
                   const SizedBox(height: 16),
                 ],
               ),

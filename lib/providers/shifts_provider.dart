@@ -119,7 +119,7 @@ class ShiftsProvider with ChangeNotifier {
         _shiftId = null;
         // Provide more helpful error message
         if (shifts.isEmpty) {
-          _errorMessage = 'Смены на сегодня не найдены. Убедитесь, что смена запланирована на ${today}.';
+          _errorMessage = 'Смены на сегодня не найдены. Убедитесь, что смена запланирована на $today.';
         } else {
           _errorMessage = 'Не найдена смена на сегодня для текущего сотрудника. Найдено смен: ${shifts.length}.';
         }

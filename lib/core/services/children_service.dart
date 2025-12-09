@@ -75,7 +75,7 @@ class ChildrenService {
         '${ApiConstants.children}/$id',
         data: child.toJson(),
       );
-      if (response.statusCode == 20) {
+      if (response.statusCode == 200) {
         return Child.fromJson(response.data);
       } else if (response.statusCode == 400) {
         throw Exception('Некорректные данные. Проверьте правильность введенной информации');

@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import '../core/services/groups_service.dart';
+import '../models/group_model.dart';
 
 class GroupsProvider with ChangeNotifier {
   final GroupsService _groupsService = GroupsService();
   
-  List<Map<String, dynamic>> _groups = [];
+  List<Group> _groups = [];
   bool _isLoading = false;
   String? _errorMessage;
   bool _hasLoaded = false; // Флаг для отслеживания, были ли данные загружены
   
-  List<Map<String, dynamic>> get groups => _groups;
+  List<Group> get groups => _groups;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
-  bool get hasLoaded => _hasLoaded;
+ bool get hasLoaded => _hasLoaded;
   
   // Load all groups
   Future<void> loadGroups() async {
@@ -59,12 +60,12 @@ class GroupsProvider with ChangeNotifier {
   }
   
  // Get group by ID
-  Map<String, dynamic>? getGroupById(String id) {
-    return _groups.firstWhere((group) => group['_id'] == id || group['id'] == id, orElse: () => _groups.first);
+  Group? getGroupById(String id) {
+    return _groups.firstWhere((group) => group.id == id, orElse: () => _groups.first);
   }
   
   // Clear error message
-  void clearError() {
+ void clearError() {
     _errorMessage = null;
     notifyListeners();
   }

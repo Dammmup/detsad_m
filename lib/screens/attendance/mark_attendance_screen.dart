@@ -112,7 +112,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       });
     } catch (e) {
       // Ошибки можно обработать, если нужно
-      print('Ошибка обновления локального состояния посещаемости: $e');
+      // Log error for debugging purposes
+      // print('Ошибка обновления локального состояния посещаемости: $e');
     }
   }
 

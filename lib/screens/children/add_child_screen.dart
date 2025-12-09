@@ -23,19 +23,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
-  final TextEditingController _clinicController = TextEditingController();
-  final TextEditingController _bloodGroupController = TextEditingController();
-  final TextEditingController _rhesusController = TextEditingController();
-  final TextEditingController _disabilityController = TextEditingController();
-  final TextEditingController _dispensaryController = TextEditingController();
-  final TextEditingController _diagnosisController = TextEditingController();
-  final TextEditingController _allergyController = TextEditingController();
-  final TextEditingController _infectionsController = TextEditingController();
-  final TextEditingController _hospitalizationsController =
-      TextEditingController();
-  final TextEditingController _incapacityController = TextEditingController();
-  final TextEditingController _checkupsController = TextEditingController();
-  final TextEditingController _notesController = TextEditingController();
+  // Removed medical-related controllers that are not needed in mobile app
 
   String? _selectedGroupId;
   String? _selectedGender;
@@ -99,24 +87,11 @@ class _AddChildScreenState extends State<AddChildScreen> {
         fullName: _fullNameController.text.trim(),
         iin: _iinController.text.trim().isEmpty ? null : _iinController.text.trim(),
         birthday: _birthdayController.text.isEmpty ? null : _birthdayController.text,
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
         parentName: _parentNameController.text.trim().isEmpty ? null : _parentNameController.text.trim(),
         parentPhone: _parentPhoneController.text.trim().isEmpty ? null : _parentPhoneController.text.trim(),
         groupId: _selectedGroupId,
         staffId: currentUser?.id, // Привязываем к текущему пользователю
         gender: _selectedGender,
-        clinic: _clinicController.text.trim().isEmpty ? null : _clinicController.text.trim(),
-        bloodGroup: _bloodGroupController.text.trim().isEmpty ? null : _bloodGroupController.text.trim(),
-        rhesus: _rhesusController.text.trim().isEmpty ? null : _rhesusController.text.trim(),
-        disability: _disabilityController.text.trim().isEmpty ? null : _disabilityController.text.trim(),
-        dispensary: _dispensaryController.text.trim().isEmpty ? null : _dispensaryController.text.trim(),
-        diagnosis: _diagnosisController.text.trim().isEmpty ? null : _diagnosisController.text.trim(),
-        allergy: _allergyController.text.trim().isEmpty ? null : _allergyController.text.trim(),
-        infections: _infectionsController.text.trim().isEmpty ? null : _infectionsController.text.trim(),
-        hospitalizations: _hospitalizationsController.text.trim().isEmpty ? null : _hospitalizationsController.text.trim(),
-        incapacity: _incapacityController.text.trim().isEmpty ? null : _incapacityController.text.trim(),
-        checkups: _checkupsController.text.trim().isEmpty ? null : _checkupsController.text.trim(),
-        notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
         active: true,
       );
 
@@ -352,8 +327,8 @@ class _AddChildScreenState extends State<AddChildScreen> {
                       ),
                       items: groupsProvider.groups.map((group) {
                         return DropdownMenuItem<String>(
-                          value: (group['_id'] ?? group['id']).toString(),
-                          child: Text(group['name'] ?? 'Без названия'),
+                          value: group.id,
+                          child: Text(group.name),
                         );
                       }).toList(),
                       onChanged: (value) {
@@ -364,172 +339,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                     );
                   },
                 ),
-                // Поле Клиника
-                TextFormField(
-                  controller: _clinicController,
-                  decoration: InputDecoration(
-                    labelText: 'Клиника',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Группа крови
-                TextFormField(
-                  controller: _bloodGroupController,
-                  decoration: InputDecoration(
-                    labelText: 'Группа крови',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Резус-фактор
-                TextFormField(
-                  controller: _rhesusController,
-                  decoration: InputDecoration(
-                    labelText: 'Резус-фактор',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Инвалидность
-                TextFormField(
-                  controller: _disabilityController,
-                  decoration: InputDecoration(
-                    labelText: 'Инвалидность',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Диспансер
-                TextFormField(
-                  controller: _dispensaryController,
-                  decoration: InputDecoration(
-                    labelText: 'Диспансер',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Диагноз
-                TextFormField(
-                  controller: _diagnosisController,
-                  decoration: InputDecoration(
-                    labelText: 'Диагноз',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Аллергии
-                TextFormField(
-                  controller: _allergyController,
-                  decoration: InputDecoration(
-                    labelText: 'Аллергии',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Перенесенные инфекции
-                TextFormField(
-                  controller: _infectionsController,
-                  decoration: InputDecoration(
-                    labelText: 'Перенесенные инфекции',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Госпитализации
-                TextFormField(
-                  controller: _hospitalizationsController,
-                  decoration: InputDecoration(
-                    labelText: 'Госпитализации',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Периоды нетрудоспособности
-                TextFormField(
-                  controller: _incapacityController,
-                  decoration: InputDecoration(
-                    labelText: 'Периоды нетрудоспособности',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Обследования
-                TextFormField(
-                  controller: _checkupsController,
-                  decoration: InputDecoration(
-                    labelText: 'Обследования',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Поле Примечания
-                TextFormField(
-                  controller: _notesController,
-                  decoration: InputDecoration(
-                    labelText: 'Примечания',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
+                // Removed medical-related fields that are not needed in mobile app
                 const SizedBox(height: 24),
 
                 // Кнопка добавить
@@ -564,18 +374,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
     _addressController.dispose();
     _parentNameController.dispose();
     _parentPhoneController.dispose();
-    _clinicController.dispose();
-    _bloodGroupController.dispose();
-    _rhesusController.dispose();
-    _disabilityController.dispose();
-    _dispensaryController.dispose();
-    _diagnosisController.dispose();
-    _allergyController.dispose();
-    _infectionsController.dispose();
-    _hospitalizationsController.dispose();
-    _incapacityController.dispose();
-    _checkupsController.dispose();
-    _notesController.dispose();
     super.dispose();
   }
 }

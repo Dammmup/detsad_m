@@ -44,9 +44,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
         // Получаем ID групп, в которых воспитатель является учителем
         List<String> groupIds = teacherGroups
-            .map((group) => group['_id'] ?? group['id'])
-            .toList()
-            .cast<String>();
+            .map((group) => group.id)
+            .toList();
 
         // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
         List<Child> allChildren = await childrenService.getAllChildren();
@@ -297,7 +296,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   }
 
   // Helper method to get child group info
-  String _getChildGroupInfo(Child child) {
+ String _getChildGroupInfo(Child child) {
     if (child.groupId == null) {
       return 'Группа не указана';
     }
