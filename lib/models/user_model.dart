@@ -10,7 +10,7 @@ class User {
   final String? avatar;
   final String? position;
   final String? department;
-  final bool isActive;
+  final bool active;
   final DateTime? lastLoginAt;
   final String? email;
 
@@ -24,7 +24,7 @@ class User {
     this.avatar,
     this.position,
     this.department,
-    this.isActive = true,
+    this.active = true,
     this.lastLoginAt,
     this.email,
   });
@@ -67,7 +67,7 @@ class User {
       avatar: json['avatar'] as String?,
       position: json['position'] as String?,
       department: json['department'] as String?,
-      isActive: json['isActive'] as bool? ?? true,
+      active: json['active'] as bool? ?? true,
       lastLoginAt: json['lastLoginAt'] != null
           ? DateTime.parse(json['lastLoginAt'] as String)
           : null,
@@ -88,7 +88,7 @@ class User {
       'avatar': avatar,
       'position': position,
       'department': department,
-      'isActive': isActive,
+      'active': active,
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'email': email,
     };
@@ -120,7 +120,7 @@ class User {
     String? avatar,
     String? position,
     String? department,
-    bool? isActive,
+    bool? active,
     DateTime? lastLoginAt,
     String? email,
   }) {
@@ -134,7 +134,7 @@ class User {
       avatar: avatar ?? this.avatar,
       position: position ?? this.position,
       department: department ?? this.department,
-      isActive: isActive ?? this.isActive,
+      active: active ?? this.active,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       email: email ?? this.email,
     );
