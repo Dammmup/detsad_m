@@ -23,7 +23,8 @@ class _TasksWidgetState extends State<TasksWidget> {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     if (authProvider.user != null) {
-      await taskProvider.loadTasksForUser(authProvider.user!.id);
+      // Загружаем все задачи, а не только назначенные пользователю
+      await taskProvider.loadAllTasks();
     }
   }
 
@@ -32,7 +33,7 @@ class _TasksWidgetState extends State<TasksWidget> {
     final taskProvider = Provider.of<TaskProvider>(context);
 
     List<Task> pendingTasks = taskProvider.tasks
-        .where((task) => task.status == 'pending' || task.status == 'in_progress')
+        .where((task) => task.status != 'completed') // Фильтруем только незавершенные задачи
         .take(3) // Показываем только первые 3 задачи
         .toList();
 

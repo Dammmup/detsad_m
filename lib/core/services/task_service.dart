@@ -30,6 +30,10 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка получения задач: Некорректный формат данных');
+      }
       throw Exception('Ошибка получения задач: $e');
     }
   }
@@ -47,6 +51,10 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка получения задач пользователя: Некорректный формат данных');
+      }
       throw Exception('Ошибка получения задач пользователя: $e');
     }
   }
@@ -63,6 +71,10 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка получения просроченных задач: Некорректный формат данных');
+      }
       throw Exception('Ошибка получения просроченных задач: $e');
     }
   }
@@ -79,6 +91,10 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка получения задачи: Некорректный формат данных');
+      }
       throw Exception('Ошибка получения задачи: $e');
     }
   }
@@ -95,6 +111,10 @@ class TaskService {
       }
       throw Exception('Ошибка создания задачи');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка создания задачи: Некорректный формат данных');
+      }
       throw Exception('Ошибка создания задачи: $e');
     }
   }
@@ -111,6 +131,10 @@ class TaskService {
       }
       throw Exception('Ошибка обновления задачи');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка обновления задачи: Некорректный формат данных');
+      }
       throw Exception('Ошибка обновления задачи: $e');
     }
   }
@@ -127,6 +151,10 @@ class TaskService {
       }
       throw Exception('Ошибка переключения статуса задачи');
     } catch (e) {
+      // Check if this is a type error related to parsing
+      if (e is TypeError || e.toString().contains('type')) {
+        throw Exception('Ошибка переключения статуса задачи: Некорректный формат данных');
+      }
       throw Exception('Ошибка переключения статуса задачи: $e');
     }
   }

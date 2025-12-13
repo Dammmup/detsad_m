@@ -5,6 +5,7 @@ import '../../../models/attendance_model.dart';
 import '../../../core/services/children_service.dart';
 import '../../../core/services/attendance_service.dart';
 import '../../../providers/auth_provider.dart';
+import '../../../providers/groups_provider.dart';
 import '../../../models/user_model.dart';
 import 'package:provider/provider.dart';
 
@@ -38,18 +39,42 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final User? currentUser = authProvider.user;
+      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+      
+      // Load all groups to have them available for name lookups
+      await groupsProvider.loadGroups();
+      final allGroups = groupsProvider.groups;
+      
+      // Debug logging
+      print('MarkAttendanceScreen | Loaded ${allGroups.length} groups');
+      print('MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
+      print('MarkAttendanceScreen | Current user role: ${currentUser?.role}');
+      for (var group in allGroups) {
+        print('MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
+      }
 
       List<Child> fetchedChildren;
-      if (currentUser != null && currentUser.role == 'teacher') {
-        List<Child> allChildren = await _childrenService.getAllChildren();
-        fetchedChildren = allChildren.where((child) {
-          if (child.groupId == null) return false;
-          if (child.groupId is Map) {
-            final group = child.groupId as Map;
-            return group['teacherId'] == currentUser.id;
+      if (currentUser != null && (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
+        
+        // Find groups assigned to the current teacher from the list of all groups
+        final teacherGroups = allGroups.where((group) => group.teacher == currentUser.id).toList();
+        print('MarkAttendanceScreen | Teacher groups found: ${teacherGroups.length}');
+        for (var group in teacherGroups) {
+          print('MarkAttendanceScreen | Teacher group: ${group.name}');
+        }
+        
+        if (teacherGroups.isNotEmpty) {
+          List<Child> teacherChildren = [];
+          for (var group in teacherGroups) {
+            List<Child> childrenInGroup = await _childrenService.getChildrenByGroupId(group.id);
+            print('MarkAttendanceScreen | Children in group ${group.name}: ${childrenInGroup.length}');
+            teacherChildren.addAll(childrenInGroup);
           }
-          return true;
-        }).toList();
+          fetchedChildren = teacherChildren;
+          print('MarkAttendanceScreen | Total children for teacher: ${fetchedChildren.length}');
+        } else {
+          fetchedChildren = [];
+        }
       } else {
         fetchedChildren = await _childrenService.getAllChildren();
       }
@@ -443,18 +468,25 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
   }
 
   // Helper method to get child group info
-  String _getChildGroupInfo(Child child) {
-    if (child.groupId == null) {
-      return 'Группа не указана';
-    }
-
-    // If groupId is a map (object), extract the name
-    if (child.groupId is Map) {
-      final groupMap = child.groupId as Map;
-      return groupMap['name'] ?? 'Группа не указана';
-    }
-
-    // If groupId is a string, return it directly
-    return child.groupId.toString();
+    String _getChildGroupInfo(Child child) {
+  // Use groupName from populated API response first
+  if (child.groupName != null && child.groupName!.isNotEmpty) {
+    return child.groupName!;
   }
+  
+  // Fallback to groupId if groupName is not available
+  if (child.groupId == null) {
+    return 'Группа не указана';
+  }
+
+  // Try to find group in provider
+  final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+  final group = groupsProvider.getGroupById(child.groupId!);
+  if (group != null) {
+    return group.name;
+  }
+  
+  // Last resort - return the ID
+  return child.groupId!;
+}
 }

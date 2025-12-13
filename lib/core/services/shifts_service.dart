@@ -12,8 +12,9 @@ class ShiftsService {
     try {
       String url = ApiConstants.staffShifts;
       List<String> queryParams = [];
-
-      if (staffId != null && staffId.isNotEmpty) queryParams.add('staffId=$staffId');
+      if (staffId != null && staffId.isNotEmpty) {
+        queryParams.add('staffId=$staffId');
+      }
       if (startDate != null && startDate.isNotEmpty) queryParams.add('startDate=$startDate');
       if (endDate != null && endDate.isNotEmpty) queryParams.add('endDate=$endDate');
       if (date != null && date.isNotEmpty) queryParams.add('date=$date');
@@ -22,31 +23,102 @@ class ShiftsService {
         url += '?${queryParams.join('&')}';
       }
 
-      final response = await _apiService.get(url);
+    final response = await _apiService.get(url);
+
+    if (response.statusCode == 200) {
+      final dynamic data = response.data;
       
-      if (response.statusCode == 200) {
-        final data = response.data;
-        
-        if (data is List) {
-          return data;
-        } else if (data is Map) {
-          // If backend returns object with shifts array
-          if (data['shifts'] != null && data['shifts'] is List) {
-            return data['shifts'] as List<dynamic>;
-          }
-          // Return empty list if unexpected format
-          return [];
-        }
-        return [];
+      if (data is List) {
+        return data;
+      } else if (data is Map && data.containsKey('shifts')) {
+        return data['shifts'] as List<dynamic>;
       } else {
-        throw Exception('Ошибка получения данных: статус ${response.statusCode}');
+        return [];
       }
-    } on SocketException {
-      throw Exception('Нет подключения к интернету');
-    } catch (e) {
-      throw Exception('Ошибка получения данных: $e');
+    } else if (response.statusCode == 404) {
+      // Return empty list for 404 as it means no shifts exist for the criteria
+      return [];
+    } else {
+      throw Exception('Ошибка получения данных: ${response.statusCode}');
     }
+  } on SocketException {
+    throw Exception('Нет подключения к интернету');
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 404) {
+      // Return empty list for 404 as it means no shifts exist for the criteria
+      return [];
+    }
+    throw Exception('Ошибка получения данных: ${e.message}');
+  } catch (e) {
+    throw Exception('Ошибка получения данных: $e');
   }
+  }
+
+  // Get staff attendance tracking records
+  Future<List<dynamic>> getStaffAttendanceTrackingRecords(
+      {String? staffId, String? startDate, String? endDate, String? date}) async {
+    try {
+      String url = ApiConstants.staffAttendanceTracking;
+      List<String> queryParams = [];
+      
+      if (staffId != null && staffId.isNotEmpty) {
+        queryParams.add('staffId=$staffId');
+      }
+      if (startDate != null && startDate.isNotEmpty) queryParams.add('startDate=$startDate');
+      if (endDate != null && endDate.isNotEmpty) queryParams.add('endDate=$endDate');
+      if (date != null && date.isNotEmpty) queryParams.add('date=$date');
+
+      if (queryParams.isNotEmpty) {
+        url += '?${queryParams.join('&')}';
+      }
+
+      print('ShiftsService | GET $url');
+      final response = await _apiService.get(url);
+      print('ShiftsService | attendance tracking status: ${response.statusCode}');
+
+    if (response.statusCode == 200) {
+      final dynamic data = response.data;
+      print('ShiftsService | attendance data type: ${data.runtimeType}');
+      
+      List<dynamic> records = [];
+      if (data is List) {
+        records = data;
+      } else if (data is Map) {
+        // Handle different wrapper keys
+        if (data.containsKey('records')) {
+          records = data['records'] as List<dynamic>;
+        } else if (data.containsKey('data')) {
+          records = data['data'] as List<dynamic>;
+        }
+      }
+      
+      print('ShiftsService | attendance records count: ${records.length}');
+      for (var record in records) {
+        print('ShiftsService | record: date=${record['date']}, actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
+      }
+      return records;
+    } else if (response.statusCode == 404) {
+      // Return empty list for 404 as it means no attendance records exist for the criteria
+      return [];
+    } else {
+      throw Exception('Ошибка получения данных: ${response.statusCode}');
+    }
+  } on SocketException {
+    throw Exception('Нет подключения к интернету');
+  } on DioException catch (e) {
+    if (e.response?.statusCode == 404) {
+      // Return empty list for 404 as it means no attendance records exist for the criteria
+      return [];
+    }
+    throw Exception('Ошибка получения данных: ${e.message}');
+  } catch (e) {
+    print('ShiftsService | Exception: $e');
+    throw Exception('Ошибка получения данных: $e');
+  }
+  }
+
+
+
 
   // Check in
   Future<void> checkIn(String shiftId,
@@ -88,7 +160,7 @@ class ShiftsService {
         } else if (errorData['message'] != null) {
           errorMessage = errorData['message'].toString();
         }
-      } else if (e.message != null) {
+      } else if(e.message != null) {
         errorMessage = e.message!;
       }
       throw Exception(errorMessage);

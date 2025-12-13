@@ -46,10 +46,22 @@ class Task {
       id: json['_id'] ?? json['id'] ?? '',
       title: json['title'] ?? '',
       description: json['description'],
-      assignedTo: json['assignedTo']?['_id'] ?? json['assignedTo'] ?? '',
-      assignedBy: json['assignedBy']?['_id'] ?? json['assignedBy'] ?? '',
-      assignedToSpecificUser: json['assignedToSpecificUser'],
-      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate']) : null,
+      assignedTo: json['assignedTo'] is String
+          ? json['assignedTo']
+          : (json['assignedTo'] is Map<String, dynamic>
+              ? (json['assignedTo'] as Map<String, dynamic>)['_id']?.toString() ?? ''
+              : json['assignedTo']?.toString() ?? ''),
+      assignedBy: json['assignedBy'] is String
+          ? json['assignedBy']
+          : (json['assignedBy'] is Map<String, dynamic>
+              ? (json['assignedBy'] as Map<String, dynamic>)['_id']?.toString() ?? ''
+              : json['assignedBy']?.toString() ?? ''),
+      assignedToSpecificUser: json['assignedToSpecificUser'] is String
+          ? json['assignedToSpecificUser']
+          : (json['assignedToSpecificUser'] is Map<String, dynamic>
+              ? (json['assignedToSpecificUser'] as Map<String, dynamic>)['_id']?.toString()
+              : json['assignedToSpecificUser']?.toString()),
+      dueDate: json['dueDate'] != null ? DateTime.parse(json['dueDate'].toString()) : null,
       priority: json['priority'] ?? 'medium',
       status: json['status'] ?? 'pending',
       category: json['category'] ?? '',
@@ -57,12 +69,20 @@ class Task {
           ? List<String>.from(json['attachments'])
           : null,
       notes: json['notes'],
-      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt']) : null,
-      cancelledAt: json['cancelledAt'] != null ? DateTime.parse(json['cancelledAt']) : null,
-      completedBy: json['completedBy'],
-      cancelledBy: json['cancelledBy'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: DateTime.parse(json['updatedAt']),
+      completedAt: json['completedAt'] != null ? DateTime.parse(json['completedAt'].toString()) : null,
+      cancelledAt: json['cancelledAt'] != null ? DateTime.parse(json['cancelledAt'].toString()) : null,
+      completedBy: json['completedBy'] is String
+          ? json['completedBy']
+          : (json['completedBy'] is Map<String, dynamic>
+              ? (json['completedBy'] as Map<String, dynamic>)['_id']?.toString()
+              : json['completedBy']?.toString()),
+      cancelledBy: json['cancelledBy'] is String
+          ? json['cancelledBy']
+          : (json['cancelledBy'] is Map<String, dynamic>
+              ? (json['cancelledBy'] as Map<String, dynamic>)['_id']?.toString()
+              : json['cancelledBy']?.toString()),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : DateTime.now(),
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'].toString()) : DateTime.now(),
     );
   }
 

@@ -44,6 +44,12 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                  errorMessage.contains('date required') ||
                  errorMessage.contains('invalid date')) {
         errorMessage = 'Некорректная дата для просмотра посещаемости';
+      } else if (errorMessage.contains('404')) {
+        // 404 means no attendance records exist for this date, which is not an error
+        // The service should handle this and return an empty list
+        // We'll continue without showing an error message
+        attendanceRecords = [];
+        return; // Exit early to avoid setState after dispose
       } else {
         errorMessage = 'Ошибка загрузки посещаемости. Проверьте подключение к интернету';
       }

@@ -54,6 +54,11 @@ class ApiConstants {
   static String staffShiftCheckout(String shiftId) =>
       '/staff-shifts/checkout/$shiftId';
 
+  // Staff Attendance Tracking endpoints
+  static const String staffAttendanceTracking = '/staff-time-tracking';
+  static String staffAttendanceTrackingByStaff(String staffId) => '/staff-time-tracking/staff/$staffId';
+  static String staffAttendanceTrackingById(String id) => '/staff-time-tracking/$id';
+
   // Schedule endpoints
   static const String schedule = '/schedule';
   static String scheduleByStaff(String staffId) => '/schedule/staff/$staffId';

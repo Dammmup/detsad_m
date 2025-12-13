@@ -19,7 +19,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _iinController = TextEditingController();
-  final TextEditingController _birthdayController = TextEditingController();
+ final TextEditingController _birthdayController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
@@ -30,7 +30,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
   bool _isLoading = false;
 
   @override
-  void initState() {
+ void initState() {
     super.initState();
     // Загружаем группы при инициализации экрана
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,8 +46,12 @@ class _AddChildScreenState extends State<AddChildScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final User? currentUser = authProvider.user;
 
-    if (currentUser != null && currentUser.role == 'teacher') {
-      // Если пользователь - воспитатель, загружаем только его группы
+    // Проверяем, является ли пользователь преподавателем или заменителем
+    bool isTeacherOrSubstitute = currentUser != null &&
+        (currentUser.role == 'teacher' || currentUser.role == 'substitute');
+    
+    if (isTeacherOrSubstitute) {
+      // Если пользователь - воспитатель или заменитель, загружаем только его группы
       await groupsProvider.loadGroupsByTeacherId(currentUser.id);
     } else {
       // Для других ролей загружаем все группы
@@ -55,7 +59,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
     }
   }
 
-  Future<void> _selectDate() async {
+ Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -69,7 +73,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
     }
   }
 
-  Future<void> _addChild() async {
+ Future<void> _addChild() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -374,6 +378,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
     _addressController.dispose();
     _parentNameController.dispose();
     _parentPhoneController.dispose();
+
     super.dispose();
   }
 }

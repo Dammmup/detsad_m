@@ -31,7 +31,8 @@ class User {
 
   // Convert from JSON
   factory User.fromJson(Map<String, dynamic> json) {
-    // Handle fullName field from server response by splitting it
+    final String id =
+        (json['_id'] ?? json['id'] ?? json['userId'] ?? '').toString();
     String firstName = '';
     String lastName = '';
     String? middleName;
@@ -40,7 +41,8 @@ class User {
       // Split fullName into firstName, lastName, and middleName
       List<String> nameParts = (json['fullName'] as String).split(' ');
       if (nameParts.isNotEmpty) {
-        lastName = nameParts[0]; // In many systems, the first part is the last name
+        lastName =
+            nameParts[0]; // In many systems, the first part is the last name
       }
       if (nameParts.length >= 2) {
         firstName = nameParts[1];
@@ -56,7 +58,7 @@ class User {
     }
 
     return User(
-      id: json['id'] as String,
+      id: id,
       firstName: firstName,
       lastName: lastName,
       middleName: middleName,

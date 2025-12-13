@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart'; // Добавляем импорт для инициализации локали
 import '../../providers/auth_provider.dart';
 import '../../core/services/shifts_service.dart';
-
 
 class StaffScheduleScreen extends StatefulWidget {
   const StaffScheduleScreen({super.key});
@@ -22,6 +22,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   @override
   void initState() {
     super.initState();
+    initializeDateFormatting(
+        'ru_RU'); // Инициализация локали для форматирования дат
     _loadSchedule();
   }
 
@@ -45,11 +47,21 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         ));
 
         // Load shifts for the current user in the selected month
-        _shifts = await _shiftsService.getStaffShifts(
+        List<dynamic> scheduledShifts = await _shiftsService.getStaffShifts(
           staffId: user.id,
           startDate: startDate,
           endDate: endDate,
         );
+
+        // Load attendance tracking records for the same period
+        List<dynamic> attendanceRecords = await _shiftsService.getStaffAttendanceTrackingRecords(
+          staffId: user.id,
+          startDate: startDate,
+          endDate: endDate,
+        );
+
+        // Combine shift data with attendance data based on date
+        _shifts = _combineShiftAndAttendanceData(scheduledShifts, attendanceRecords);
 
         setState(() {
           _isLoading = false;
@@ -237,7 +249,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                    color: Colors.grey
+                                        .withAlpha((0.1 * 255).round()),
                                     spreadRadius: 1,
                                     blurRadius: 5,
                                     offset: const Offset(0, 2),
@@ -269,7 +282,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                        color: Colors.grey
+                                            .withAlpha((0.1 * 255).round()),
                                         spreadRadius: 1,
                                         blurRadius: 5,
                                         offset: const Offset(0, 2),
@@ -303,7 +317,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                 itemCount: _shifts.length,
                                 itemBuilder: (context, index) {
                                   final shift = _shifts[index];
-                                  
+
                                   // Parse date
                                   DateTime shiftDate;
                                   if (shift['date'] is String) {
@@ -314,9 +328,26 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                     shiftDate = DateTime.now();
                                   }
 
-                                  // Format time
-                                  String startTime = shift['startTime'] ?? '00:00';
-                                  String endTime = shift['endTime'] ?? '00:00';
+                                  // Format time - используем отмеченное время прихода и ухода, если доступно
+                                  String scheduledStartTime =
+                                      shift['startTime'] ?? '0:00';
+                                  String scheduledEndTime =
+                                      shift['endTime'] ?? '00:00';
+                                  String? actualStartTime = shift[
+                                      'actualStartTime']; // отмеченное время прихода
+                                  String? actualEndTime = shift[
+                                      'actualEndTime']; // отмеченное время ухода
+
+                                  // Если есть отмеченное время, используем его, иначе запланированное
+                                  String displayStartTime = actualStartTime ?? scheduledStartTime;
+                                  String displayEndTime = actualEndTime ?? scheduledEndTime;
+
+                                  // Определяем, было ли время отмечено (отличается от запланированного)
+                                  bool hasActualTimes = (actualStartTime != null && actualStartTime != scheduledStartTime) ||
+                                                        (actualEndTime != null && actualEndTime != scheduledEndTime);
+
+                                  // Проверяем, есть ли отмеченное время вообще (для отображения секции "Отмечено")
+                                  bool hasAnyActualTime = actualStartTime != null || actualEndTime != null;
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
@@ -325,7 +356,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                       borderRadius: BorderRadius.circular(12),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                          color: Colors.grey
+                                              .withAlpha((0.1 * 255).round()),
                                           spreadRadius: 1,
                                           blurRadius: 5,
                                           offset: const Offset(0, 2),
@@ -343,7 +375,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                                 MainAxisAlignment.spaceBetween,
                                             children: [
                                               Text(
-                                                DateFormat('dd MMMM yyyy', 'ru_RU')
+                                                DateFormat(
+                                                        'dd MMMM yyyy', 'ru_RU')
                                                     .format(shiftDate),
                                                 style: const TextStyle(
                                                   fontSize: 16,
@@ -351,17 +384,21 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                                 ),
                                               ),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                    horizontal: 8, vertical: 4),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8,
+                                                        vertical: 4),
                                                 decoration: BoxDecoration(
                                                   color: _getStatusColor(
-                                                      shift['status'] ?? 'scheduled'),
+                                                      shift['status'] ??
+                                                          'scheduled'),
                                                   borderRadius:
                                                       BorderRadius.circular(12),
                                                 ),
                                                 child: Text(
                                                   _getStatusText(
-                                                      shift['status'] ?? 'scheduled'),
+                                                      shift['status'] ??
+                                                          'scheduled'),
                                                   style: const TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 12),
@@ -370,19 +407,45 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                             ],
                                           ),
                                           const SizedBox(height: 8),
+                                          // Отображаем запланированное время
                                           Row(
                                             children: [
-                                              const Icon(Icons.access_time,
+                                              const Icon(Icons.schedule,
                                                   size: 16, color: Colors.grey),
                                               const SizedBox(width: 8),
                                               Text(
-                                                'Время: $startTime - $endTime',
+                                                'Запланировано: $scheduledStartTime - $scheduledEndTime',
                                                 style: TextStyle(
                                                   color: Colors.grey[600],
+                                                  decoration: hasActualTimes
+                                                      ? TextDecoration
+                                                          .lineThrough
+                                                      : null,
+                                                  decorationColor:
+                                                      Colors.grey[400],
                                                 ),
                                               ),
                                             ],
                                           ),
+                                          // Отображаем отмеченное время, если оно было зафиксировано
+                                          if (hasAnyActualTime) ...[
+                                            const SizedBox(height: 4),
+                                            Row(
+                                              children: [
+                                                const Icon(Icons.access_time,
+                                                    size: 16,
+                                                    color: Colors.blue),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Отмечено: $displayStartTime - $displayEndTime',
+                                                  style: const TextStyle(
+                                                    color: Colors.blue,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                           if (shift['notes'] != null &&
                                               shift['notes'].isNotEmpty)
                                             Column(
@@ -400,7 +463,8 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                                       child: Text(
                                                         'Примечание: ${shift['notes']}',
                                                         style: TextStyle(
-                                                          color: Colors.grey[600],
+                                                          color:
+                                                              Colors.grey[600],
                                                         ),
                                                       ),
                                                     ),
@@ -421,4 +485,111 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       ),
     );
   }
+
+  // Method to combine shift data with attendance tracking data
+  List<dynamic> _combineShiftAndAttendanceData(List<dynamic> scheduledShifts, List<dynamic> attendanceRecords) {
+    print('StaffScheduleScreen | Combining ${scheduledShifts.length} shifts with ${attendanceRecords.length} attendance records');
+    
+    // Create a map of attendance records by date for quick lookup
+    Map<String, dynamic> attendanceMap = {};
+    for (var record in attendanceRecords) {
+      // Convert date to string format for comparison
+      String dateStr;
+      if (record['date'] is String) {
+        dateStr = DateTime.parse(record['date']).toIso8601String().split('T')[0];
+      } else if (record['date'] is DateTime) {
+        dateStr = (record['date'] as DateTime).toIso8601String().split('T')[0];
+      } else {
+        continue; // Skip invalid records
+      }
+      attendanceMap[dateStr] = record;
+      print('StaffScheduleScreen | Attendance map: $dateStr -> actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
+    }
+
+    // Process each scheduled shift and enrich with attendance data if available
+    List<dynamic> combinedShifts = [];
+    for (var shift in scheduledShifts) {
+      String shiftDateStr;
+      if (shift['date'] is String) {
+        shiftDateStr = DateTime.parse(shift['date']).toIso8601String().split('T')[0];
+      } else if (shift['date'] is DateTime) {
+        shiftDateStr = (shift['date'] as DateTime).toIso8601String().split('T')[0];
+      } else {
+        combinedShifts.add(shift);
+        continue; // Keep original shift if date is invalid
+      }
+
+      // Check if there's attendance record for this date
+      if (attendanceMap.containsKey(shiftDateStr)) {
+        var attendanceRecord = attendanceMap[shiftDateStr];
+        // Merge the shift data with attendance data
+        var combinedShift = Map<String, dynamic>.from(shift);
+        
+        // Format actualStart and actualEnd from ISO datetime to HH:mm time string
+        String? actualStartTime = _formatISOToTimeString(attendanceRecord['actualStart']);
+        String? actualEndTime = _formatISOToTimeString(attendanceRecord['actualEnd']);
+        
+        print('StaffScheduleScreen | Shift $shiftDateStr: actualStart=$actualStartTime, actualEnd=$actualEndTime');
+        
+        combinedShift['actualStartTime'] = actualStartTime;
+        combinedShift['actualEndTime'] = actualEndTime;
+        combinedShift['actualStart'] = attendanceRecord['actualStart'];
+        combinedShift['actualEnd'] = attendanceRecord['actualEnd'];
+        combinedShift['workDuration'] = attendanceRecord['workDuration'];
+        combinedShift['breakDuration'] = attendanceRecord['breakDuration'];
+        combinedShift['overtimeDuration'] = attendanceRecord['overtimeDuration'];
+        combinedShift['lateMinutes'] = attendanceRecord['lateMinutes'];
+        combinedShift['earlyLeaveMinutes'] = attendanceRecord['earlyLeaveMinutes'];
+        combinedShift['penalties'] = attendanceRecord['penalties'];
+        combinedShift['bonuses'] = attendanceRecord['bonuses'];
+        combinedShift['notes'] = attendanceRecord['notes'] ?? shift['notes'];
+        combinedShift['totalHours'] = attendanceRecord['totalHours'];
+        combinedShift['regularHours'] = attendanceRecord['regularHours'];
+        combinedShift['overtimeHours'] = attendanceRecord['overtimeHours'];
+        combinedShifts.add(combinedShift);
+      } else {
+        // If no attendance record, keep the scheduled shift as is
+        combinedShifts.add(shift);
+      }
+    }
+
+    // Sort the combined shifts by date
+    combinedShifts.sort((a, b) {
+      DateTime dateA, dateB;
+      if (a['date'] is String) {
+        dateA = DateTime.parse(a['date']);
+      } else {
+        dateA = a['date'];
+      }
+      if (b['date'] is String) {
+        dateB = DateTime.parse(b['date']);
+      } else {
+        dateB = b['date'];
+      }
+      return dateB.compareTo(dateA); // Sort in descending order (newest first)
+    });
+
+    return combinedShifts;
+  }
+  
+  // Helper function to format ISO datetime string to HH:mm time string
+  String? _formatISOToTimeString(dynamic isoDateTime) {
+    if (isoDateTime == null) return null;
+    
+    try {
+      if (isoDateTime is String) {
+        // Parse ISO datetime and format to HH:mm
+        DateTime dateTime = DateTime.parse(isoDateTime);
+        return DateFormat('HH:mm').format(dateTime);
+      } else if (isoDateTime is DateTime) {
+        return DateFormat('HH:mm').format(isoDateTime);
+      }
+    } catch (e) {
+      print('StaffScheduleScreen | Error formatting time: $e');
+    }
+    
+    // If it's already a time string like "08:30", return as is
+    return isoDateTime.toString();
+  }
 }
+

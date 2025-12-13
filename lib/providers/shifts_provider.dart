@@ -45,13 +45,6 @@ class ShiftsProvider with ChangeNotifier {
         endDate: today,
       );
 
-      // Also try without staffId if backend filters automatically
-      if (shifts.isEmpty) {
-        shifts = await _shiftsService.getStaffShifts(
-          startDate: today,
-          endDate: today,
-        );
-      }
 
       // Find shift for current user
       dynamic myShift;

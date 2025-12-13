@@ -265,6 +265,12 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                         controller: _passwordController,
                         enabled: true,
                         isPassword: true,
+                        validator: (value) {
+                          if (value != null && value.isNotEmpty && value.length < 6) {
+                            return 'Пароль должен содержать не менее 6 символов';
+                          }
+                          return null;
+                        },
                       ),
                       const SizedBox(height: 16),
                       

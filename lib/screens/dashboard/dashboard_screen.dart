@@ -113,42 +113,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withAlpha((0.1 * 255).round()),
-                          spreadRadius: 1,
-                          blurRadius: 5,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Добро пожаловать,',
-                          style: TextStyle(fontSize: 16, color: Colors.grey[60]),
-                        ),
-                        Text(
-                          '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.blue,
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Добро пожаловать,',
+                                style: TextStyle(fontSize: 16, color: Colors.grey[60]),
+                              ),
+                              Text(
+                                '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Роль: ${user?.role ?? ''}',
+                                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Роль: ${user?.role ?? ''}',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                      ),
+                      const SizedBox(width: 16),
+                      if (isStaff)
+                        Expanded(
+                          flex: 1,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const StaffProfileScreen(),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                    spreadRadius: 1,
+                                    blurRadius: 5,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.person,
+                                    size: 32,
+                                    color: Colors.blue.shade600,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Мой профиль',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.grey[800],
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 
@@ -285,21 +340,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           },
                         ),
 
-                      // Staff profile (for staff members)
-                      if (isStaff)
-                        _buildDashboardCard(
-                          context,
-                          'Мой профиль',
-                          Icons.person,
-                          Colors.blue.shade600,
-                          () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => const StaffProfileScreen(),
-                              ),
-                            );
-                          },
-                        ),
 
                       // Staff schedule (for staff members)
                       if (isStaff)
@@ -335,14 +375,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Добавляем виджет дней рождения только для администраторов
-                  if (!isStaff)
-                    const BirthdaysWidget(),
+                  // Добавляем виджет дней рождения для всех сотрудников
+                  const BirthdaysWidget(),
                   const SizedBox(height: 16),
 
-                  // Добавляем виджет задач только для администраторов
-                  if (!isStaff)
-                    const TasksWidget(),
+                  // Добавляем виджет задач для всех сотрудников
+                  const TasksWidget(),
                   const SizedBox(height: 16),
                 ],
               ),

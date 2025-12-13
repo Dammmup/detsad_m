@@ -5,12 +5,18 @@ class Group {
   final String name;
   final String? description;
   final int? childrenCount;
-  final String? teacher;
+ final String? teacher;
+  final String? assistantTeacher;
   final bool? isActive;
   final int? maxStudents;
   final List<String>? ageGroup;
+  final String? schedule;
+  final String? room;
   final String? createdAt;
   final String? updatedAt;
+  final List<Map<String, dynamic>>? children; // Добавляем поле для детей
+  final Map<String, dynamic>? educationalPlan;
+  final List<String>? activities;
 
   Group({
     required this.id,
@@ -18,30 +24,75 @@ class Group {
     this.description,
     this.childrenCount,
     this.teacher,
+    this.assistantTeacher,
     this.isActive,
     this.maxStudents,
     this.ageGroup,
+    this.schedule,
+    this.room,
     this.createdAt,
     this.updatedAt,
+    this.children,
+    this.educationalPlan,
+    this.activities,
   });
 
-  // Convert from JSON
+// group_model.dart
   factory Group.fromJson(Map<String, dynamic> json) {
+    // Handle MongoDB ObjectId format in _id field
+    dynamic rawId = json['_id'] ?? json['id'];
+    String id;
+    if (rawId is Map && rawId.containsKey('\$oid')) {
+      id = rawId['\$oid'].toString();
+    } else {
+      id = (rawId ?? '').toString();
+    }
+
+    // teacher: может быть { _id: '...' } или строка '...'
+    // Приоритет: teacherId (как в бэкенде), затем teacher, затем teacher_id
+    dynamic rawTeacher =
+        json['teacherId'] ?? json['teacher'] ?? json['teacher_id'];
+    String? teacherId;
+    if (rawTeacher == null) {
+      teacherId = null;
+    } else if (rawTeacher is Map) {
+      teacherId = (rawTeacher['_id'] ?? rawTeacher['id'])?.toString();
+    } else {
+      teacherId = rawTeacher.toString();
+    }
+
+    // Handle ageGroup as string or list
+    List<String>? ageGroupList;
+    if (json['ageGroup'] != null) {
+      if (json['ageGroup'] is List) {
+        ageGroupList = List<String>.from(json['ageGroup']);
+      } else if (json['ageGroup'] is String) {
+        ageGroupList = [json['ageGroup'] as String];
+      }
+    }
+
     return Group(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: id,
       name: json['name'] ?? '',
       description: json['description'],
       childrenCount: json['childrenCount'],
-      teacher: json['teacher'],
+      teacher: teacherId,
+      assistantTeacher: json['assistantTeacher'],
       isActive: json['isActive'],
       maxStudents: json['maxStudents'],
-      ageGroup: json['ageGroup'] != null 
-          ? List<String>.from(json['ageGroup']) 
-          : null,
+      ageGroup: ageGroupList,
+      schedule: json['schedule'],
+      room: json['room'],
       createdAt: json['createdAt'],
       updatedAt: json['updatedAt'],
+      children: json['children'] != null
+          ? List<Map<String, dynamic>>.from(json['children'])
+          : null,
+      educationalPlan: json['educationalPlan'] != null ? Map<String, dynamic>.from(json['educationalPlan']) : null,
+      activities: json['activities'] != null ? List<String>.from(json['activities']) : null,
     );
- }
+  }
+
 
   // Convert to JSON
   Map<String, dynamic> toJson() {
@@ -51,13 +102,19 @@ class Group {
       'description': description,
       'childrenCount': childrenCount,
       'teacher': teacher,
+      'assistantTeacher': assistantTeacher,
       'isActive': isActive,
       'maxStudents': maxStudents,
       'ageGroup': ageGroup,
+      'schedule': schedule,
+      'room': room,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'children': children,
+      'educationalPlan': educationalPlan,
+      'activities': activities,
     };
-  }
+ }
 
   // Convert to JSON string
   String toJsonString() {
@@ -81,11 +138,17 @@ class Group {
     String? description,
     int? childrenCount,
     String? teacher,
+    String? assistantTeacher,
     bool? isActive,
     int? maxStudents,
     List<String>? ageGroup,
+    String? schedule,
+    String? room,
     String? createdAt,
     String? updatedAt,
+    List<Map<String, dynamic>>? children,
+    Map<String, dynamic>? educationalPlan,
+    List<String>? activities,
   }) {
     return Group(
       id: id ?? this.id,
@@ -93,11 +156,17 @@ class Group {
       description: description ?? this.description,
       childrenCount: childrenCount ?? this.childrenCount,
       teacher: teacher ?? this.teacher,
+      assistantTeacher: assistantTeacher ?? this.assistantTeacher,
       isActive: isActive ?? this.isActive,
       maxStudents: maxStudents ?? this.maxStudents,
       ageGroup: ageGroup ?? this.ageGroup,
+      schedule: schedule ?? this.schedule,
+      room: room ?? this.room,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      children: children ?? this.children,
+      educationalPlan: educationalPlan ?? this.educationalPlan,
+      activities: activities ?? this.activities,
     );
   }
 }

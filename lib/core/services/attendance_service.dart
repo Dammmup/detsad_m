@@ -51,12 +51,22 @@ class AttendanceService {
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Attendance.fromJson(json)).toList();
+      } else if (response.statusCode == 404) {
+        // Return empty list for 404 as it means no attendance records exist for this date
+        return [];
+      } else {
+        throw Exception('Ошибка получения данных: ${response.statusCode}');
       }
-      return [];
+    } on SocketException {
+      throw Exception('Нет подключения к интернету');
     } catch (e) {
-      return [];
+      if (e.toString().contains('404')) {
+        // Return empty list for 404 as it means no attendance records exist for this date
+        return [];
+      }
+      rethrow;
     }
-  }
+ }
 
   Future<List<AttendanceRecord>> getAttendanceRecords(String date) async {
     try {
@@ -96,10 +106,16 @@ class AttendanceService {
       }).whereType<AttendanceRecord>().toList();
 
       return records;
+    } on SocketException {
+      throw Exception('Нет подключения к интернету');
     } catch (e) {
+      if (e.toString().contains('404')) {
+        // Return empty list for 404 as it means no attendance records exist for this date
+        return [];
+      }
       throw Exception('Ошибка загрузки записей посещаемости: $e');
     }
-  }
+ }
 
   // Mark attendance (using bulk endpoint)
  Future<void> markAttendanceBulk(List<Attendance> attendances, {required String groupId}) async {

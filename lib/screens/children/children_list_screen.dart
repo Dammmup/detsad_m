@@ -20,7 +20,6 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
   List<Child> _filteredChildren = [];
   String _selectedFilter = 'all';
   bool isLoading = true;
-  bool _initialLoadComplete = false; // Флаг для отслеживания завершения начальной загрузки
   final ChildrenService _childrenService = ChildrenService();
 
   @override
@@ -31,91 +30,108 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
 
   Future<void> _loadChildren() async {
     final ctx = context; // сохраняем контекст
-
+    if (!ctx.mounted) {
+      return;
+    }
     try {
-      // Если данные уже были загружены ранее, просто используем их
-      final groupsProvider = Provider.of<GroupsProvider>(ctx, listen: false);
-      
-      if (!_initialLoadComplete && !groupsProvider.hasLoaded) {
-        setState(() {
-          isLoading = true;
-        });
-      }
-
-      // Получаем информацию о текущем пользователе
       final authProvider = Provider.of<AuthProvider>(ctx, listen: false);
+      final groupsProvider = Provider.of<GroupsProvider>(ctx, listen: false);
       final User? currentUser = authProvider.user;
 
-      if (currentUser != null && (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
-        // Если пользователь - воспитатель или заменитель, загружаем только детей из его групп
-        await groupsProvider.loadGroupsByTeacherId(currentUser.id);
+      // Load all groups to have them available for name lookups
+      await groupsProvider.loadGroups();
+      if (!ctx.mounted) return;
+      final allGroups = groupsProvider.groups;
+      
+      // Debug logging
+      print('ChildrenListScreen | Loaded ${allGroups.length} groups');
+      print('ChildrenListScreen | Current user ID: ${currentUser?.id}');
+      print('ChildrenListScreen | Current user role: ${currentUser?.role}');
+      for (var group in allGroups) {
+        print('ChildrenListScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
+      }
+
+      // Проверяем, является ли пользователь преподавателем или заменителем
+      bool isTeacherOrSubstitute = currentUser != null &&
+          (currentUser.role == 'teacher' || currentUser.role == 'substitute');
+
+      // Проверяем, имеет ли пользователь права администратора
+      bool isAdmin = currentUser != null &&
+          (currentUser.role == 'admin' ||
+              currentUser.role == 'director' ||
+              currentUser.role == 'owner');
+
+      if (isAdmin) {
+        // Для администраторов и руководителей загружаем всех детей
+        children = await _childrenService.getAllChildren();
         if (!ctx.mounted) return; // проверяем контекст после await
+      } else if (isTeacherOrSubstitute) {
+        // Find groups assigned to the current teacher from the list of all groups
+        final teacherGroups = allGroups.where((group) => group.teacher == currentUser.id).toList();
+        print('ChildrenListScreen | Teacher groups found: ${teacherGroups.length}');
+        for (var group in teacherGroups) {
+          print('ChildrenListScreen | Teacher group: ${group.name}');
+        }
+        List<Child> teacherChildren = [];
 
-        final teacherGroups = groupsProvider.groups;
-
-        // Получаем ID групп, в которых воспитатель является учителем
-        List<String> groupIds = teacherGroups
-            .map((group) => group.id)
-            .toList();
-        
-        // Проверяем, есть ли у воспитателя назначенные группы
-        if (groupIds.isEmpty) {
-          children = []; // Показываем пустой список, если нет назначенных групп
-          return; // Ранний выход, чтобы не загружать всех детей
+        if (teacherGroups.isNotEmpty) {
+          // For each teacher group, get the children in that group
+          for (var group in teacherGroups) {
+            List<Child> childrenInGroup = await _childrenService.getChildrenByGroupId(group.id);
+            print('ChildrenListScreen | Children in group ${group.name}: ${childrenInGroup.length}');
+            teacherChildren.addAll(childrenInGroup);
+          }
+        } else {
+          // Если у преподавателя нет назначенных групп, не загружаем детей
+          teacherChildren = [];
         }
 
-        // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
-        List<Child> allChildren = await _childrenService.getAllChildren();
-        if (!ctx.mounted) return; // проверяем контекст после await
-
-        children = allChildren.where((child) {
-          if (child.groupId == null) return false;
-
-          // Проверяем, принадлежит ли ребенок к одной из групп воспитателя
-          String childGroupId;
-          if (child.groupId is Map) {
-            // Если groupId - это объект группы, извлекаем ID
-            final groupMap = child.groupId as Map;
-            childGroupId = groupMap['_id'] ?? groupMap['id'] ?? '';
-          } else {
-            // Если groupId - это строка, используем его напрямую
-            childGroupId = child.groupId.toString();
-          }
-
-          return groupIds.contains(childGroupId);
-        }).toList();
+        children = teacherChildren;
+        print('ChildrenListScreen | Total children for teacher: ${children.length}');
       } else {
-        // Для других ролей (администратор и т.д.) загружаем всех детей
+        // Для других ролей также загружаем всех детей, но с возможными ограничениями на бэкенде
         children = await _childrenService.getAllChildren();
         if (!ctx.mounted) return; // проверяем контекст после await
       }
+
+      // Применяем фильтрацию после загрузки детей
+      _applyFilters();
     } on Exception catch (e) {
       String errorMessage = e.toString();
-      
+
       // Check for specific error messages
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для просмотра') ||
-                 errorMessage.contains('unauthorized') ||
-                 errorMessage.contains('403')) {
+          errorMessage.contains('unauthorized') ||
+          errorMessage.contains('403')) {
         errorMessage = 'Нет прав для просмотра списка детей';
       } else if (errorMessage.contains('Данные не найдены') ||
-                 errorMessage.contains('not found') ||
-                 errorMessage.contains('404')) {
+          errorMessage.contains('not found') ||
+          errorMessage.contains('404')) {
         errorMessage = 'Данные о детях не найдены';
       } else {
-        errorMessage = 'Ошибка загрузки списка детей. Проверьте подключение к интернету';
+        errorMessage =
+            'Ошибка загрузки списка детей. Проверьте подключение к интернету';
       }
-
+      final ctx = context; // сохраняем контекст
+      if (!ctx.mounted) {
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(content: Text(errorMessage)),
         );
       }
     } catch (e) {
-      String errorMessage = 'Ошибка загрузки списка детей. Проверьте подключение к интернету';
-      
+      String errorMessage =
+          'Ошибка загрузки списка детей. Проверьте подключение к интернету';
+
       if (mounted) {
+        final ctx = context; // сохраняем контекст
+        if (!ctx.mounted) {
+          return;
+        }
         ScaffoldMessenger.of(ctx).showSnackBar(
           SnackBar(content: Text(errorMessage)),
         );
@@ -124,28 +140,27 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       if (ctx.mounted) {
         setState(() {
           isLoading = false;
-          _initialLoadComplete = true;
         });
       }
     }
- }
+  }
 
-void _applyFilters() {
-   if (_selectedFilter == 'all') {
-     _filteredChildren = children;
-   } else if (_selectedFilter == 'by_group') {
-     // For now, just show all children, but in a real implementation
-     // this would filter by the user's assigned group
-     _filteredChildren = children;
-   }
-   setState(() {
-     // Update filtered list
-     _filteredChildren = List.from(_filteredChildren);
-   });
- }
+  void _applyFilters() {
+    if (_selectedFilter == 'all') {
+      _filteredChildren = children;
+    } else if (_selectedFilter == 'by_group') {
+      // For now, just show all children, but in a real implementation
+      // this would filter by the user's assigned group
+      _filteredChildren = children;
+    }
+    setState(() {
+      // Update filtered list
+      _filteredChildren = List.from(_filteredChildren);
+    });
+  }
 
- @override
- Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Дети'),
@@ -153,19 +168,34 @@ void _applyFilters() {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          // Добавляем кнопку "Добавить ребенка" в правую часть AppBar
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () async {
-              // Навигация к экрану добавления ребенка
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddChildScreen()),
-              );
+          // Проверяем права пользователя на добавление ребенка
+          Consumer<AuthProvider>(
+            builder: (context, authProvider, child) {
+              final currentUser = authProvider.user;
+              bool canAddChild = currentUser != null &&
+                  (currentUser.role == 'admin' ||
+                      currentUser.role == 'director' ||
+                      currentUser.role == 'owner');
 
-              // Если ребенок был успешно добавлен, обновляем список
-              if (result == true) {
-                _loadChildren(); // Перезагружаем список детей
+              if (canAddChild) {
+                return IconButton(
+                  icon: const Icon(Icons.add),
+                  onPressed: () async {
+                    // Навигация к экрану добавления ребенка
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const AddChildScreen()),
+                    );
+
+                    // Если ребенок был успешно добавлен, обновляем список
+                    if (result == true) {
+                      _loadChildren(); // Перезагружаем список детей
+                    }
+                  },
+                );
+              } else {
+                return Container(); // Не отображаем кнопку, если нет прав
               }
             },
           ),
@@ -195,75 +225,95 @@ void _applyFilters() {
                     color: Colors.grey[800]),
               ),
               const SizedBox(height: 16),
-              
-              // Filter controls
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withAlpha((0.1 * 255).round()),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Фильтры',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
+
+              // Filter controls - only visible to admins and alternative staff members
+              Consumer<AuthProvider>(
+                builder: (context, authProvider, child) {
+                  final currentUser = authProvider.user;
+                  bool isAdminOrAlternative = currentUser != null &&
+                      (currentUser.role == 'admin' ||
+                          currentUser.role == 'director' ||
+                          currentUser.role == 'owner' ||
+                          currentUser.role ==
+                              'substitute'); // assuming 'substitute' is alternative staff
+
+                  if (isAdminOrAlternative) {
+                    return Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withAlpha((0.1 * 255).round()),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: [
-                        FilterChip(
-                          label: const Text('Все'),
-                          selected: _selectedFilter == 'all',
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _selectedFilter = selected ? 'all' : 'all';
-                            });
-                            _applyFilters();
-                          },
-                          selectedColor: Colors.blue.shade200, // Changed from purple to blue
-                          backgroundColor: Colors.grey.shade200,
-                          checkmarkColor: Colors.blue.shade700,
-                        ),
-                        FilterChip(
-                          label: const Text('По группам'),
-                          selected: _selectedFilter == 'by_group',
-                          onSelected: (bool selected) {
-                            setState(() {
-                              _selectedFilter = selected ? 'by_group' : 'all';
-                            });
-                            _applyFilters();
-                          },
-                          selectedColor: Colors.blue.shade200, // Changed from purple to blue
-                          backgroundColor: Colors.grey.shade200,
-                          checkmarkColor: Colors.blue.shade700,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Фильтры',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              FilterChip(
+                                label: const Text('Все'),
+                                selected: _selectedFilter == 'all',
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    _selectedFilter = selected ? 'all' : 'all';
+                                  });
+                                  _applyFilters();
+                                },
+                                selectedColor: Colors.blue
+                                    .shade200, // Changed from purple to blue
+                                backgroundColor: Colors.grey.shade200,
+                                checkmarkColor: Colors.blue.shade700,
+                              ),
+                              FilterChip(
+                                label: const Text('По группам'),
+                                selected: _selectedFilter == 'by_group',
+                                onSelected: (bool selected) {
+                                  setState(() {
+                                    _selectedFilter =
+                                        selected ? 'by_group' : 'all';
+                                  });
+                                  _applyFilters();
+                                },
+                                selectedColor: Colors.blue
+                                    .shade200, // Changed from purple to blue
+                                backgroundColor: Colors.grey.shade200,
+                                checkmarkColor: Colors.blue.shade700,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    // Return empty container if user is not admin or substitute
+                    return Container();
+                  }
+                },
               ),
               const SizedBox(height: 16),
-              
+
               Expanded(
-                child: isLoading && children.isEmpty
+                child: isLoading
                     ? const Center(child: CircularProgressIndicator())
-                    : children.isEmpty
+                    : _filteredChildren.isEmpty
                         ? Center(
                             child: Container(
                               padding: const EdgeInsets.all(24),
@@ -280,18 +330,27 @@ void _applyFilters() {
                                   ),
                                 ],
                               ),
-                              child: const Column(
+                              child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.people_outline,
+                                  const Icon(Icons.people_outline,
                                       size: 48, color: Colors.grey),
-                                  SizedBox(height: 16),
-                                  Text(
+                                  const SizedBox(height: 16),
+                                  const Text(
                                     'Нет данных о детях',
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                         color: Colors.grey, fontSize: 16),
                                   ),
+                                  if (children.isNotEmpty && _filteredChildren.isEmpty)
+                                    const SizedBox(height: 8),
+                                  if (children.isNotEmpty && _filteredChildren.isEmpty)
+                                    const Text(
+                                      'Попробуйте изменить фильтры',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 14),
+                                    ),
                                 ],
                               ),
                             ),
@@ -430,18 +489,25 @@ void _applyFilters() {
 
   // Helper method to get child group info
   String _getChildGroupInfo(Child child) {
-    if (child.groupId == null) {
-      return 'Группа не указана';
-    }
+   // Use groupName from populated API response first
+   if (child.groupName != null && child.groupName!.isNotEmpty) {
+     return child.groupName!;
+   }
+   
+   // Fallback to groupId if groupName is not available
+   if (child.groupId == null) {
+     return 'Группа не указана';
+   }
 
-    // If groupId is a Group object, extract the name
-    if (child.groupId is Map) {
-      final groupMap = child.groupId as Map;
-      return groupMap['name'] ?? 'Группа не указана';
-    }
-
-    // If groupId is a string, return it directly
-    return 'Группа: ${child.groupId.toString()}';
+   // Try to find group in provider
+   final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+   final group = groupsProvider.getGroupById(child.groupId!);
+   if (group != null) {
+     return group.name;
+   }
+   
+   // Last resort - return the ID
+   return child.groupId!;
  }
 
   // Helper method to format birthday in the format: day, month (in words), year

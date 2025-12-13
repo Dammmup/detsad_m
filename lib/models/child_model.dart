@@ -8,7 +8,8 @@ class Child {
   final String? parentName;
   final String? parentPhone;
   final String? staffId;
-  final dynamic groupId; // Can be Group object or string ID
+  final String? groupId; // Can be Group object or string ID
+  final String? groupName; // Group name from populated groupId
   final bool? active;
   final String? gender;
 
@@ -21,56 +22,109 @@ class Child {
     this.parentPhone,
     this.staffId,
     this.groupId,
+    this.groupName,
     this.active,
     this.gender,
   });
 
-  // Convert from JSON
+// И factory:
   factory Child.fromJson(Map<String, dynamic> json) {
+    // birthday processing (как у тебя)
+    String? birthdayString;
+    if (json['birthday'] != null) {
+      if (json['birthday'] is String) {
+        birthdayString = json['birthday'];
+      } else {
+        try {
+          birthdayString = DateTime.parse(json['birthday'].toString())
+              .toIso8601String()
+              .split('T')[0];
+        } catch (_) {
+          birthdayString = null;
+        }
+      }
+    }
+
+    // Normalize groupId and extract groupName from populated object
+    dynamic rawGroup = json['groupId'] ?? json['group'] ?? json['group_id'];
+    String? groupIdString;
+    String? groupNameString;
+    if (rawGroup == null) {
+      groupIdString = null;
+      groupNameString = null;
+    } else if (rawGroup is Map) {
+      // Populated group object from backend
+      groupIdString = (rawGroup['oid'] ?? rawGroup['_id'] ?? rawGroup['id'])?.toString();
+      groupNameString = rawGroup['name']?.toString();
+    } else {
+      // Just a string ID
+      groupIdString = rawGroup.toString();
+      groupNameString = null;
+    }
+
     return Child(
-      id: json['_id'] ?? json['id'] ?? '',
+      id: (json['_id'] ?? json['id'] ?? '').toString(),
       fullName: json['fullName'] ?? '',
       iin: json['iin'],
-      birthday: json['birthday'],
+      birthday: birthdayString,
       parentName: json['parentName'],
       parentPhone: json['parentPhone'],
       staffId: json['staffId'],
-      groupId: json['groupId'],
+      groupId: groupIdString,
+      groupName: groupNameString,
       active: json['active'],
       gender: json['gender'],
     );
   }
 
+
   // Convert to JSON
   Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
+    final Map<String, dynamic> json = {
       'fullName': fullName,
       'iin': iin,
       'birthday': birthday,
       'parentName': parentName,
       'parentPhone': parentPhone,
       'staffId': staffId,
-      'groupId': groupId,
       'active': active,
       'gender': gender,
     };
+
+    // Добавляем _id только если он не пустой (для обновления существующего ребенка)
+    if (id.isNotEmpty) {
+      json['_id'] = id;
+    }
+
+    // Обрабатываем groupId - если это объект, извлекаем ID, иначе используем как есть
+    if (groupId != null) {
+      if (groupId is Map) {
+        // Если  groupId - это объект группы, извлекаем ID
+        final groupMap = groupId as Map;
+        json['groupId'] = groupMap['_id'] ?? groupMap['id'] ?? groupId;
+      } else {
+        // Если groupId - это строка, используем напрямую
+        json['groupId'] = groupId;
+      }
+    }
+
+    return json;
   }
 
- // Convert to JSON string
+  // Convert to JSON string
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
- // Convert from JSON string
- factory Child.fromJsonString(String jsonString) {
+  // Convert from JSON string
+  factory Child.fromJsonString(String jsonString) {
     try {
       final Map<String, dynamic> json = jsonDecode(jsonString);
       return Child.fromJson(json);
     } catch (e) {
       throw Exception('Failed to parse child data from JSON string: $e');
     }
- }
+  }
 
   // Copy with method for updates
   Child copyWith({
@@ -82,6 +136,7 @@ class Child {
     String? parentPhone,
     String? staffId,
     dynamic groupId,
+    String? groupName,
     bool? active,
     String? gender,
   }) {
@@ -94,6 +149,7 @@ class Child {
       parentPhone: parentPhone ?? this.parentPhone,
       staffId: staffId ?? this.staffId,
       groupId: groupId ?? this.groupId,
+      groupName: groupName ?? this.groupName,
       active: active ?? this.active,
       gender: gender ?? this.gender,
     );

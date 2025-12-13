@@ -46,6 +46,12 @@ android {
             buildConfigField("String", "GOOGLE_MAPS_API_KEY", "\"$googleApiKey\"")
         }
     }
+    
+    packagingOptions {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+    }
 }
 
 flutter {

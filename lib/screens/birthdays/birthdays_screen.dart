@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../models/child_model.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/groups_provider.dart';
 import '../../core/services/children_service.dart';
 
 class BirthdaysScreen extends StatefulWidget {
@@ -30,80 +27,55 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
         _errorMessage = null;
       });
 
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final groupsProvider =
-          Provider.of<GroupsProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-
       final childrenService = ChildrenService();
 
-      if (currentUser != null && currentUser.role == 'teacher') {
-        // Загружаем группы, в которых воспитатель является учителем
-        await groupsProvider.loadGroupsByTeacherId(currentUser.id);
-        final teacherGroups = groupsProvider.groups;
-
-        // Получаем ID групп, в которых воспитатель является учителем
-        List<String> groupIds = teacherGroups
-            .map((group) => group.id)
-            .toList();
-
-        // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
-        List<Child> allChildren = await childrenService.getAllChildren();
-        List<Child> childrenInTeacherGroups = allChildren.where((child) {
-          if (child.groupId == null) return false;
-
-          // Проверяем, принадлежит ли ребенок к одной из групп воспитателя
-          String childGroupId;
-          if (child.groupId is Map) {
-            // Если groupId - это объект группы, извлекаем ID
-            final groupMap = child.groupId as Map;
-            childGroupId = groupMap['_id'] ?? groupMap['id'] ?? '';
-          } else {
-            // Если groupId - это строка, используем его напрямую
-            childGroupId = child.groupId.toString();
-          }
-
-          return groupIds.contains(childGroupId);
-        }).toList();
-
-        // Фильтруем детей с днями рождения и сортируем по ближайшим
-        _upcomingBirthdays = _filterAndSortBirthdays(childrenInTeacherGroups);
-      } else {
-        // Для других ролей (администратор и т.д.) загружаем всех детей с днями рождения
-        List<Child> allChildren = await childrenService.getAllChildren();
-        _upcomingBirthdays = _filterAndSortBirthdays(allChildren);
+      // Для всех сотрудников загружаем всех детей с днями рождения (без фильтрации по группам)
+      List<Child> allChildren = await childrenService.getAllChildren();
+      
+      if (mounted) {
+        setState(() {
+          _upcomingBirthdays = _filterAndSortBirthdays(allChildren);
+        });
       }
     } on Exception catch (e) {
       String errorMessage = e.toString();
-      
+
       // Check for specific error messages
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для просмотра') ||
-                 errorMessage.contains('unauthorized') ||
-                 errorMessage.contains('403')) {
+          errorMessage.contains('unauthorized') ||
+          errorMessage.contains('403')) {
         errorMessage = 'Нет прав для просмотра дней рождения детей';
       } else if (errorMessage.contains('Данные не найдены') ||
-                 errorMessage.contains('not found') ||
-                 errorMessage.contains('404')) {
+          errorMessage.contains('not found') ||
+          errorMessage.contains('404')) {
         errorMessage = 'Данные о детях не найдены';
       } else {
-        errorMessage = 'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
+        errorMessage =
+            'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
       }
-      
-      setState(() {
-        _errorMessage = errorMessage;
-      });
+
+      if (mounted) {
+        setState(() {
+          _errorMessage = errorMessage;
+        });
+      }
     } catch (e) {
-      String errorMessage = 'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
-      
-      setState(() {
-        _errorMessage = errorMessage;
-      });
+      String errorMessage =
+          'Ошибка загрузки дней рождения. Проверьте подключение к интернету';
+
+      if (mounted) {
+        setState(() {
+          _errorMessage = errorMessage;
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -172,7 +144,35 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
     return '$day ${months[monthIndex]}, $year';
   }
-
+ 
+  int? _calculateAge(String? birthdayString, DateTime currentDate) {
+    if (birthdayString == null) return null;
+    
+    try {
+      DateTime birthday = DateTime.parse(birthdayString);
+      DateTime? nextBirthday = _getNextBirthdayDate(birthdayString, currentDate);
+      
+      if (nextBirthday != null) {
+        // Calculate age based on the next birthday
+        int years = nextBirthday.year - birthday.year;
+        return years;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+ 
+  String _getAgeSuffix(int age) {
+    if (age % 10 == 1 && age % 100 != 11) {
+      return 'год';
+    } else if ((age % 10 >= 2 && age % 10 <= 4) && (age % 100 < 10 || age % 100 >= 20)) {
+      return 'года';
+    } else {
+      return 'лет';
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -203,92 +203,114 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                       ? const Center(
                           child: Text('Нет предстоящих дней рождения'),
                         )
-                      : ListView.builder(
-                          itemCount: _upcomingBirthdays.length,
-                          itemBuilder: (context, index) {
-                            final child = _upcomingBirthdays[index];
-                            final birthdayDate = _getNextBirthdayDate(
-                                child.birthday, DateTime.now());
+                      : RefreshIndicator(
+                          onRefresh: () => _loadUpcomingBirthdays(),
+                          child: ListView.builder(
+                            itemCount: _upcomingBirthdays.length,
+                            itemBuilder: (context, index) {
+                              final child = _upcomingBirthdays[index];
+                              final birthdayDate = _getNextBirthdayDate(
+                                  child.birthday, DateTime.now());
 
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey.withAlpha((0.1 * 255).round()),
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      child.fullName,
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey[800],
-                                      ),
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey
+                                          .withAlpha((0.1 * 255).round()),
+                                      spreadRadius: 1,
+                                      blurRadius: 5,
+                                      offset: const Offset(0, 2),
                                     ),
-                                    const SizedBox(height: 8),
-                                    if (child.parentName != null) ...[
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.person,
-                                              size: 16, color: Colors.grey),
-                                          const SizedBox(width: 4),
-                                          Text('Родитель: ${child.parentName}',
-                                              style: TextStyle(
-                                                  color: Colors.grey[700])),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 4),
-                                    ],
-                                    if (birthdayDate != null) ...[
-                                      Row(
-                                        children: [
-                                          const Icon(Icons.cake,
-                                              size: 16, color: Colors.orange),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'День рождения: ${_formatBirthdayDate(birthdayDate)}',
-                                            style: const TextStyle(
-                                              color: Colors.orange,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                    if (child.groupId != null) ...[
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue.withAlpha((0.1 * 255).round()),
-                                          borderRadius:
-                                              BorderRadius.circular(12),
-                                        ),
-                                        child: Text(
-                                          _getChildGroupInfo(child),
-                                          style:
-                                              const TextStyle(color: Colors.blue),
-                                        ),
-                                      ),
-                                    ],
                                   ],
                                 ),
-                              ),
-                            );
-                          },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        child.fullName,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.grey[800],
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      if (child.parentName != null) ...[
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.person,
+                                                size: 16, color: Colors.grey),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                                'Родитель: ${child.parentName}',
+                                                style: TextStyle(
+                                                    color: Colors.grey[700])),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                      ],
+                                      if (birthdayDate != null) ...[
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.cake,
+                                                size: 16, color: Colors.orange),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'День рождения: ${_formatBirthdayDate(birthdayDate)}',
+                                              style: const TextStyle(
+                                                color: Colors.orange,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.cake,
+                                                size: 16, color: Colors.blue),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Исполняется: ${_calculateAge(child.birthday, DateTime.now()) ?? 0} ${_getAgeSuffix(_calculateAge(child.birthday, DateTime.now()) ?? 0)}',
+                                              style: const TextStyle(
+                                                color: Colors.blue,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                      if (child.groupId != null) ...[
+                                        const SizedBox(height: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue
+                                                .withAlpha((0.1 * 255).round()),
+                                            borderRadius:
+                                                BorderRadius.circular(12),
+                                          ),
+                                          child: Text(
+                                            _getChildGroupInfo(child),
+                                            style: const TextStyle(
+                                                color: Colors.blue),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
         ),
       ),
@@ -296,18 +318,19 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   }
 
   // Helper method to get child group info
- String _getChildGroupInfo(Child child) {
+  String _getChildGroupInfo(Child child) {
+    // Use groupName from populated API response first
+    if (child.groupName != null && child.groupName!.isNotEmpty) {
+      return 'Группа: ${child.groupName}';
+    }
+    
+    // Fallback when groupName is not available
     if (child.groupId == null) {
       return 'Группа не указана';
     }
 
-    // If groupId is a map (object), extract the name
-    if (child.groupId is Map) {
-      final groupMap = child.groupId as Map;
-      return groupMap['name'] ?? 'Группа не указана';
-    }
-
-    // If groupId is a string, return it directly
-    return 'Группа: ${child.groupId.toString()}';
+    // Return groupId as fallback
+    return 'Группа: ${child.groupId}';
   }
 }
+

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/child_model.dart';
-import '../providers/auth_provider.dart';
-import '../providers/groups_provider.dart';
+import '../models/group_model.dart';
 import '../core/services/children_service.dart';
+import '../providers/groups_provider.dart';
 import '../screens/birthdays/birthdays_screen.dart';
+
 
 class BirthdaysWidget extends StatefulWidget {
   const BirthdaysWidget({super.key});
@@ -15,6 +16,7 @@ class BirthdaysWidget extends StatefulWidget {
 
 class _BirthdaysWidgetState extends State<BirthdaysWidget> {
   Child? _nextBirthdayChild;
+  String? _nextBirthdayGroupName;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -31,62 +33,45 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
         _errorMessage = null;
       });
 
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-      final currentUser = authProvider.user;
-
       final childrenService = ChildrenService();
-
-      if (currentUser != null && currentUser.role == 'teacher') {
-        // Загружаем группы, в которых воспитатель является учителем
-        await groupsProvider.loadGroupsByTeacherId(currentUser.id);
-        final teacherGroups = groupsProvider.groups;
-
-        // Получаем ID групп, в которых воспитатель является учителем
-        List<String> groupIds = teacherGroups
-            .map((group) => group.id)
-            .toList();
-            
-        // Проверяем, есть ли у воспитателя назначенные группы
-        if (groupIds.isEmpty) {
-          _nextBirthdayChild = null; // Показываем, что нет детей, если нет назначенных групп
-          return; // Ранний выход, чтобы не загружать всех детей
+      
+      // Загружаем всех детей с днями рождения для всех сотрудников (без фильтрации по группам)
+      // Бэкенд делает .populate('groupId'), поэтому groupName будет доступен в child.groupName
+      List<Child> allChildren = await childrenService.getAllChildren();
+      print('BirthdaysWidget | Children loaded: ${allChildren.length}');
+      
+      if (mounted) {
+        Child? nextChild = _getNextBirthdayChild(allChildren);
+        String? groupName;
+        
+        // Get group name directly from the child object (populated from backend)
+        if (nextChild != null) {
+          print('BirthdaysWidget | Next birthday: ${nextChild.fullName}, groupId=${nextChild.groupId}, groupName=${nextChild.groupName}');
+          groupName = nextChild.groupName;
         }
-
-        // Загружаем всех детей и фильтруем только тех, кто принадлежит к группам воспитателя
-        List<Child> allChildren = await childrenService.getAllChildren();
-        List<Child> childrenInTeacherGroups = allChildren.where((child) {
-          if (child.groupId == null) return false;
-
-          // Проверяем, принадлежит ли ребенок к одной из групп воспитателя
-          String childGroupId;
-          if (child.groupId is Map) {
-            // Если groupId - это объект группы, извлекаем ID
-            final groupMap = child.groupId as Map;
-            childGroupId = groupMap['_id'] ?? groupMap['id'] ?? '';
-          } else {
-            // Если groupId - это строка, используем его напрямую
-            childGroupId = child.groupId.toString();
-          }
-
-          return groupIds.contains(childGroupId);
-        }).toList();
-
-        // Фильтруем детей с днями рождения и получаем самого ближайшего
-        _nextBirthdayChild = _getNextBirthdayChild(childrenInTeacherGroups);
-      } else {
-        // Для других ролей (администратор и т.д.) загружаем всех детей с днями рождения
-        List<Child> allChildren = await childrenService.getAllChildren();
-        _nextBirthdayChild = _getNextBirthdayChild(allChildren);
+        
+        setState(() {
+          _nextBirthdayChild = nextChild;
+          _nextBirthdayGroupName = groupName;
+        });
       }
     } catch (e) {
-      _errorMessage = 'Ошибка загрузки дней рождения: $e';
+
+
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Ошибка загрузки дней рождения: $e';
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
+
 
   Child? _getNextBirthdayChild(List<Child> children) {
     final now = DateTime.now();
@@ -158,7 +143,35 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
 
     return '$day ${months[monthIndex]}, $year';
   }
-
+ 
+  int? _calculateAge(String? birthdayString, DateTime currentDate) {
+    if (birthdayString == null) return null;
+    
+    try {
+      DateTime birthday = DateTime.parse(birthdayString);
+      DateTime? nextBirthday = _getNextBirthdayDate(birthdayString, currentDate);
+      
+      if (nextBirthday != null) {
+        // Calculate age based on the next birthday
+        int years = nextBirthday.year - birthday.year;
+        return years;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+ 
+  String _getAgeSuffix(int age) {
+    if (age % 10 == 1 && age % 100 != 11) {
+      return 'год';
+    } else if ((age % 10 >= 2 && age % 10 <= 4) && (age % 100 < 10 || age % 100 >= 20)) {
+      return 'года';
+    } else {
+      return 'лет';
+    }
+  }
+ 
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -199,8 +212,8 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
             else if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child:
-                    Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                child: Text(_errorMessage!,
+                    style: const TextStyle(color: Colors.red)),
               )
             else if (_nextBirthdayChild == null)
               const Padding(
@@ -247,11 +260,27 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                                 color: Colors.grey[800],
                               ),
                             ),
+                            if (_nextBirthdayGroupName != null)
+                              Text(
+                                'Группа: $_nextBirthdayGroupName',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
                             Text(
                               'Следующий день рождения: ${_formatBirthdayDate(_getNextBirthdayDate(_nextBirthdayChild!.birthday, DateTime.now())!)}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[600],
+                              ),
+                            ),
+                            Text(
+                              'Исполняется: ${_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0} ${_getAgeSuffix(_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.blue,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
                           ],
