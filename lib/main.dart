@@ -12,6 +12,7 @@ import 'providers/notification_provider.dart';
 import 'providers/groups_provider.dart';
 import 'providers/task_provider.dart';
 import 'providers/geolocation_provider.dart';
+import 'providers/payroll_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'core/navigation/app_router.dart';
@@ -44,6 +45,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GroupsProvider()),
         ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => GeolocationProvider()),
+        ChangeNotifierProvider(create: (_) => PayrollProvider()),
         ChangeNotifierProxyProvider<GeolocationProvider, ShiftsProvider>(
           create: (context) => ShiftsProvider(),
           update: (context, geoProvider, shiftsProvider) {

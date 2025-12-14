@@ -18,6 +18,7 @@ import '../../components/geolocation_status_widget.dart'; // Импорт вид
 import '../../core/services/notification_service.dart';
 import '../staff/staff_profile_screen.dart';
 import '../staff/staff_schedule_screen.dart';
+import '../salary/salary_screen.dart';
 
 
 class DashboardScreen extends StatefulWidget {
@@ -356,6 +357,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           },
                         ),
+
+                      // My Salary (for staff members)
+                      if (isStaff)
+                         _buildDashboardCard(
+                           context,
+                           'Моя зарплата',
+                           Icons.account_balance_wallet,
+                           Colors.teal.shade700,
+                           () {
+                             Navigator.of(context).push(
+                               MaterialPageRoute(
+                                 builder: (context) => const SalaryScreen(),
+                               ),
+                             );
+                           },
+                         ),
 
                       // Birthdays (replaces calendar)
                       _buildDashboardCard(
