@@ -46,3 +46,4 @@ flutter:
     - assets/images/logo.png
     - assets/images/powered_by.png
     - assets/images/icon.png
+    - shorebird.yaml
