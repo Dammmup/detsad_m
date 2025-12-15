@@ -1,9 +1,8 @@
-
 import 'fine_model.dart';
 import 'user_model.dart';
 
 class Payroll {
-  final String id;
+  final String? id;
   final User? staff; // Can be minimal user info
   final String period;
   final double baseSalary;
@@ -20,9 +19,10 @@ class Payroll {
   final List<Fine> fines;
   final double workedDays;
   final double workedShifts;
+  final List<ShiftDetail> shiftDetails;
 
   Payroll({
-    required this.id,
+    this.id,
     this.staff,
     required this.period,
     required this.baseSalary,
@@ -39,7 +39,9 @@ class Payroll {
     required this.fines,
     required this.workedDays,
     required this.workedShifts,
+    this.shiftDetails = const [],
   });
+// ... 
 
   factory Payroll.fromJson(Map<String, dynamic> json) {
     return Payroll(
@@ -47,7 +49,7 @@ class Payroll {
       staff: json['staffId'] != null && json['staffId'] is Map 
           ? User.fromJson(json['staffId']) 
           : null,
-      period: json['period'],
+      period: json['period'] ?? '',
       baseSalary: (json['baseSalary'] as num?)?.toDouble() ?? 0.0,
       baseSalaryType: json['baseSalaryType'] ?? 'month',
       total: (json['total'] as num?)?.toDouble() ?? 0.0,
@@ -64,6 +66,35 @@ class Payroll {
           .toList() ?? [],
       workedDays: (json['workedDays'] as num?)?.toDouble() ?? 0.0,
       workedShifts: (json['workedShifts'] as num?)?.toDouble() ?? 0.0,
+      shiftDetails: (json['shiftDetails'] as List<dynamic>?)
+          ?.map((e) => ShiftDetail.fromJson(e))
+          .toList() ?? [],
+    );
+  }
+}
+
+class ShiftDetail {
+  final DateTime date;
+  final double earnings;
+  final double fines;
+  final double net;
+  final String reason;
+
+  ShiftDetail({
+    required this.date,
+    required this.earnings,
+    required this.fines,
+    required this.net,
+    required this.reason
+  });
+
+  factory ShiftDetail.fromJson(Map<String, dynamic> json) {
+    return ShiftDetail(
+      date: DateTime.parse(json['date']),
+      earnings: (json['earnings'] as num).toDouble(),
+      fines: (json['fines'] as num).toDouble(),
+      net: (json['net'] as num).toDouble(),
+      reason: json['reason'] ?? '',
     );
   }
 }

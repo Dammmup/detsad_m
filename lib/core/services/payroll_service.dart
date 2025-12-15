@@ -19,6 +19,7 @@ class PayrollService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
+        print('DEBUG PAYROLL DATA: $data'); // Debug print
         return data.map((json) => Payroll.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load payrolls');

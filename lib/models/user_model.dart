@@ -52,9 +52,9 @@ class User {
       }
     } else {
       // Use the original fields if fullName is not present
-      firstName = json['firstName'] as String;
-      lastName = json['lastName'] as String;
-      middleName = json['middleName'] as String?;
+      firstName: (json['firstName'] ?? '').toString();
+      lastName: (json['lastName'] ?? '').toString();
+      middleName: json['middleName']?.toString();
     }
 
     return User(
@@ -62,8 +62,8 @@ class User {
       firstName: firstName,
       lastName: lastName,
       middleName: middleName,
-      phone: json['phone'] as String,
-      role: json['role'] as String,
+      phone: (json['phone'] ?? '').toString(),
+      role: (json['role'] ?? 'staff').toString(),
       avatar: json['avatar'] as String?,
       position: json['position'] as String?,
       department: json['department'] as String?,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../../providers/payroll_provider.dart';
+import '../../models/payroll_model.dart';
 import '../../models/fine_model.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -74,9 +75,14 @@ class _SalaryScreenState extends State<SalaryScreen> {
                     // Details Grid
                     _buildDetailsGrid(context, provider),
                     const SizedBox(height: 20),
-                    // Fines Section if any
-                    if (provider.currentPayroll!.penalties > 0)
+                     // Fines Section if any
+                    if (provider.currentPayroll!.fines.isNotEmpty)
                        _buildFinesSection(context, provider.currentPayroll!.fines),
+
+                    const SizedBox(height: 20),
+                    // Shift Details Section
+                    if (provider.currentPayroll!.shiftDetails.isNotEmpty)
+                       _buildShiftDetailsSection(context, provider.currentPayroll!.shiftDetails),
                   ],
                 ],
               ),
@@ -140,7 +146,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildInfoCard('Оклад', p.accruals, Colors.blue)), // Using accruals as calculated salary
+            Expanded(child: _buildInfoCard('Оклад', p.baseSalary, Colors.blue)), // Using baseSalary for Oklad
             const SizedBox(width: 16),
              Expanded(child: _buildInfoCard('Бонусы', p.bonuses, Colors.orange)),
           ],
@@ -151,6 +157,14 @@ class _SalaryScreenState extends State<SalaryScreen> {
             Expanded(child: _buildInfoCard('Аванс', p.advance, Colors.purple)),
              const SizedBox(width: 16),
             Expanded(child: _buildInfoCard('Штрафы', p.penalties, Colors.red)),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _buildInfoCard('Смен', p.workedShifts, Colors.teal)),
+             const SizedBox(width: 16),
+            Expanded(child: _buildInfoCard('Дней', p.workedDays, Colors.teal)),
           ],
         ),
       ],
@@ -214,6 +228,62 @@ class _SalaryScreenState extends State<SalaryScreen> {
                    style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
                  ),
                )),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _buildShiftDetailsSection(BuildContext context, List<ShiftDetail> details) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+             Row(
+               children: [
+                 const Icon(Icons.history, color: Colors.blue),
+                 const SizedBox(width: 8),
+                 Text('Детализация смен', style: Theme.of(context).textTheme.titleMedium),
+               ],
+             ),
+             const Divider(),
+             ...details.map((detail) => Padding(
+               padding: const EdgeInsets.symmetric(vertical: 8.0),
+               child: Row(
+                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                 children: [
+                   Expanded(
+                     flex: 2,
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Text(DateFormat('dd.MM.yyyy').format(detail.date), style: const TextStyle(fontWeight: FontWeight.bold)),
+                         Text('Начислено: ${currencyFormat.format(detail.earnings)}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                       ],
+                     ),
+                   ),
+                   Expanded(
+                     flex: 3, 
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.end,
+                       children: [
+                         if (detail.fines > 0)
+                           Text('Штраф: -${currencyFormat.format(detail.fines)}', style: const TextStyle(fontSize: 12, color: Colors.red)),
+                         Text(
+                           currencyFormat.format(detail.net), 
+                           style: TextStyle(
+                             fontWeight: FontWeight.bold, 
+                             color: detail.net > 0 ? Colors.green : Colors.red
+                           )
+                         ),
+                       ],
+                     ),
+                   )
+                 ],
+               ),
+             )),
           ],
         ),
       ),

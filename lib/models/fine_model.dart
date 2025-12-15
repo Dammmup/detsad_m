@@ -22,7 +22,7 @@ class Fine {
       amount: (json['amount'] as num).toDouble(),
       reason: json['reason'] ?? '',
       type: json['type'] ?? 'other',
-      date: DateTime.parse(json['date']),
+      date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       notes: json['notes'],
     );
   }
