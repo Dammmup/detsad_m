@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../models/child_model.dart';
-import '../models/group_model.dart';
 import '../core/services/children_service.dart';
-import '../providers/groups_provider.dart';
 import '../screens/birthdays/birthdays_screen.dart';
 
 
