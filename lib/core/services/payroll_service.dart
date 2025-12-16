@@ -27,4 +27,17 @@ class PayrollService {
       throw Exception('Error fetching payrolls: $e');
     }
   }
+
+  Future<Payroll> getPayrollWithShiftDetails(String payrollId) async {
+    try {
+      final response = await _apiService.get('/payroll/$payrollId');
+      if (response.statusCode == 200) {
+        return Payroll.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load payroll details');
+      }
+    } catch (e) {
+      throw Exception('Error fetching payroll details: $e');
+    }
+  }
 }

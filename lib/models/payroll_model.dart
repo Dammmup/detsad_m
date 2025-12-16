@@ -91,9 +91,9 @@ class ShiftDetail {
   factory ShiftDetail.fromJson(Map<String, dynamic> json) {
     return ShiftDetail(
       date: DateTime.parse(json['date']),
-      earnings: (json['earnings'] as num).toDouble(),
-      fines: (json['fines'] as num).toDouble(),
-      net: (json['net'] as num).toDouble(),
+      earnings: (json['earnings'] as num?)?.toDouble() ?? 0.0,
+      fines: (json['fines'] as num?)?.toDouble() ?? 0.0,
+      net: (json['net'] as num?)?.toDouble() ?? 0.0,
       reason: json['reason'] ?? '',
     );
   }

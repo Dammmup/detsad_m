@@ -34,6 +34,16 @@ class PayrollProvider with ChangeNotifier {
       
       if (result.isNotEmpty) {
         _currentPayroll = result.first;
+        // After loading the basic payroll, load the detailed one with shift details
+        if (_currentPayroll?.id != null) {
+          try {
+            final detailedPayroll = await _payrollService.getPayrollWithShiftDetails(_currentPayroll!.id!);
+            _currentPayroll = detailedPayroll;
+          } catch (e) {
+            // Log this error but don't block the UI. The basic info is still useful.
+            print('Could not load shift details: $e');
+          }
+        }
       } else {
         _currentPayroll = null;
       }
