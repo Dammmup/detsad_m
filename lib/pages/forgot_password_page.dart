@@ -14,7 +14,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   bool _load = false;
 
   final GlobalKey<FormState> _key = GlobalKey();
-// Removed invalid non-ASCII characters
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -124,7 +124,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   _load = true;
                 });
                 _resetPassword();
-                // Clear form after submission
+
                 setState(() {
                   _email = '';
                 });

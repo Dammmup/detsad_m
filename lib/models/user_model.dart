@@ -29,7 +29,6 @@ class User {
     this.email,
   });
 
-  // Convert from JSON
   factory User.fromJson(Map<String, dynamic> json) {
     final String id =
         (json['_id'] ?? json['id'] ?? json['userId'] ?? '').toString();
@@ -38,11 +37,9 @@ class User {
     String? middleName;
 
     if (json.containsKey('fullName') && json['fullName'] != null) {
-      // Split fullName into firstName, lastName, and middleName
       List<String> nameParts = (json['fullName'] as String).split(' ');
       if (nameParts.isNotEmpty) {
-        lastName =
-            nameParts[0]; // In many systems, the first part is the last name
+        lastName = nameParts[0];
       }
       if (nameParts.length >= 2) {
         firstName = nameParts[1];
@@ -51,10 +48,12 @@ class User {
         middleName = nameParts.sublist(2).join(' ');
       }
     } else {
-      // Use the original fields if fullName is not present
-      firstName: (json['firstName'] ?? '').toString();
-      lastName: (json['lastName'] ?? '').toString();
-      middleName: json['middleName']?.toString();
+      firstName:
+      (json['firstName'] ?? '').toString();
+      lastName:
+      (json['lastName'] ?? '').toString();
+      middleName:
+      json['middleName']?.toString();
     }
 
     return User(
@@ -75,14 +74,13 @@ class User {
     );
   }
 
-  // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       'id': id,
       'firstName': firstName,
       'lastName': lastName,
       'middleName': middleName,
-      'fullName': _getFullName(), // Include fullName for server compatibility
+      'fullName': _getFullName(),
       'phone': phone,
       'role': role,
       'avatar': avatar,
@@ -94,7 +92,6 @@ class User {
     };
   }
 
-  // Convert from JSON string
   factory User.fromJsonString(String jsonString) {
     try {
       final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -104,12 +101,10 @@ class User {
     }
   }
 
-  // Convert to JSON string
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  // Copy with method for updates
   User copyWith({
     String? id,
     String? firstName,
@@ -140,7 +135,6 @@ class User {
     );
   }
 
-  // Helper method to generate full name from first, last, and middle names
   String _getFullName() {
     List<String> parts = [lastName, firstName];
     if (middleName != null && middleName!.isNotEmpty) {

@@ -47,7 +47,6 @@ class GeolocationStatusWidget extends StatelessWidget {
       );
     }
 
-    // Check if we have permissions but location service is disabled
     if (!provider.isServiceEnabled) {
       return Row(
         children: [
@@ -75,7 +74,6 @@ class GeolocationStatusWidget extends StatelessWidget {
       );
     }
 
-    // Check if we don't have permission
     if (!provider.hasPermission) {
       return Row(
         children: [
@@ -93,7 +91,8 @@ class GeolocationStatusWidget extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  provider.errorMessage ?? 'Предоставьте разрешение на доступ к местоположению',
+                  provider.errorMessage ??
+                      'Предоставьте разрешение на доступ к местоположению',
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ],
@@ -103,7 +102,6 @@ class GeolocationStatusWidget extends StatelessWidget {
       );
     }
 
-    // Check if location is temporarily unavailable (has permission but no position yet)
     if (provider.isLocationTemporarilyUnavailable) {
       return Row(
         children: [
@@ -131,7 +129,6 @@ class GeolocationStatusWidget extends StatelessWidget {
       );
     }
 
-    // Check if there's a specific error message
     if (provider.errorMessage != null && !provider.isPositionLoaded) {
       return Row(
         children: [
@@ -158,7 +155,6 @@ class GeolocationStatusWidget extends StatelessWidget {
         ],
       );
     } else if (!provider.isPositionLoaded && provider.enabled) {
-      // Показываем статус "поиск местоположения", если геолокация включена, но позиция еще не получена
       return const Row(
         children: [
           SizedBox(
@@ -175,8 +171,10 @@ class GeolocationStatusWidget extends StatelessWidget {
     }
 
     final position = provider.currentPosition!;
-    final isInZone = provider.checkGeofence(position.latitude, position.longitude);
-    final distance = provider.calculateDistance(position.latitude, position.longitude);
+    final isInZone =
+        provider.checkGeofence(position.latitude, position.longitude);
+    final distance =
+        provider.calculateDistance(position.latitude, position.longitude);
 
     return Row(
       children: [

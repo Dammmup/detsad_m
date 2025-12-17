@@ -7,19 +7,18 @@ import '../../../providers/geolocation_provider.dart';
 import '../attendance/mark_attendance_screen.dart';
 import '../attendance/view_attendance_screen.dart';
 import '../children/children_list_screen.dart';
-import '../children/add_child_screen.dart'; // Импорт экрана добавления ребенка
+import '../children/add_child_screen.dart';
 import '../auth/login_screen.dart';
-import '../birthdays/birthdays_screen.dart'; // Импорт экрана дней рождения
+import '../birthdays/birthdays_screen.dart';
 import '../../components/staff_attendance_button.dart';
 import '../../components/staff_shift_status_manager.dart';
-import '../../components/birthdays_widget.dart'; // Импорт виджета дней рождения
-import '../../components/tasks_widget.dart'; // Импорт виджета задач
-import '../../components/geolocation_status_widget.dart'; // Импорт виджета статуса геолокации
+import '../../components/birthdays_widget.dart';
+import '../../components/tasks_widget.dart';
+import '../../components/geolocation_status_widget.dart';
 import '../../core/services/notification_service.dart';
 import '../staff/staff_profile_screen.dart';
 import '../staff/staff_schedule_screen.dart';
 import '../salary/salary_screen.dart';
-
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,7 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Load geolocation settings on dashboard load
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final geoProvider =
@@ -55,22 +54,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
             user.role == 'teacher' ||
             user.role == 'substitute');
 
-    // Планируем уведомления при загрузке экрана, если они еще не запланированы
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        // Проверяем, были ли уже запланированы уведомления
         if (!shiftsProvider.areNotificationsScheduled) {
-          // Уведомления о приходе в 8:00
           notificationProvider.scheduleDailyArrivalNotification(
               id: 1, time: Time(hour: 8, minute: 0));
-          // Уведомления об уходе в 18:00
+
           notificationProvider.scheduleDailyDepartureNotification(
               id: 2, time: Time(hour: 18, minute: 0));
-          // Уведомления о посещаемости детей в 9:00
+
           notificationProvider.scheduleDailyAttendanceNotification(
               id: 3, time: Time(hour: 9, minute: 0));
 
-          // Устанавливаем флаг, что уведомления запланированы
           shiftsProvider.setNotificationsScheduled();
         }
       }
@@ -125,7 +120,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                color:
+                                    Colors.grey.withAlpha((0.1 * 255).round()),
                                 spreadRadius: 1,
                                 blurRadius: 5,
                                 offset: const Offset(0, 2),
@@ -137,7 +133,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: [
                               Text(
                                 'Добро пожаловать,',
-                                style: TextStyle(fontSize: 16, color: Colors.grey[60]),
+                                style: TextStyle(
+                                    fontSize: 16, color: Colors.grey[60]),
                               ),
                               Text(
                                 '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
@@ -150,7 +147,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Роль: ${user?.role ?? ''}',
-                                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                                style: TextStyle(
+                                    fontSize: 14, color: Colors.grey[600]),
                               ),
                             ],
                           ),
@@ -164,7 +162,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             onTap: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const StaffProfileScreen(),
+                                  builder: (context) =>
+                                      const StaffProfileScreen(),
                                 ),
                               );
                             },
@@ -175,7 +174,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                    color: Colors.grey
+                                        .withAlpha((0.1 * 255).round()),
                                     spreadRadius: 1,
                                     blurRadius: 5,
                                     offset: const Offset(0, 2),
@@ -207,12 +207,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Geolocation status widget (for all users)
                   const GeolocationStatusWidget(),
                   const SizedBox(height: 16),
-
-                  // Staff attendance button (for staff members)
                   if (isStaff) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
@@ -258,7 +254,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             const SizedBox(width: 16),
                             const Expanded(
                               child: SizedBox(
-                                // constraints: BoxConstraints(maxWidth: 150),
                                 child: StaffAttendanceButton(),
                               ),
                             ),
@@ -268,8 +263,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     const SizedBox(height: 16),
                   ],
-
-                  // Grid of main functions
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -277,7 +270,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
                     children: [
-                      // Mark children attendance (for those who can manage children)
                       if (canManageChildren)
                         _buildDashboardCard(
                           context,
@@ -293,8 +285,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           },
                         ),
-
-                      // View children attendance
                       _buildDashboardCard(
                         context,
                         'Посещаемость детей',
@@ -309,8 +299,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           );
                         },
                       ),
-
-                      // Children list
                       _buildDashboardCard(
                         context,
                         'Список детей',
@@ -324,8 +312,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           );
                         },
                       ),
-
-                      // Add child (for those who can manage children)
                       if (canManageChildren)
                         _buildDashboardCard(
                           context,
@@ -340,9 +326,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           },
                         ),
-
-
-                      // Staff schedule (for staff members)
                       if (isStaff)
                         _buildDashboardCard(
                           context,
@@ -352,29 +335,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => const StaffScheduleScreen(),
+                                builder: (context) =>
+                                    const StaffScheduleScreen(),
                               ),
                             );
                           },
                         ),
-
-                      // My Salary (for staff members)
                       if (isStaff)
-                         _buildDashboardCard(
-                           context,
-                           'Моя зарплата',
-                           Icons.account_balance_wallet,
-                           Colors.teal.shade700,
-                           () {
-                             Navigator.of(context).push(
-                               MaterialPageRoute(
-                                 builder: (context) => const SalaryScreen(),
-                               ),
-                             );
-                           },
-                         ),
-
-                      // Birthdays (replaces calendar)
+                        _buildDashboardCard(
+                          context,
+                          'Моя зарплата',
+                          Icons.account_balance_wallet,
+                          Colors.teal.shade700,
+                          () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const SalaryScreen(),
+                              ),
+                            );
+                          },
+                        ),
                       _buildDashboardCard(
                         context,
                         'Дни рождения',
@@ -391,12 +371,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-
-                  // Добавляем виджет дней рождения для всех сотрудников
                   const BirthdaysWidget(),
                   const SizedBox(height: 16),
-
-                  // Добавляем виджет задач для всех сотрудников
                   const TasksWidget(),
                   const SizedBox(height: 16),
                 ],

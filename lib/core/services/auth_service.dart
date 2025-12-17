@@ -8,7 +8,6 @@ class AuthService {
   final ApiService _apiService = ApiService();
   final StorageService _storageService = StorageService();
 
-  // Login
   Future<Map<String, dynamic>> login(String phone, String password) async {
     try {
       final response = await _apiService.post(
@@ -24,7 +23,6 @@ class AuthService {
         final token = data['token'];
         final user = User.fromJson(data['user']);
 
-        // Ensure storage is initialized before saving
         await _storageService.init();
         await _storageService.saveToken(token);
         await _storageService.saveUser(user);
@@ -58,21 +56,18 @@ class AuthService {
     }
   }
 
-  // Logout
- Future<bool> logout() async {
+  Future<bool> logout() async {
     try {
       await _apiService.post(ApiConstants.logout);
       await _storageService.init();
       await _storageService.clearAll();
       return true;
     } catch (e) {
-      // Clear local data even if API call fails
       await _storageService.clearAll();
       return false;
     }
   }
 
-  // Validate Token
   Future<bool> validateToken() async {
     try {
       final response = await _apiService.get(ApiConstants.validateToken);
@@ -82,7 +77,6 @@ class AuthService {
     }
   }
 
-  // Get Current User
   Future<User?> getCurrentUser() async {
     try {
       final response = await _apiService.get(ApiConstants.currentUser);
@@ -99,7 +93,6 @@ class AuthService {
     }
   }
 
- // Check if user is logged in
   Future<bool> isLoggedIn() async {
     await _storageService.init();
     final token = await _storageService.getToken();
@@ -107,13 +100,11 @@ class AuthService {
     return await validateToken();
   }
 
-  // Get stored user
   Future<User?> getStoredUser() async {
     await _storageService.init();
     return await _storageService.getUser();
   }
 
-  // Update profile
   Future<bool> updateProfile({
     required String userId,
     String? firstName,
@@ -139,13 +130,10 @@ class AuthService {
       }
       return false;
     } catch (e) {
-      // Log error for debugging purposes
-      // print('Error updating profile: $e');
       return false;
     }
   }
 
-  // Change password
   Future<bool> changePassword({
     required String userId,
     required String newPassword,
@@ -158,8 +146,6 @@ class AuthService {
 
       return response.statusCode == 200;
     } catch (e) {
-      // Log error for debugging purposes
-      // print('Error changing password: $e');
       return false;
     }
   }

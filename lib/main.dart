@@ -19,15 +19,13 @@ import 'core/navigation/app_router.dart';
 import 'pages/splash_screen_page.dart';
 
 void main() async {
- WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize storage
   await StorageService().init();
 
-  // Initialize notification service
   await NotificationService().init();
 
- runApp(const MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

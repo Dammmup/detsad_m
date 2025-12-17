@@ -124,13 +124,13 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
             Icons.arrow_downward,
             color: Colors.redAccent,
           ),
-          iconSize: 24.0, // can be changed, default: 24.0
+          iconSize: 24.0,
           iconEnabledColor: Colors.blue,
           items: <String>['1', '2', '3', '4']
               .map<DropdownMenuItem<String>>((String value) {
             return DropdownMenuItem<String>(
               value: value,
-              child: Text("   $value   "), // Added const
+              child: Text("   $value   "),
             );
           }).toList(),
           onChanged: (String? value) {
@@ -160,7 +160,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
   Widget _button() {
     return !_load
         ? SizedBox(
-            width: _width! / 2, // Use SizedBox for fixed width
+            width: _width! / 2,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.all(0.0),
@@ -271,8 +271,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
             setState(() {
               _load = false;
             });
-            ScaffoldMessenger.of(context)
-                .showSnackBar(const SnackBar(content: Text('Attendance Marked')));
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Attendance Marked')));
           }
         }
       }

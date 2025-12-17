@@ -4,7 +4,7 @@ import '../core/services/attendance_service.dart';
 
 class AttendanceProvider with ChangeNotifier {
   final AttendanceService _attendanceService = AttendanceService();
-  
+
   List<Attendance> _attendanceRecords = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -13,8 +13,7 @@ class AttendanceProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Load all attendance records
- Future<void> loadAttendance() async {
+  Future<void> loadAttendance() async {
     _isLoading = true;
     notifyListeners();
 
@@ -29,13 +28,13 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  // Load attendance by user ID
- Future<void> loadAttendanceByUserId(String userId) async {
+  Future<void> loadAttendanceByUserId(String userId) async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      _attendanceRecords = await _attendanceService.getAttendanceByUserId(userId);
+      _attendanceRecords =
+          await _attendanceService.getAttendanceByUserId(userId);
       _errorMessage = null;
     } catch (e) {
       _errorMessage = e.toString();
@@ -45,7 +44,6 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  // Mark attendance
   Future<void> markAttendance(Attendance attendance) async {
     try {
       final newAttendance = await _attendanceService.markAttendance(attendance);
@@ -57,11 +55,12 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  // Update attendance
   Future<void> updateAttendance(String id, Attendance updatedAttendance) async {
     try {
-      final updated = await _attendanceService.updateAttendance(id, updatedAttendance);
-      final index = _attendanceRecords.indexWhere((attendance) => attendance.id == id);
+      final updated =
+          await _attendanceService.updateAttendance(id, updatedAttendance);
+      final index =
+          _attendanceRecords.indexWhere((attendance) => attendance.id == id);
       if (index != -1) {
         _attendanceRecords[index] = updated;
         notifyListeners();
@@ -72,7 +71,6 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  // Delete attendance
   Future<void> deleteAttendance(String id) async {
     try {
       final success = await _attendanceService.deleteAttendance(id);
@@ -86,8 +84,7 @@ class AttendanceProvider with ChangeNotifier {
     }
   }
 
-  // Clear error message
- void clearError() {
+  void clearError() {
     _errorMessage = null;
     notifyListeners();
   }

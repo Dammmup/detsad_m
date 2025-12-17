@@ -3,7 +3,6 @@ import '../models/child_model.dart';
 import '../core/services/children_service.dart';
 import '../screens/birthdays/birthdays_screen.dart';
 
-
 class BirthdaysWidget extends StatefulWidget {
   const BirthdaysWidget({super.key});
 
@@ -31,30 +30,26 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       });
 
       final childrenService = ChildrenService();
-      
-      // Загружаем всех детей с днями рождения для всех сотрудников (без фильтрации по группам)
-      // Бэкенд делает .populate('groupId'), поэтому groupName будет доступен в child.groupName
+
       List<Child> allChildren = await childrenService.getAllChildren();
       print('BirthdaysWidget | Children loaded: ${allChildren.length}');
-      
+
       if (mounted) {
         Child? nextChild = _getNextBirthdayChild(allChildren);
         String? groupName;
-        
-        // Get group name directly from the child object (populated from backend)
+
         if (nextChild != null) {
-          print('BirthdaysWidget | Next birthday: ${nextChild.fullName}, groupId=${nextChild.groupId}, groupName=${nextChild.groupName}');
+          print(
+              'BirthdaysWidget | Next birthday: ${nextChild.fullName}, groupId=${nextChild.groupId}, groupName=${nextChild.groupName}');
           groupName = nextChild.groupName;
         }
-        
+
         setState(() {
           _nextBirthdayChild = nextChild;
           _nextBirthdayGroupName = groupName;
         });
       }
     } catch (e) {
-
-
       if (mounted) {
         setState(() {
           _errorMessage = 'Ошибка загрузки дней рождения: $e';
@@ -69,11 +64,9 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
     }
   }
 
-
   Child? _getNextBirthdayChild(List<Child> children) {
     final now = DateTime.now();
 
-    // Фильтруем детей с датами рождения
     List<Child> childrenWithBirthdays =
         children.where((child) => child.birthday != null).toList();
 
@@ -81,7 +74,6 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       return null;
     }
 
-    // Сортируем по ближайшим дням рождения
     childrenWithBirthdays.sort((child1, child2) {
       DateTime? date1 = _getNextBirthdayDate(child1.birthday, now);
       DateTime? date2 = _getNextBirthdayDate(child2.birthday, now);
@@ -92,7 +84,6 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       return date1.compareTo(date2);
     });
 
-    // Возвращаем только самого ближайшего ребенка с днем рождения
     return childrenWithBirthdays.first;
   }
 
@@ -102,11 +93,9 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
     try {
       DateTime birthday = DateTime.parse(birthdayString);
 
-      // Создаем дату дня рождения в текущем году
       DateTime birthdayThisYear =
           DateTime(currentDate.year, birthday.month, birthday.day);
 
-      // Если день рождения уже прошел в этом году, берем следующий год
       if (birthdayThisYear.isBefore(currentDate)) {
         birthdayThisYear =
             DateTime(currentDate.year + 1, birthday.month, birthday.day);
@@ -140,16 +129,16 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
 
     return '$day ${months[monthIndex]}, $year';
   }
- 
+
   int? _calculateAge(String? birthdayString, DateTime currentDate) {
     if (birthdayString == null) return null;
-    
+
     try {
       DateTime birthday = DateTime.parse(birthdayString);
-      DateTime? nextBirthday = _getNextBirthdayDate(birthdayString, currentDate);
-      
+      DateTime? nextBirthday =
+          _getNextBirthdayDate(birthdayString, currentDate);
+
       if (nextBirthday != null) {
-        // Calculate age based on the next birthday
         int years = nextBirthday.year - birthday.year;
         return years;
       }
@@ -158,17 +147,18 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       return null;
     }
   }
- 
+
   String _getAgeSuffix(int age) {
     if (age % 10 == 1 && age % 100 != 11) {
       return 'год';
-    } else if ((age % 10 >= 2 && age % 10 <= 4) && (age % 100 < 10 || age % 100 >= 20)) {
+    } else if ((age % 10 >= 2 && age % 10 <= 4) &&
+        (age % 100 < 10 || age % 100 >= 20)) {
       return 'года';
     } else {
       return 'лет';
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -225,7 +215,6 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
             else
               InkWell(
                 onTap: () {
-                  // Навигация к полному списку дней рождения
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const BirthdaysScreen(),

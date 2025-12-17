@@ -4,7 +4,7 @@ import '../models/task_model.dart';
 
 class TaskProvider with ChangeNotifier {
   final TaskService _taskService = TaskService();
-  
+
   List<Task> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -13,7 +13,6 @@ class TaskProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Load tasks for current user
   Future<void> loadTasksForUser(String userId) async {
     _isLoading = true;
     _errorMessage = null;
@@ -29,8 +28,8 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
- // Load all tasks
-  Future<void> loadAllTasks({String? assignedTo, String? status, String? category}) async {
+  Future<void> loadAllTasks(
+      {String? assignedTo, String? status, String? category}) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -49,7 +48,6 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  // Load overdue tasks
   Future<void> loadOverdueTasks() async {
     _isLoading = true;
     _errorMessage = null;
@@ -65,12 +63,10 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  // Toggle task status
   Future<void> toggleTaskStatus(String taskId, String userId) async {
     try {
       final updatedTask = await _taskService.toggleTaskStatus(taskId, userId);
-      
-      // Update the task in the local list
+
       final index = _tasks.indexWhere((task) => task.id == taskId);
       if (index != -1) {
         _tasks[index] = updatedTask;
@@ -82,12 +78,10 @@ class TaskProvider with ChangeNotifier {
     }
   }
 
-  // Refresh tasks
   Future<void> refreshTasks(String userId) async {
     await loadTasksForUser(userId);
   }
 
-  // Clear error
   void clearError() {
     _errorMessage = null;
     notifyListeners();

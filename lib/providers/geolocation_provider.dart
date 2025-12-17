@@ -19,7 +19,6 @@ class GeolocationProvider with ChangeNotifier {
   bool _hasPermission = false;
   bool _isServiceEnabled = false;
 
-
   bool get enabled => _enabled;
   double get targetLatitude => _targetLatitude;
   double get targetLongitude => _targetLongitude;
@@ -30,24 +29,25 @@ class GeolocationProvider with ChangeNotifier {
   bool get isPositionLoaded => _currentPosition != null;
   bool get hasPermission => _hasPermission;
   bool get isServiceEnabled => _isServiceEnabled;
-  bool get isLocationAvailable => _hasPermission && _isServiceEnabled && _currentPosition != null;
+  bool get isLocationAvailable =>
+      _hasPermission && _isServiceEnabled && _currentPosition != null;
   bool get isWithinGeofence => _currentPosition != null
       ? checkGeofence(_currentPosition!.latitude, _currentPosition!.longitude)
       : false;
 
-
-  // Load geolocation settings from backend
   Future<void> loadSettings() async {
     _loading = true;
     notifyListeners();
 
     try {
       final settings = await _geolocationService.getGeolocationSettings();
-      
+
       if (settings != null) {
         _enabled = settings['enabled'] ?? false;
-        _targetLatitude = settings['coordinates']?['latitude']?.toDouble() ?? 0.0;
-        _targetLongitude = settings['coordinates']?['longitude']?.toDouble() ?? 0.0;
+        _targetLatitude =
+            settings['coordinates']?['latitude']?.toDouble() ?? 0.0;
+        _targetLongitude =
+            settings['coordinates']?['longitude']?.toDouble() ?? 0.0;
         _radius = settings['radius']?.toDouble() ?? 100.0;
         _errorMessage = null;
 
@@ -59,7 +59,7 @@ class GeolocationProvider with ChangeNotifier {
       }
     } catch (e) {
       _errorMessage = e.toString();
-      _enabled = false; // Disable geofencing if settings can't be loaded
+      _enabled = false;
       stopLocationUpdates();
     } finally {
       _loading = false;
@@ -67,9 +67,7 @@ class GeolocationProvider with ChangeNotifier {
     }
   }
 
-  // Initialize location services and check permissions
   Future<void> initializeLocation() async {
-    // Check if location services are enabled on the device
     _isServiceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!_isServiceEnabled) {
       _errorMessage = 'Службы геолокации отключены на устройстве.';
@@ -77,7 +75,6 @@ class GeolocationProvider with ChangeNotifier {
       return;
     }
 
-    // Check location permissions
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied && !_isRequestingPermission) {
       _isRequestingPermission = true;
@@ -85,7 +82,8 @@ class GeolocationProvider with ChangeNotifier {
       _isRequestingPermission = false;
     }
 
-    if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever) {
       _hasPermission = false;
       _errorMessage = 'Разрешение на доступ к местоположению отклонено.';
       notifyListeners();
@@ -95,27 +93,24 @@ class GeolocationProvider with ChangeNotifier {
       _errorMessage = null;
     }
 
-    // Start location updates
     await startLocationUpdates();
   }
 
   Future<void> startLocationUpdates() async {
-    if (_positionStream != null) return; // Already started
+    if (_positionStream != null) return;
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 10, // Update every 10 meters
+        distanceFilter: 10,
       ),
     ).listen((Position position) {
       _currentPosition = position;
-      _errorMessage = null; // Clear previous errors
+      _errorMessage = null;
       notifyListeners();
     }, onError: (e) {
-      // For temporary GPS issues, we don't set an error but keep trying
-      // The position stream will continue to try to get updates
-      // Only set error for actual permission or service issues
-      if (e.toString().toLowerCase().contains('permission') || e.toString().toLowerCase().contains('denied')) {
+      if (e.toString().toLowerCase().contains('permission') ||
+          e.toString().toLowerCase().contains('denied')) {
         _errorMessage = 'Ошибка получения геолокации: $e';
       }
       notifyListeners();
@@ -129,12 +124,14 @@ class GeolocationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Check if location is temporarily unavailable (for UI purposes)
   bool get isLocationTemporarilyUnavailable {
-    return _enabled && _hasPermission && _isServiceEnabled && _currentPosition == null && _errorMessage == null;
+    return _enabled &&
+        _hasPermission &&
+        _isServiceEnabled &&
+        _currentPosition == null &&
+        _errorMessage == null;
   }
 
-  // Calculate distance from current position to target
   double calculateDistance(double currentLat, double currentLon) {
     return _geolocationService.calculateDistance(
       currentLat,
@@ -144,10 +141,9 @@ class GeolocationProvider with ChangeNotifier {
     );
   }
 
-  // Check if user is within geofence
   bool checkGeofence(double currentLat, double currentLon) {
-    if (!_enabled) return true; // If geofencing is disabled, allow
-    
+    if (!_enabled) return true;
+
     return _geolocationService.isWithinGeofence(
       userLat: currentLat,
       userLon: currentLon,
@@ -157,12 +153,11 @@ class GeolocationProvider with ChangeNotifier {
     );
   }
 
-  // Get status text based on distance
   String getStatusText(double currentLat, double currentLon) {
     if (!_enabled) return 'Геолокация отключена';
-    
+
     final distance = calculateDistance(currentLat, currentLon);
-    
+
     if (distance <= _radius) {
       return 'В зоне (${distance.toStringAsFixed(0)}м от офиса)';
     } else {

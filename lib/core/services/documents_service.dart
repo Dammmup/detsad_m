@@ -5,13 +5,12 @@ import 'dart:io';
 class DocumentsService {
   final ApiService _apiService = ApiService();
 
-  // Get all documents
   Future<List<Map<String, dynamic>>> getAllDocuments() async {
     try {
       final response = await _apiService.get(ApiConstants.children);
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        // Return children data as documents since in this app children data represents documents
+
         return data.cast<Map<String, dynamic>>();
       }
       return [];
@@ -22,7 +21,6 @@ class DocumentsService {
     }
   }
 
-  // Get document by ID
   Future<Map<String, dynamic>?> getDocumentById(String id) async {
     try {
       final response = await _apiService.get('${ApiConstants.children}/$id');
@@ -35,7 +33,6 @@ class DocumentsService {
     }
   }
 
-  // Upload document
   Future<Map<String, dynamic>?> uploadDocument(String filePath,
       {Map<String, dynamic>? additionalData}) async {
     try {
@@ -53,11 +50,10 @@ class DocumentsService {
     }
   }
 
-  // Download document
   Future<bool> downloadDocument(String documentId, String savePath) async {
     try {
-      final response =
-          await _apiService.get('${ApiConstants.children}/$documentId/download');
+      final response = await _apiService
+          .get('${ApiConstants.children}/$documentId/download');
       if (response.statusCode == 200) {
         final file = File(savePath);
         await file.writeAsBytes(response.data);
@@ -69,11 +65,9 @@ class DocumentsService {
     }
   }
 
-  // Delete document
   Future<bool> deleteDocument(String id) async {
     try {
-      final response =
-          await _apiService.delete('${ApiConstants.children}/$id');
+      final response = await _apiService.delete('${ApiConstants.children}/$id');
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;

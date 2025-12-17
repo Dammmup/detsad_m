@@ -3,7 +3,7 @@ import '../core/services/documents_service.dart';
 
 class DocumentsProvider with ChangeNotifier {
   final DocumentsService _documentsService = DocumentsService();
-  
+
   List<Map<String, dynamic>> _documents = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -12,7 +12,6 @@ class DocumentsProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Load all documents
   Future<void> loadDocuments() async {
     _isLoading = true;
     notifyListeners();
@@ -28,15 +27,16 @@ class DocumentsProvider with ChangeNotifier {
     }
   }
 
-  // Get document by ID
   Map<String, dynamic>? getDocumentById(String id) {
-    return _documents.firstWhere((doc) => doc['_id'] == id || doc['id'] == id, orElse: () => _documents.first);
+    return _documents.firstWhere((doc) => doc['_id'] == id || doc['id'] == id,
+        orElse: () => _documents.first);
   }
 
-  // Upload a new document
- Future<void> uploadDocument(String filePath, {Map<String, dynamic>? additionalData}) async {
+  Future<void> uploadDocument(String filePath,
+      {Map<String, dynamic>? additionalData}) async {
     try {
-      final newDocument = await _documentsService.uploadDocument(filePath, additionalData: additionalData);
+      final newDocument = await _documentsService.uploadDocument(filePath,
+          additionalData: additionalData);
       if (newDocument != null) {
         _documents.add(newDocument);
         notifyListeners();
@@ -47,7 +47,6 @@ class DocumentsProvider with ChangeNotifier {
     }
   }
 
-  // Download a document
   Future<bool> downloadDocument(String documentId, String savePath) async {
     try {
       return await _documentsService.downloadDocument(documentId, savePath);
@@ -58,7 +57,6 @@ class DocumentsProvider with ChangeNotifier {
     }
   }
 
-  // Delete a document
   Future<void> deleteDocument(String id) async {
     try {
       final success = await _documentsService.deleteDocument(id);
@@ -72,8 +70,7 @@ class DocumentsProvider with ChangeNotifier {
     }
   }
 
-  // Clear error message
- void clearError() {
+  void clearError() {
     _errorMessage = null;
     notifyListeners();
   }

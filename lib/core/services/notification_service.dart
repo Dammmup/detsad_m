@@ -11,7 +11,6 @@ class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // Инициализация часовых поясов
     tz.initializeTimeZones();
 
     const AndroidInitializationSettings androidInitializationSettings =
@@ -32,9 +31,7 @@ class NotificationService {
 
     await flutterLocalNotificationsPlugin.initialize(
       initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse payload) {
-        // Обработка нажатия на уведомление
-      },
+      onDidReceiveNotificationResponse: (NotificationResponse payload) {},
     );
   }
 
@@ -95,7 +92,6 @@ class NotificationService {
       iOS: iosNotificationDetails,
     );
 
-    // Конвертируем DateTime в TZDateTime для корректной работы планировщика
     tz.TZDateTime scheduledTime = tz.TZDateTime.from(scheduledDate, tz.local);
 
     await flutterLocalNotificationsPlugin.zonedSchedule(
@@ -110,7 +106,6 @@ class NotificationService {
     );
   }
 
-  // Метод для планирования ежедневных уведомлений о приходе
   Future<void> scheduleDailyArrivalNotification({
     required int id,
     required Time time,
@@ -126,7 +121,6 @@ class NotificationService {
     );
   }
 
-  // Метод для планирования ежедневных уведомлений об уходе
   Future<void> scheduleDailyDepartureNotification({
     required int id,
     required Time time,
@@ -142,7 +136,6 @@ class NotificationService {
     );
   }
 
-  // Метод для планирования ежедневных уведомлений о посещаемости детей
   Future<void> scheduleDailyAttendanceNotification({
     required int id,
     required Time time,
@@ -158,7 +151,6 @@ class NotificationService {
     );
   }
 
-  // Вспомогательный метод для получения следующего occurrence времени
   tz.TZDateTime _getNextOccurrence(Time time) {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
     tz.TZDateTime scheduledDate = tz.TZDateTime(

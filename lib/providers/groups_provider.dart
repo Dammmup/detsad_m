@@ -8,16 +8,14 @@ class GroupsProvider with ChangeNotifier {
   List<Group> _groups = [];
   bool _isLoading = false;
   String? _errorMessage;
-  bool _hasLoaded = false; // Флаг для отслеживания, были ли данные загружены
+  bool _hasLoaded = false;
 
   List<Group> get groups => _groups;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get hasLoaded => _hasLoaded;
 
-  // Load all groups
   Future<void> loadGroups() async {
-    // Reset the provider to allow reloading
     reset();
     _isLoading = true;
     notifyListeners();
@@ -26,10 +24,11 @@ class GroupsProvider with ChangeNotifier {
       _groups = await _groupsService.getAllGroups();
       print('GroupsProvider | Loaded ${_groups.length} groups');
       for (var group in _groups) {
-        print('GroupsProvider | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
+        print(
+            'GroupsProvider | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
       _errorMessage = null;
-      _hasLoaded = true; // Отмечаем, что данные были загружены
+      _hasLoaded = true;
     } catch (e) {
       print('GroupsProvider | Error loading groups: $e');
       _errorMessage = e.toString();
@@ -39,10 +38,7 @@ class GroupsProvider with ChangeNotifier {
     }
   }
 
-
-  // Load groups by teacher ID
   Future<void> loadGroupsByTeacherId(String teacherId) async {
-    // Reset the provider to allow reloading
     reset();
     _isLoading = true;
     notifyListeners();
@@ -50,7 +46,7 @@ class GroupsProvider with ChangeNotifier {
     try {
       _groups = await _groupsService.getGroupsByTeacherId(teacherId);
       _errorMessage = null;
-      _hasLoaded = true; // Отмечаем, что данные были загружены
+      _hasLoaded = true;
     } catch (e) {
       _errorMessage = e.toString();
     } finally {
@@ -61,10 +57,10 @@ class GroupsProvider with ChangeNotifier {
 
   Group? getGroupById(String id) {
     try {
-      // Handle MongoDB ObjectId format in group IDs
       String processedId = id;
       if (id.contains('\$oid')) {
-        processedId = id.split('\$oid:').last.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
+        processedId =
+            id.split('\$oid:').last.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '');
       } else if (id.contains('ObjectId(')) {
         processedId = id.split('ObjectId(').last.split(')')[0];
       }
@@ -74,13 +70,11 @@ class GroupsProvider with ChangeNotifier {
     }
   }
 
-  // Clear error message
   void clearError() {
     _errorMessage = null;
     notifyListeners();
   }
 
-  // Reset provider to allow reloading
   void reset() {
     _groups = [];
     _isLoading = false;

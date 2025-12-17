@@ -20,11 +20,9 @@ class ApiService {
       ),
     );
 
-    // Add interceptors
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // Add auth token to headers
           final token = await _storageService.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
@@ -35,11 +33,8 @@ class ApiService {
           return handler.next(response);
         },
         onError: (DioException error, handler) async {
-          // Handle 401 Unauthorized
           if (error.response?.statusCode == 401) {
-            // Clear token and redirect to login
             await _storageService.clearToken();
-            // You can add navigation logic here or emit an event
           }
           return handler.next(error);
         },
@@ -47,7 +42,6 @@ class ApiService {
     );
   }
 
-  // GET request
   Future<Response> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -63,7 +57,6 @@ class ApiService {
     }
   }
 
-  // POST request
   Future<Response> post(
     String path, {
     dynamic data,
@@ -81,7 +74,6 @@ class ApiService {
     }
   }
 
-  // PUT request
   Future<Response> put(
     String path, {
     dynamic data,
@@ -99,7 +91,6 @@ class ApiService {
     }
   }
 
-  // PATCH request
   Future<Response> patch(
     String path, {
     dynamic data,
@@ -117,7 +108,6 @@ class ApiService {
     }
   }
 
-  // DELETE request
   Future<Response> delete(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -133,7 +123,6 @@ class ApiService {
     }
   }
 
-  // Upload file
   Future<Response> uploadFile(
     String path,
     String filePath, {

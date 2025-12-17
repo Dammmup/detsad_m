@@ -18,25 +18,23 @@ class SplashScreenState extends State<SplashScreen>
   late Animation<double> animation;
 
   Timer? _timer;
-  
+
   startTime() async {
-    var duration = const Duration(seconds: 3); // Reduced duration
+    var duration = const Duration(seconds: 3);
     _timer = Timer(duration, navigationPage);
   }
 
   navigationPage() async {
     if (mounted) {
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      
-      // Initialize auth state
+
       await authProvider.initialize();
-      
-      // Дожидаемся, пока состояние загрузки не изменится
+
       while (authProvider.isLoading) {
         await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return; // Проверяем, что виджет все еще смонтирован
+        if (!mounted) return;
       }
-      
+
       if (mounted) {
         if (authProvider.isLoggedIn) {
           Navigator.of(context).pushReplacementNamed('home');

@@ -35,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             child: Container(
-              width: 400, // Max width for larger screens
+              width: 400,
               padding: const EdgeInsets.all(24.0),
               child: Card(
                 elevation: 8,
@@ -50,7 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // Logo or app title
                         const Padding(
                           padding: EdgeInsets.only(bottom: 24),
                           child: Text(
@@ -62,8 +61,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-
-                        // Phone field
                         TextFormField(
                           controller: _phoneController,
                           keyboardType: TextInputType.phone,
@@ -94,8 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 16),
-
-                        // Password field
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
@@ -139,8 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 24),
-
-                        // Login button
                         SizedBox(
                           width: double.infinity,
                           height: 50,
@@ -149,8 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : ElevatedButton(
                                   onPressed: () async {
                                     if (_formKey.currentState!.validate()) {
-                                      final ctx =
-                                          context; // ← сохраняем контекст
+                                      final ctx = context;
 
                                       final success = await authProvider.login(
                                         _phoneController.text.trim(),
@@ -194,8 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                       style: TextStyle(fontSize: 16)),
                                 ),
                         ),
-
-                        // Error message if any
                         if (authProvider.errorMessage != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0),

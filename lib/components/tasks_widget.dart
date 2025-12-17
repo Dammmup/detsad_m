@@ -23,7 +23,6 @@ class _TasksWidgetState extends State<TasksWidget> {
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
 
     if (authProvider.user != null) {
-      // Загружаем все задачи, а не только назначенные пользователю
       await taskProvider.loadAllTasks();
     }
   }
@@ -33,8 +32,8 @@ class _TasksWidgetState extends State<TasksWidget> {
     final taskProvider = Provider.of<TaskProvider>(context);
 
     List<Task> pendingTasks = taskProvider.tasks
-        .where((task) => task.status != 'completed') // Фильтруем только незавершенные задачи
-        .take(3) // Показываем только первые 3 задачи
+        .where((task) => task.status != 'completed')
+        .take(3)
         .toList();
 
     return Container(
@@ -146,7 +145,8 @@ class _TasksWidgetState extends State<TasksWidget> {
                     ),
                   ],
                 ),
-                if (task.description != null && task.description!.isNotEmpty) ...[
+                if (task.description != null &&
+                    task.description!.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
                     task.description!,
@@ -162,7 +162,8 @@ class _TasksWidgetState extends State<TasksWidget> {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 12, color: Colors.grey),
+                      const Icon(Icons.access_time,
+                          size: 12, color: Colors.grey),
                       const SizedBox(width: 2),
                       Text(
                         'До: ${_formatDate(task.dueDate!)}',
@@ -221,13 +222,13 @@ class _TasksWidgetState extends State<TasksWidget> {
     final difference = dueDate.difference(now).inDays;
 
     if (difference < 0) {
-      return Colors.red; // Просрочено
+      return Colors.red;
     } else if (difference == 0) {
-      return Colors.orange; // Выполнить сегодня
+      return Colors.orange;
     } else if (difference <= 2) {
-      return Colors.amber; // Близко к сроку
+      return Colors.amber;
     } else {
-      return Colors.grey; // Еще есть время
+      return Colors.grey;
     }
   }
 
@@ -235,7 +236,8 @@ class _TasksWidgetState extends State<TasksWidget> {
     return '${date.day}.${date.month}.${date.year}';
   }
 
-  Future<void> _toggleTaskStatus(String taskId, TaskProvider taskProvider) async {
+  Future<void> _toggleTaskStatus(
+      String taskId, TaskProvider taskProvider) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.user != null) {
       await taskProvider.toggleTaskStatus(taskId, authProvider.user!.id);

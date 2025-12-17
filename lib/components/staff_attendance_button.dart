@@ -20,11 +20,13 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
-        final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
-        
+        final shiftsProvider =
+            Provider.of<ShiftsProvider>(context, listen: false);
+        final geoProvider =
+            Provider.of<GeolocationProvider>(context, listen: false);
+
         geoProvider.loadSettings();
-        
+
         if (authProvider.user != null) {
           shiftsProvider.fetchShiftStatus(authProvider.user!.id);
         }
@@ -49,9 +51,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonText = 'Отметить приход';
       buttonAction =
           user != null ? () => _handleCheckIn(context, user.id) : null;
-      // Only disable button if geolocation is enabled but user is outside geofence
-      // Don't disable if GPS is temporarily unavailable but permissions are granted
-      // Time restrictions are now handled on the backend, so the button is available at any time
+
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {
@@ -61,9 +61,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonText = 'Отметить уход';
       buttonAction =
           user != null ? () => _handleCheckOut(context, user.id) : null;
-      // Only disable button if geolocation is enabled but user is outside geofence
-      // Don't disable if GPS is temporarily unavailable but permissions are granted
-      // Time restrictions are now handled on the backend, so the button is available at any time
+
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {
@@ -82,7 +80,9 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (geolocationProvider.enabled && (geolocationProvider.isPositionLoaded || geolocationProvider.isLocationTemporarilyUnavailable))
+        if (geolocationProvider.enabled &&
+            (geolocationProvider.isPositionLoaded ||
+                geolocationProvider.isLocationTemporarilyUnavailable))
           _buildGeolocationStatus(geolocationProvider),
         SizedBox(
           width: 200,
@@ -134,7 +134,6 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
   }
 
   Widget _buildGeolocationStatus(GeolocationProvider provider) {
-    // Handle case when GPS is temporarily unavailable but permissions are granted
     if (provider.isLocationTemporarilyUnavailable) {
       return Container(
         margin: const EdgeInsets.only(bottom: 8),

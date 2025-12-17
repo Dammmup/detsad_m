@@ -6,46 +6,39 @@ import 'dart:io';
 class ChildrenService {
   final ApiService _apiService = ApiService();
 
-  // Get all children
   Future<List<Child>> getAllChildren() async {
     try {
       final response = await _apiService.get(ApiConstants.children);
-      //print('ChildrenService | GET /children | Статус: ${response.statusCode}');
-      //print('ChildrenService | GET /children | Данные: ${response.data}');
 
       if (response.statusCode == 200) {
         final dynamic data = response.data;
         if (data is List) {
-          // Фильтруем только валидные объекты Child
           return data
-              .where((json) => json is Map<String, dynamic> && json['fullName'] != null)
+              .where((json) =>
+                  json is Map<String, dynamic> && json['fullName'] != null)
               .map((json) => Child.fromJson(json as Map<String, dynamic>))
               .toList();
         } else if (data is Map && data.containsKey('children')) {
           final childrenList = data['children'] as List<dynamic>;
           return childrenList
-              .where((json) => json is Map<String, dynamic> && json['fullName'] != null)
+              .where((json) =>
+                  json is Map<String, dynamic> && json['fullName'] != null)
               .map((json) => Child.fromJson(json as Map<String, dynamic>))
               .toList();
         } else {
-          //print('ChildrenService | Неподдерживаемый формат данных: $data');
           return [];
         }
       } else {
-        //print('ChildrenService | Ошибка: ${response.statusCode} - ${response.data}');
         return [];
       }
     } on SocketException {
-      //print('ChildrenService | Ошибка сети: Нет подключения к интернету');
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      //print('ChildrenService | Исключение: $e');
       throw Exception('Ошибка получения данных: $e');
     }
   }
 
-  // Get child by ID
- Future<Child?> getChildById(String id) async {
+  Future<Child?> getChildById(String id) async {
     try {
       final response = await _apiService.get('${ApiConstants.children}/$id');
       if (response.statusCode == 200) {
@@ -63,10 +56,8 @@ class ChildrenService {
     }
   }
 
-  // Get children by group ID
- Future<List<Child>> getChildrenByGroupId(String groupId) async {
+  Future<List<Child>> getChildrenByGroupId(String groupId) async {
     try {
-      // childrenByGroup is a function, not a property - call it with groupId
       final url = ApiConstants.childrenByGroup(groupId);
       print('ChildrenService | GET $url');
       final response = await _apiService.get(url);
@@ -76,20 +67,22 @@ class ChildrenService {
         print('ChildrenService | Data type: ${data.runtimeType}');
         if (data is List) {
           final children = data
-              .where((json) => json is Map<String, dynamic> && json['fullName'] != null)
+              .where((json) =>
+                  json is Map<String, dynamic> && json['fullName'] != null)
               .map((json) => Child.fromJson(json as Map<String, dynamic>))
               .toList();
           print('ChildrenService | Parsed ${children.length} children');
           return children;
         } else if (data is Map) {
-          // Handle both 'children' and 'data' wrappers
           final dynamic childrenList = data['children'] ?? data['data'];
           if (childrenList is List<dynamic>) {
             final children = childrenList
-                .where((json) => json is Map<String, dynamic> && json['fullName'] != null)
+                .where((json) =>
+                    json is Map<String, dynamic> && json['fullName'] != null)
                 .map((json) => Child.fromJson(json as Map<String, dynamic>))
                 .toList();
-            print('ChildrenService | Parsed ${children.length} children from wrapper');
+            print(
+                'ChildrenService | Parsed ${children.length} children from wrapper');
             return children;
           }
         }
@@ -106,8 +99,6 @@ class ChildrenService {
     }
   }
 
-
-  // Create child
   Future<Child> createChild(Child child) async {
     try {
       final response = await _apiService.post(
@@ -136,7 +127,6 @@ class ChildrenService {
     }
   }
 
-  // Update child
   Future<Child> updateChild(String id, Child child) async {
     try {
       final response = await _apiService.put(
@@ -165,7 +155,6 @@ class ChildrenService {
     }
   }
 
-  // Delete child
   Future<bool> deleteChild(String id) async {
     try {
       final response = await _apiService.delete('${ApiConstants.children}/$id');
@@ -184,5 +173,5 @@ class ChildrenService {
     } catch (e) {
       throw Exception('Ошибка удаления ребенка: $e');
     }
- }
+  }
 }

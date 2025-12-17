@@ -4,7 +4,6 @@ import '../core/services/notification_service.dart';
 class NotificationProvider with ChangeNotifier {
   final NotificationService _notificationService = NotificationService();
 
-  // Метод для показа немедленного уведомления
   Future<void> showNotification({
     required int id,
     required String title,
@@ -19,7 +18,6 @@ class NotificationProvider with ChangeNotifier {
     );
   }
 
-  // Метод для планирования уведомления на определенное время
   Future<void> scheduleNotification({
     required int id,
     required String title,
@@ -36,7 +34,6 @@ class NotificationProvider with ChangeNotifier {
     );
   }
 
-  // Метод для планирования ежедневного уведомления о приходе
   Future<void> scheduleDailyArrivalNotification({
     required int id,
     required Time time,
@@ -47,7 +44,6 @@ class NotificationProvider with ChangeNotifier {
     );
   }
 
-  // Метод для планирования ежедневного уведомления об уходе
   Future<void> scheduleDailyDepartureNotification({
     required int id,
     required Time time,
@@ -58,7 +54,6 @@ class NotificationProvider with ChangeNotifier {
     );
   }
 
-  // Метод для планирования ежедневного уведомления о посещаемости детей
   Future<void> scheduleDailyAttendanceNotification({
     required int id,
     required Time time,

@@ -39,39 +39,44 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final User? currentUser = authProvider.user;
-      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-      
-      // Load all groups to have them available for name lookups
+      final groupsProvider =
+          Provider.of<GroupsProvider>(context, listen: false);
+
       await groupsProvider.loadGroups();
       final allGroups = groupsProvider.groups;
-      
-      // Debug logging
+
       print('MarkAttendanceScreen | Loaded ${allGroups.length} groups');
       print('MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
       print('MarkAttendanceScreen | Current user role: ${currentUser?.role}');
       for (var group in allGroups) {
-        print('MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
+        print(
+            'MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
 
       List<Child> fetchedChildren;
-      if (currentUser != null && (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
-        
-        // Find groups assigned to the current teacher from the list of all groups
-        final teacherGroups = allGroups.where((group) => group.teacher == currentUser.id).toList();
-        print('MarkAttendanceScreen | Teacher groups found: ${teacherGroups.length}');
+      if (currentUser != null &&
+          (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
+        final teacherGroups = allGroups
+            .where((group) => group.teacher == currentUser.id)
+            .toList();
+        print(
+            'MarkAttendanceScreen | Teacher groups found: ${teacherGroups.length}');
         for (var group in teacherGroups) {
           print('MarkAttendanceScreen | Teacher group: ${group.name}');
         }
-        
+
         if (teacherGroups.isNotEmpty) {
           List<Child> teacherChildren = [];
           for (var group in teacherGroups) {
-            List<Child> childrenInGroup = await _childrenService.getChildrenByGroupId(group.id);
-            print('MarkAttendanceScreen | Children in group ${group.name}: ${childrenInGroup.length}');
+            List<Child> childrenInGroup =
+                await _childrenService.getChildrenByGroupId(group.id);
+            print(
+                'MarkAttendanceScreen | Children in group ${group.name}: ${childrenInGroup.length}');
             teacherChildren.addAll(childrenInGroup);
           }
           fetchedChildren = teacherChildren;
-          print('MarkAttendanceScreen | Total children for teacher: ${fetchedChildren.length}');
+          print(
+              'MarkAttendanceScreen | Total children for teacher: ${fetchedChildren.length}');
         } else {
           fetchedChildren = [];
         }
@@ -79,26 +84,27 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
         fetchedChildren = await _childrenService.getAllChildren();
       }
 
-      // Загрузка существующих отметок для выбранной даты
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      List<Attendance> todaysAttendance = await _attendanceService.getAttendanceByDate(date);
+      List<Attendance> todaysAttendance =
+          await _attendanceService.getAttendanceByDate(date);
 
       setState(() {
         children = fetchedChildren;
         present = List.generate(children.length, (index) {
           final childId = children[index].id;
-          // Try to find attendance record - check both childId formats
+
           final attendanceRecord = todaysAttendance.firstWhere(
             (att) => att.childId == childId || att.userId == childId,
             orElse: () => Attendance(
               id: '',
               childId: childId,
-              groupId: children[index].groupId is String 
-                ? children[index].groupId as String
-                : (children[index].groupId is Map
-                    ? (children[index].groupId as Map)['_id']?.toString() ?? 
-                      (children[index].groupId as Map)['id']?.toString() ?? ''
-                    : ''),
+              groupId: children[index].groupId is String
+                  ? children[index].groupId as String
+                  : (children[index].groupId is Map
+                      ? (children[index].groupId as Map)['_id']?.toString() ??
+                          (children[index].groupId as Map)['id']?.toString() ??
+                          ''
+                      : ''),
               date: date,
               checkIn: '',
               status: 'absent',
@@ -123,23 +129,28 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
   Future<void> _updateLocalAttendanceState() async {
     try {
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      List<Attendance> todaysAttendance = await _attendanceService.getAttendanceByDate(date);
+      List<Attendance> todaysAttendance =
+          await _attendanceService.getAttendanceByDate(date);
 
       setState(() {
         present = List.generate(children.length, (index) {
           final childId = children[index].id;
           final attendanceRecord = todaysAttendance.firstWhere(
             (att) => att.childId == childId,
-            orElse: () => Attendance(id: '', childId: '', groupId: '', date: DateTime.now().toString(), checkIn: '', status: 'present', notes: '', markedBy: ''),
+            orElse: () => Attendance(
+                id: '',
+                childId: '',
+                groupId: '',
+                date: DateTime.now().toString(),
+                checkIn: '',
+                status: 'present',
+                notes: '',
+                markedBy: ''),
           );
           return attendanceRecord.status == 'present';
         });
       });
-    } catch (e) {
-      // Ошибки можно обработать, если нужно
-      // Log error for debugging purposes
-      // print('Ошибка обновления локального состояния посещаемости: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _markAttendance() async {
@@ -159,28 +170,27 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       });
 
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      
-      // Group children by groupId to send separate bulk requests
+
       Map<String, List<Map<String, dynamic>>> groupedRecords = {};
-      
+
       for (int i = 0; i < children.length; i++) {
-        // Determine the groupId for this child
         String childGroupId = '';
         if (children[i].groupId is String) {
           childGroupId = children[i].groupId as String;
         } else if (children[i].groupId is Map<String, dynamic>) {
           final groupMap = children[i].groupId as Map<String, dynamic>;
-          childGroupId = groupMap['_id']?.toString() ?? groupMap['id']?.toString() ?? '';
+          childGroupId =
+              groupMap['_id']?.toString() ?? groupMap['id']?.toString() ?? '';
         }
-        
+
         if (childGroupId.isEmpty) {
-          continue; // Skip children without a group
+          continue;
         }
-        
+
         if (!groupedRecords.containsKey(childGroupId)) {
           groupedRecords[childGroupId] = [];
         }
-        
+
         groupedRecords[childGroupId]!.add({
           'childId': children[i].id,
           'groupId': childGroupId,
@@ -202,22 +212,26 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
       int errorCount = 0;
       List<String> errors = [];
-      
+
       for (var entry in groupedRecords.entries) {
         final groupId = entry.key;
         final records = entry.value;
-        
+
         try {
           await _attendanceService.markAttendanceBulk(
-            records.map((record) => Attendance(
-              id: '', // id is generated by the server
-              childId: record['childId'],
-              groupId: groupId,
-              date: date,
-              checkIn: record['status'] == 'present' ? DateFormat('HH:mm').format(DateTime.now()) : '',
-              status: record['status'],
-              notes: record['notes'],
-            )).toList(),
+            records
+                .map((record) => Attendance(
+                      id: '',
+                      childId: record['childId'],
+                      groupId: groupId,
+                      date: date,
+                      checkIn: record['status'] == 'present'
+                          ? DateFormat('HH:mm').format(DateTime.now())
+                          : '',
+                      status: record['status'],
+                      notes: record['notes'],
+                    ))
+                .toList(),
             groupId: groupId,
           );
         } catch (e) {
@@ -225,49 +239,54 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
           errors.add('Ошибка для группы $groupId: ${e.toString()}');
         }
       }
-      
+
       if (errorCount > 0) {
         throw Exception(errors.join('; '));
       }
 
-      // Show success message and update local state
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Посещаемость успешно отмечена')),
         );
-        await _updateLocalAttendanceState(); // Обновляем состояние
+        await _updateLocalAttendanceState();
       }
 
-      // Refresh the list to show updated attendance
       await _loadChildren();
     } on Exception catch (e) {
       String errorMessage = e.toString();
-      
-      // Check for specific error messages
+
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
-      } else if (errorMessage.contains('Время для отметки посещаемости еще не наступило') ||
-                 errorMessage.contains('too early') ||
-                 errorMessage.contains('early')) {
+      } else if (errorMessage
+              .contains('Время для отметки посещаемости еще не наступило') ||
+          errorMessage.contains('too early') ||
+          errorMessage.contains('early')) {
         errorMessage = 'Время для отметки посещаемости еще не наступило';
-      } else if (errorMessage.contains('Время для отметки посещаемости истекло') ||
-                 errorMessage.contains('too late') ||
-                 errorMessage.contains('late')) {
+      } else if (errorMessage
+              .contains('Время для отметки посещаемости истекло') ||
+          errorMessage.contains('too late') ||
+          errorMessage.contains('late')) {
         errorMessage = 'Время для отметки посещаемости истекло';
       } else if (errorMessage.contains('Неправильный сотрудник') ||
-                 errorMessage.contains('invalid employee') ||
-                 errorMessage.contains('unauthorized')) {
+          errorMessage.contains('invalid employee') ||
+          errorMessage.contains('unauthorized')) {
         errorMessage = 'Неправильный сотрудник для отметки посещаемости';
       } else if (errorMessage.contains('Дети не выбраны') ||
-                 errorMessage.contains('no children') ||
-                 errorMessage.contains('no selected')) {
+          errorMessage.contains('no children') ||
+          errorMessage.contains('no selected')) {
         errorMessage = 'Не выбраны дети для отметки посещаемости';
-      } else if (errorMessage.contains('проверьте время сотрудника или выбранных детей')) {
-        errorMessage = 'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
-      } else if (errorMessage.contains('employee') || errorMessage.contains('time') || errorMessage.contains('сотрудника')) {
-        errorMessage = 'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
+      } else if (errorMessage
+          .contains('проверьте время сотрудника или выбранных детей')) {
+        errorMessage =
+            'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
+      } else if (errorMessage.contains('employee') ||
+          errorMessage.contains('time') ||
+          errorMessage.contains('сотрудника')) {
+        errorMessage =
+            'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
       } else {
-        errorMessage = 'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
+        errorMessage =
+            'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
       }
 
       if (mounted) {
@@ -276,8 +295,9 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
         );
       }
     } catch (e) {
-      String errorMessage = 'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
-      
+      String errorMessage =
+          'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -288,7 +308,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
         isLoading = false;
       });
     }
- }
+  }
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
@@ -331,7 +351,6 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Date selection only (no time)
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -367,7 +386,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     const Row(
                                       children: [
@@ -392,10 +412,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Children list
                     Text(
                       'Дети',
                       style: TextStyle(
@@ -404,7 +421,6 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                           color: Colors.grey[800]),
                     ),
                     const SizedBox(height: 8),
-
                     Expanded(
                       child: ListView.builder(
                         itemCount: children.length,
@@ -416,7 +432,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                  color: Colors.grey
+                                      .withAlpha((0.1 * 255).round()),
                                   spreadRadius: 1,
                                   blurRadius: 5,
                                   offset: const Offset(0, 2),
@@ -425,7 +442,8 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                             ),
                             child: CheckboxListTile(
                               title: Text(children[index].fullName),
-                              subtitle: Text(_getChildGroupInfo(children[index])),
+                              subtitle:
+                                  Text(_getChildGroupInfo(children[index])),
                               value: present[index],
                               onChanged: (value) {
                                 setState(() {
@@ -440,10 +458,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                         },
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
-                    // Submit button
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -467,26 +482,21 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
     );
   }
 
-  // Helper method to get child group info
-    String _getChildGroupInfo(Child child) {
-  // Use groupName from populated API response first
-  if (child.groupName != null && child.groupName!.isNotEmpty) {
-    return child.groupName!;
-  }
-  
-  // Fallback to groupId if groupName is not available
-  if (child.groupId == null) {
-    return 'Группа не указана';
-  }
+  String _getChildGroupInfo(Child child) {
+    if (child.groupName != null && child.groupName!.isNotEmpty) {
+      return child.groupName!;
+    }
 
-  // Try to find group in provider
-  final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-  final group = groupsProvider.getGroupById(child.groupId!);
-  if (group != null) {
-    return group.name;
+    if (child.groupId == null) {
+      return 'Группа не указана';
+    }
+
+    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+    final group = groupsProvider.getGroupById(child.groupId!);
+    if (group != null) {
+      return group.name;
+    }
+
+    return child.groupId!;
   }
-  
-  // Last resort - return the ID
-  return child.groupId!;
-}
 }

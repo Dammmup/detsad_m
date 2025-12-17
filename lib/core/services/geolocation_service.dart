@@ -6,7 +6,6 @@ import 'dart:math';
 class GeolocationService {
   final ApiService _apiService = ApiService();
 
-  // Get geolocation settings
   Future<Map<String, dynamic>?> getGeolocationSettings() async {
     try {
       final response = await _apiService.get(ApiConstants.settingsGeolocation);
@@ -21,14 +20,13 @@ class GeolocationService {
     }
   }
 
-  // Calculate distance between two coordinates using Haversine formula
   double calculateDistance(
     double lat1,
     double lon1,
     double lat2,
     double lon2,
   ) {
-    const R = 6371e3; // Earth's radius in meters
+    const R = 6371e3;
     final phi1 = lat1 * pi / 180;
     final phi2 = lat2 * pi / 180;
     final deltaPhi = (lat2 - lat1) * pi / 180;
@@ -38,10 +36,9 @@ class GeolocationService {
         cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
-    return R * c; // Distance in meters
+    return R * c;
   }
 
-  // Check if user is within allowed geolocation
   bool isWithinGeofence({
     required double userLat,
     required double userLon,

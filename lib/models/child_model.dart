@@ -8,8 +8,8 @@ class Child {
   final String? parentName;
   final String? parentPhone;
   final String? staffId;
-  final String? groupId; // Can be Group object or string ID
-  final String? groupName; // Group name from populated groupId
+  final String? groupId;
+  final String? groupName;
   final bool? active;
   final String? gender;
 
@@ -27,9 +27,7 @@ class Child {
     this.gender,
   });
 
-// И factory:
   factory Child.fromJson(Map<String, dynamic> json) {
-    // birthday processing (как у тебя)
     String? birthdayString;
     if (json['birthday'] != null) {
       if (json['birthday'] is String) {
@@ -45,7 +43,6 @@ class Child {
       }
     }
 
-    // Normalize groupId and extract groupName from populated object
     dynamic rawGroup = json['groupId'] ?? json['group'] ?? json['group_id'];
     String? groupIdString;
     String? groupNameString;
@@ -53,11 +50,10 @@ class Child {
       groupIdString = null;
       groupNameString = null;
     } else if (rawGroup is Map) {
-      // Populated group object from backend
-      groupIdString = (rawGroup['oid'] ?? rawGroup['_id'] ?? rawGroup['id'])?.toString();
+      groupIdString =
+          (rawGroup['oid'] ?? rawGroup['_id'] ?? rawGroup['id'])?.toString();
       groupNameString = rawGroup['name']?.toString();
     } else {
-      // Just a string ID
       groupIdString = rawGroup.toString();
       groupNameString = null;
     }
@@ -77,8 +73,6 @@ class Child {
     );
   }
 
-
-  // Convert to JSON
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> json = {
       'fullName': fullName,
@@ -91,19 +85,15 @@ class Child {
       'gender': gender,
     };
 
-    // Добавляем _id только если он не пустой (для обновления существующего ребенка)
     if (id.isNotEmpty) {
       json['_id'] = id;
     }
 
-    // Обрабатываем groupId - если это объект, извлекаем ID, иначе используем как есть
     if (groupId != null) {
       if (groupId is Map) {
-        // Если  groupId - это объект группы, извлекаем ID
         final groupMap = groupId as Map;
         json['groupId'] = groupMap['_id'] ?? groupMap['id'] ?? groupId;
       } else {
-        // Если groupId - это строка, используем напрямую
         json['groupId'] = groupId;
       }
     }
@@ -111,12 +101,10 @@ class Child {
     return json;
   }
 
-  // Convert to JSON string
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  // Convert from JSON string
   factory Child.fromJsonString(String jsonString) {
     try {
       final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -126,7 +114,6 @@ class Child {
     }
   }
 
-  // Copy with method for updates
   Child copyWith({
     String? id,
     String? fullName,

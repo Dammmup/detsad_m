@@ -3,7 +3,7 @@ import 'user_model.dart';
 
 class Payroll {
   final String? id;
-  final User? staff; // Can be minimal user info
+  final User? staff;
   final String period;
   final double baseSalary;
   final String baseSalaryType;
@@ -41,13 +41,12 @@ class Payroll {
     required this.workedShifts,
     this.shiftDetails = const [],
   });
-// ... 
 
   factory Payroll.fromJson(Map<String, dynamic> json) {
     return Payroll(
       id: json['_id'],
-      staff: json['staffId'] != null && json['staffId'] is Map 
-          ? User.fromJson(json['staffId']) 
+      staff: json['staffId'] != null && json['staffId'] is Map
+          ? User.fromJson(json['staffId'])
           : null,
       period: json['period'] ?? '',
       baseSalary: (json['baseSalary'] as num?)?.toDouble() ?? 0.0,
@@ -62,13 +61,15 @@ class Payroll {
       bonuses: (json['bonuses'] as num?)?.toDouble() ?? 0.0,
       advance: (json['advance'] as num?)?.toDouble() ?? 0.0,
       fines: (json['fines'] as List<dynamic>?)
-          ?.map((e) => Fine.fromJson(e))
-          .toList() ?? [],
+              ?.map((e) => Fine.fromJson(e))
+              .toList() ??
+          [],
       workedDays: (json['workedDays'] as num?)?.toDouble() ?? 0.0,
       workedShifts: (json['workedShifts'] as num?)?.toDouble() ?? 0.0,
       shiftDetails: (json['shiftDetails'] as List<dynamic>?)
-          ?.map((e) => ShiftDetail.fromJson(e))
-          .toList() ?? [],
+              ?.map((e) => ShiftDetail.fromJson(e))
+              .toList() ??
+          [],
     );
   }
 }
@@ -80,13 +81,12 @@ class ShiftDetail {
   final double net;
   final String reason;
 
-  ShiftDetail({
-    required this.date,
-    required this.earnings,
-    required this.fines,
-    required this.net,
-    required this.reason
-  });
+  ShiftDetail(
+      {required this.date,
+      required this.earnings,
+      required this.fines,
+      required this.net,
+      required this.reason});
 
   factory ShiftDetail.fromJson(Map<String, dynamic> json) {
     return ShiftDetail(

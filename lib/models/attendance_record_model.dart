@@ -6,7 +6,6 @@ class AttendanceRecord {
   final Child child;
 
   AttendanceRecord({required this.attendance, required this.child});
-  
-  // Add getter to access the attendance status
+
   String get status => attendance.status;
 }

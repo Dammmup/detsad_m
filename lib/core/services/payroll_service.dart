@@ -1,4 +1,3 @@
-
 import '../../models/payroll_model.dart';
 import 'api_service.dart';
 
@@ -18,7 +17,7 @@ class PayrollService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        print('DEBUG PAYROLL DATA: $data'); // Debug print
+        print('DEBUG PAYROLL DATA: $data');
         return data.map((json) => Payroll.fromJson(json)).toList();
       } else {
         throw Exception('Failed to load payrolls');

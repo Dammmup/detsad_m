@@ -5,7 +5,7 @@ class Group {
   final String name;
   final String? description;
   final int? childrenCount;
- final String? teacher;
+  final String? teacher;
   final String? assistantTeacher;
   final bool? isActive;
   final int? maxStudents;
@@ -14,7 +14,7 @@ class Group {
   final String? room;
   final String? createdAt;
   final String? updatedAt;
-  final List<Map<String, dynamic>>? children; // Добавляем поле для детей
+  final List<Map<String, dynamic>>? children;
   final Map<String, dynamic>? educationalPlan;
   final List<String>? activities;
 
@@ -37,9 +37,7 @@ class Group {
     this.activities,
   });
 
-// group_model.dart
   factory Group.fromJson(Map<String, dynamic> json) {
-    // Handle MongoDB ObjectId format in _id field
     dynamic rawId = json['_id'] ?? json['id'];
     String id;
     if (rawId is Map && rawId.containsKey('\$oid')) {
@@ -48,8 +46,6 @@ class Group {
       id = (rawId ?? '').toString();
     }
 
-    // teacher: может быть { _id: '...' } или строка '...'
-    // Приоритет: teacherId (как в бэкенде), затем teacher, затем teacher_id
     dynamic rawTeacher =
         json['teacherId'] ?? json['teacher'] ?? json['teacher_id'];
     String? teacherId;
@@ -61,7 +57,6 @@ class Group {
       teacherId = rawTeacher.toString();
     }
 
-    // Handle ageGroup as string or list
     List<String>? ageGroupList;
     if (json['ageGroup'] != null) {
       if (json['ageGroup'] is List) {
@@ -88,13 +83,15 @@ class Group {
       children: json['children'] != null
           ? List<Map<String, dynamic>>.from(json['children'])
           : null,
-      educationalPlan: json['educationalPlan'] != null ? Map<String, dynamic>.from(json['educationalPlan']) : null,
-      activities: json['activities'] != null ? List<String>.from(json['activities']) : null,
+      educationalPlan: json['educationalPlan'] != null
+          ? Map<String, dynamic>.from(json['educationalPlan'])
+          : null,
+      activities: json['activities'] != null
+          ? List<String>.from(json['activities'])
+          : null,
     );
   }
 
-
-  // Convert to JSON
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
@@ -114,14 +111,12 @@ class Group {
       'educationalPlan': educationalPlan,
       'activities': activities,
     };
- }
+  }
 
-  // Convert to JSON string
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
-  // Convert from JSON string
   factory Group.fromJsonString(String jsonString) {
     try {
       final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -131,7 +126,6 @@ class Group {
     }
   }
 
-  // Copy with method for updates
   Group copyWith({
     String? id,
     String? name,

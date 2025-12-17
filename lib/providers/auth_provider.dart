@@ -5,7 +5,7 @@ import '../core/services/storage_service.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
-  
+
   User? _user;
   bool _isLoading = false;
   bool _isLoggedIn = false;
@@ -17,24 +17,20 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    // Initialize automatically when the provider is created
     _autoInitialize();
   }
 
-  // Initialize - check if user is already logged in
   Future<void> initialize() async {
     _isLoading = true;
     notifyListeners();
 
     try {
-      // Ensure storage service is initialized
       await StorageService().init();
       _isLoggedIn = await _authService.isLoggedIn();
-      
+
       if (_isLoggedIn) {
         _user = await _authService.getStoredUser();
-        
-        // Refresh user data from server
+
         final updatedUser = await _authService.getCurrentUser();
         if (updatedUser != null) {
           _user = updatedUser;
@@ -49,12 +45,8 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Auto-initialize when provider is created
-  Future<void> _autoInitialize() async {
-    // Не запускаем автоматическую инициализацию, так как она будет вызвана в SplashScreen
-  }
+  Future<void> _autoInitialize() async {}
 
-  // Login
   Future<bool> login(String phone, String password) async {
     _isLoading = true;
     _errorMessage = null;
@@ -62,7 +54,7 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final result = await _authService.login(phone, password);
-      
+
       if (result['success'] == true) {
         _user = result['user'];
         _isLoggedIn = true;
@@ -83,7 +75,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Logout
   Future<void> logout() async {
     _isLoading = true;
     notifyListeners();
@@ -101,7 +92,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
- // Refresh user data
   Future<void> refreshUser() async {
     try {
       final updatedUser = await _authService.getCurrentUser();
@@ -115,13 +105,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Update user in provider
   void updateUser(User updatedUser) {
     _user = updatedUser;
     notifyListeners();
   }
 
-  // Clear error
   void clearError() {
     _errorMessage = null;
     notifyListeners();

@@ -19,20 +19,19 @@ class _AddChildScreenState extends State<AddChildScreen> {
 
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _iinController = TextEditingController();
- final TextEditingController _birthdayController = TextEditingController();
+  final TextEditingController _birthdayController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _parentNameController = TextEditingController();
   final TextEditingController _parentPhoneController = TextEditingController();
-  // Removed medical-related controllers that are not needed in mobile app
 
   String? _selectedGroupId;
   String? _selectedGender;
   bool _isLoading = false;
 
   @override
- void initState() {
+  void initState() {
     super.initState();
-    // Загружаем группы при инициализации экрана
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadGroups();
@@ -46,20 +45,17 @@ class _AddChildScreenState extends State<AddChildScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final User? currentUser = authProvider.user;
 
-    // Проверяем, является ли пользователь преподавателем или заменителем
     bool isTeacherOrSubstitute = currentUser != null &&
         (currentUser.role == 'teacher' || currentUser.role == 'substitute');
-    
+
     if (isTeacherOrSubstitute) {
-      // Если пользователь - воспитатель или заменитель, загружаем только его группы
       await groupsProvider.loadGroupsByTeacherId(currentUser.id);
     } else {
-      // Для других ролей загружаем все группы
       await groupsProvider.loadGroups();
     }
   }
 
- Future<void> _selectDate() async {
+  Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -73,7 +69,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
     }
   }
 
- Future<void> _addChild() async {
+  Future<void> _addChild() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -87,49 +83,55 @@ class _AddChildScreenState extends State<AddChildScreen> {
       final currentUser = authProvider.user;
 
       final child = Child(
-        id: '', // будет сгенерирован на сервере
+        id: '',
         fullName: _fullNameController.text.trim(),
-        iin: _iinController.text.trim().isEmpty ? null : _iinController.text.trim(),
-        birthday: _birthdayController.text.isEmpty ? null : _birthdayController.text,
-        parentName: _parentNameController.text.trim().isEmpty ? null : _parentNameController.text.trim(),
-        parentPhone: _parentPhoneController.text.trim().isEmpty ? null : _parentPhoneController.text.trim(),
+        iin: _iinController.text.trim().isEmpty
+            ? null
+            : _iinController.text.trim(),
+        birthday:
+            _birthdayController.text.isEmpty ? null : _birthdayController.text,
+        parentName: _parentNameController.text.trim().isEmpty
+            ? null
+            : _parentNameController.text.trim(),
+        parentPhone: _parentPhoneController.text.trim().isEmpty
+            ? null
+            : _parentPhoneController.text.trim(),
         groupId: _selectedGroupId,
-        staffId: currentUser?.id, // Привязываем к текущему пользователю
+        staffId: currentUser?.id,
         gender: _selectedGender,
         active: true,
       );
 
       await _childrenService.createChild(child);
 
-      // Показываем сообщение об успешном добавлении
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Ребенок успешно добавлен')),
         );
 
-        // Возвращаемся назад к списку детей
-        Navigator.pop(context, true); // Передаем true как индикатор успешного добавления
+        Navigator.pop(context, true);
       }
     } on Exception catch (e) {
       String errorMessage = e.toString();
-      
-      // Check for specific error messages
+
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для добавления') ||
-                 errorMessage.contains('unauthorized') ||
-                 errorMessage.contains('403')) {
+          errorMessage.contains('unauthorized') ||
+          errorMessage.contains('403')) {
         errorMessage = 'Нет прав для добавления ребенка';
       } else if (errorMessage.contains('Некорректные данные') ||
-                 errorMessage.contains('invalid data') ||
-                 errorMessage.contains('400')) {
-        errorMessage = 'Некорректные данные. Проверьте правильность введенной информации';
+          errorMessage.contains('invalid data') ||
+          errorMessage.contains('400')) {
+        errorMessage =
+            'Некорректные данные. Проверьте правильность введенной информации';
       } else if (errorMessage.contains('Ребенок уже существует') ||
-                 errorMessage.contains('child already exists') ||
-                 errorMessage.contains('duplicate')) {
+          errorMessage.contains('child already exists') ||
+          errorMessage.contains('duplicate')) {
         errorMessage = 'Ребенок с такими данными уже существует';
       } else {
-        errorMessage = 'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
+        errorMessage =
+            'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
       }
 
       if (mounted) {
@@ -138,8 +140,9 @@ class _AddChildScreenState extends State<AddChildScreen> {
         );
       }
     } catch (e) {
-      String errorMessage = 'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
-      
+      String errorMessage =
+          'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -178,7 +181,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
             key: _formKey,
             child: ListView(
               children: [
-                // Поле ФИО
                 TextFormField(
                   controller: _fullNameController,
                   decoration: InputDecoration(
@@ -197,8 +199,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Поле ИИН
                 TextFormField(
                   controller: _iinController,
                   decoration: InputDecoration(
@@ -211,8 +211,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Поле Дата рождения
                 TextFormField(
                   controller: _birthdayController,
                   decoration: InputDecoration(
@@ -236,8 +234,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Поле Адрес
                 TextFormField(
                   controller: _addressController,
                   decoration: InputDecoration(
@@ -250,8 +246,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Поле Имя родителя
                 TextFormField(
                   controller: _parentNameController,
                   decoration: InputDecoration(
@@ -264,8 +258,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Поле Телефон родителя
                 TextFormField(
                   controller: _parentPhoneController,
                   decoration: InputDecoration(
@@ -278,8 +270,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // Выбор пола
                 Consumer<GroupsProvider>(
                   builder: (context, groupsProvider, child) {
                     return DropdownButtonFormField<String>(
@@ -307,8 +297,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-
-                // Выбор группы
                 Consumer<GroupsProvider>(
                   builder: (context, groupsProvider, child) {
                     if (groupsProvider.isLoading) {
@@ -343,10 +331,7 @@ class _AddChildScreenState extends State<AddChildScreen> {
                     );
                   },
                 ),
-                // Removed medical-related fields that are not needed in mobile app
                 const SizedBox(height: 24),
-
-                // Кнопка добавить
                 ElevatedButton(
                   onPressed: _isLoading ? null : _addChild,
                   style: ElevatedButton.styleFrom(

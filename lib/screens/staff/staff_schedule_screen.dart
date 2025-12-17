@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:intl/date_symbol_data_local.dart'; // Добавляем импорт для инициализации локали
+import 'package:intl/date_symbol_data_local.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/shifts_service.dart';
 
@@ -22,8 +22,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    initializeDateFormatting(
-        'ru_RU'); // Инициализация локали для форматирования дат
+    initializeDateFormatting('ru_RU');
     _loadSchedule();
   }
 
@@ -38,30 +37,28 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       final user = authProvider.user;
 
       if (user != null) {
-        // Format the month range
         String startDate = DateFormat('yyyy-MM-01').format(_currentMonth);
         String endDate = DateFormat('yyyy-MM-dd').format(DateTime(
           _currentMonth.year,
           _currentMonth.month + 1,
-          0, // Last day of the month
+          0,
         ));
 
-        // Load shifts for the current user in the selected month
         List<dynamic> scheduledShifts = await _shiftsService.getStaffShifts(
           staffId: user.id,
           startDate: startDate,
           endDate: endDate,
         );
 
-        // Load attendance tracking records for the same period
-        List<dynamic> attendanceRecords = await _shiftsService.getStaffAttendanceTrackingRecords(
+        List<dynamic> attendanceRecords =
+            await _shiftsService.getStaffAttendanceTrackingRecords(
           staffId: user.id,
           startDate: startDate,
           endDate: endDate,
         );
 
-        // Combine shift data with attendance data based on date
-        _shifts = _combineShiftAndAttendanceData(scheduledShifts, attendanceRecords);
+        _shifts =
+            _combineShiftAndAttendanceData(scheduledShifts, attendanceRecords);
 
         setState(() {
           _isLoading = false;
@@ -156,7 +153,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Month navigation
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -195,8 +191,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // User info
               Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -235,8 +229,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Schedule list
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -318,7 +310,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                 itemBuilder: (context, index) {
                                   final shift = _shifts[index];
 
-                                  // Parse date
                                   DateTime shiftDate;
                                   if (shift['date'] is String) {
                                     shiftDate = DateTime.parse(shift['date']);
@@ -328,26 +319,30 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                     shiftDate = DateTime.now();
                                   }
 
-                                  // Format time - используем отмеченное время прихода и ухода, если доступно
                                   String scheduledStartTime =
                                       shift['startTime'] ?? '0:00';
                                   String scheduledEndTime =
                                       shift['endTime'] ?? '00:00';
-                                  String? actualStartTime = shift[
-                                      'actualStartTime']; // отмеченное время прихода
-                                  String? actualEndTime = shift[
-                                      'actualEndTime']; // отмеченное время ухода
+                                  String? actualStartTime =
+                                      shift['actualStartTime'];
+                                  String? actualEndTime =
+                                      shift['actualEndTime'];
 
-                                  // Если есть отмеченное время, используем его, иначе запланированное
-                                  String displayStartTime = actualStartTime ?? scheduledStartTime;
-                                  String displayEndTime = actualEndTime ?? scheduledEndTime;
+                                  String displayStartTime =
+                                      actualStartTime ?? scheduledStartTime;
+                                  String displayEndTime =
+                                      actualEndTime ?? scheduledEndTime;
 
-                                  // Определяем, было ли время отмечено (отличается от запланированного)
-                                  bool hasActualTimes = (actualStartTime != null && actualStartTime != scheduledStartTime) ||
-                                                        (actualEndTime != null && actualEndTime != scheduledEndTime);
+                                  bool hasActualTimes = (actualStartTime !=
+                                              null &&
+                                          actualStartTime !=
+                                              scheduledStartTime) ||
+                                      (actualEndTime != null &&
+                                          actualEndTime != scheduledEndTime);
 
-                                  // Проверяем, есть ли отмеченное время вообще (для отображения секции "Отмечено")
-                                  bool hasAnyActualTime = actualStartTime != null || actualEndTime != null;
+                                  bool hasAnyActualTime =
+                                      actualStartTime != null ||
+                                          actualEndTime != null;
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
@@ -407,7 +402,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                             ],
                                           ),
                                           const SizedBox(height: 8),
-                                          // Отображаем запланированное время
                                           Row(
                                             children: [
                                               const Icon(Icons.schedule,
@@ -427,7 +421,6 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                               ),
                                             ],
                                           ),
-                                          // Отображаем отмеченное время, если оно было зафиксировано
                                           if (hasAnyActualTime) ...[
                                             const SizedBox(height: 4),
                                             Row(
@@ -486,60 +479,65 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
     );
   }
 
-  // Method to combine shift data with attendance tracking data
-  List<dynamic> _combineShiftAndAttendanceData(List<dynamic> scheduledShifts, List<dynamic> attendanceRecords) {
-    print('StaffScheduleScreen | Combining ${scheduledShifts.length} shifts with ${attendanceRecords.length} attendance records');
-    
-    // Create a map of attendance records by date for quick lookup
+  List<dynamic> _combineShiftAndAttendanceData(
+      List<dynamic> scheduledShifts, List<dynamic> attendanceRecords) {
+    print(
+        'StaffScheduleScreen | Combining ${scheduledShifts.length} shifts with ${attendanceRecords.length} attendance records');
+
     Map<String, dynamic> attendanceMap = {};
     for (var record in attendanceRecords) {
-      // Convert date to string format for comparison
       String dateStr;
       if (record['date'] is String) {
-        dateStr = DateTime.parse(record['date']).toIso8601String().split('T')[0];
+        dateStr =
+            DateTime.parse(record['date']).toIso8601String().split('T')[0];
       } else if (record['date'] is DateTime) {
         dateStr = (record['date'] as DateTime).toIso8601String().split('T')[0];
       } else {
-        continue; // Skip invalid records
+        continue;
       }
       attendanceMap[dateStr] = record;
-      print('StaffScheduleScreen | Attendance map: $dateStr -> actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
+      print(
+          'StaffScheduleScreen | Attendance map: $dateStr -> actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
     }
 
-    // Process each scheduled shift and enrich with attendance data if available
     List<dynamic> combinedShifts = [];
     for (var shift in scheduledShifts) {
       String shiftDateStr;
       if (shift['date'] is String) {
-        shiftDateStr = DateTime.parse(shift['date']).toIso8601String().split('T')[0];
+        shiftDateStr =
+            DateTime.parse(shift['date']).toIso8601String().split('T')[0];
       } else if (shift['date'] is DateTime) {
-        shiftDateStr = (shift['date'] as DateTime).toIso8601String().split('T')[0];
+        shiftDateStr =
+            (shift['date'] as DateTime).toIso8601String().split('T')[0];
       } else {
         combinedShifts.add(shift);
-        continue; // Keep original shift if date is invalid
+        continue;
       }
 
-      // Check if there's attendance record for this date
       if (attendanceMap.containsKey(shiftDateStr)) {
         var attendanceRecord = attendanceMap[shiftDateStr];
-        // Merge the shift data with attendance data
+
         var combinedShift = Map<String, dynamic>.from(shift);
-        
-        // Format actualStart and actualEnd from ISO datetime to HH:mm time string
-        String? actualStartTime = _formatISOToTimeString(attendanceRecord['actualStart']);
-        String? actualEndTime = _formatISOToTimeString(attendanceRecord['actualEnd']);
-        
-        print('StaffScheduleScreen | Shift $shiftDateStr: actualStart=$actualStartTime, actualEnd=$actualEndTime');
-        
+
+        String? actualStartTime =
+            _formatISOToTimeString(attendanceRecord['actualStart']);
+        String? actualEndTime =
+            _formatISOToTimeString(attendanceRecord['actualEnd']);
+
+        print(
+            'StaffScheduleScreen | Shift $shiftDateStr: actualStart=$actualStartTime, actualEnd=$actualEndTime');
+
         combinedShift['actualStartTime'] = actualStartTime;
         combinedShift['actualEndTime'] = actualEndTime;
         combinedShift['actualStart'] = attendanceRecord['actualStart'];
         combinedShift['actualEnd'] = attendanceRecord['actualEnd'];
         combinedShift['workDuration'] = attendanceRecord['workDuration'];
         combinedShift['breakDuration'] = attendanceRecord['breakDuration'];
-        combinedShift['overtimeDuration'] = attendanceRecord['overtimeDuration'];
+        combinedShift['overtimeDuration'] =
+            attendanceRecord['overtimeDuration'];
         combinedShift['lateMinutes'] = attendanceRecord['lateMinutes'];
-        combinedShift['earlyLeaveMinutes'] = attendanceRecord['earlyLeaveMinutes'];
+        combinedShift['earlyLeaveMinutes'] =
+            attendanceRecord['earlyLeaveMinutes'];
         combinedShift['penalties'] = attendanceRecord['penalties'];
         combinedShift['bonuses'] = attendanceRecord['bonuses'];
         combinedShift['notes'] = attendanceRecord['notes'] ?? shift['notes'];
@@ -548,12 +546,10 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         combinedShift['overtimeHours'] = attendanceRecord['overtimeHours'];
         combinedShifts.add(combinedShift);
       } else {
-        // If no attendance record, keep the scheduled shift as is
         combinedShifts.add(shift);
       }
     }
 
-    // Sort the combined shifts by date
     combinedShifts.sort((a, b) {
       DateTime dateA, dateB;
       if (a['date'] is String) {
@@ -566,19 +562,17 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       } else {
         dateB = b['date'];
       }
-      return dateB.compareTo(dateA); // Sort in descending order (newest first)
+      return dateB.compareTo(dateA);
     });
 
     return combinedShifts;
   }
-  
-  // Helper function to format ISO datetime string to HH:mm time string
+
   String? _formatISOToTimeString(dynamic isoDateTime) {
     if (isoDateTime == null) return null;
-    
+
     try {
       if (isoDateTime is String) {
-        // Parse ISO datetime and format to HH:mm
         DateTime dateTime = DateTime.parse(isoDateTime);
         return DateFormat('HH:mm').format(dateTime);
       } else if (isoDateTime is DateTime) {
@@ -587,9 +581,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
     } catch (e) {
       print('StaffScheduleScreen | Error formatting time: $e');
     }
-    
-    // If it's already a time string like "08:30", return as is
+
     return isoDateTime.toString();
   }
 }
-

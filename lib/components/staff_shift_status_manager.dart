@@ -9,7 +9,8 @@ class StaffShiftStatusManager extends StatefulWidget {
   const StaffShiftStatusManager({super.key, required this.child});
 
   @override
-  State<StaffShiftStatusManager> createState() => _StaffShiftStatusManagerState();
+  State<StaffShiftStatusManager> createState() =>
+      _StaffShiftStatusManagerState();
 }
 
 class _StaffShiftStatusManagerState extends State<StaffShiftStatusManager> {
@@ -21,7 +22,6 @@ class _StaffShiftStatusManagerState extends State<StaffShiftStatusManager> {
     final shiftsProvider = Provider.of<ShiftsProvider>(context);
     final user = authProvider.user;
 
-    // Проверяем, изменился ли пользователь, и если да, загружаем статус смены
     if (user != null && user.id != _previousUserId) {
       _previousUserId = user.id;
       shiftsProvider.fetchShiftStatus(user.id);

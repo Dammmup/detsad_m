@@ -31,7 +31,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
   Future<void> _loadUserProfile() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final user = authProvider.user;
-    
+
     if (user != null) {
       _firstNameController.text = user.firstName;
       _lastNameController.text = user.lastName;
@@ -51,7 +51,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       final user = authProvider.user;
 
       if (user != null) {
-        // Update basic profile info
         bool profileUpdated = await _authService.updateProfile(
           userId: user.id,
           firstName: _firstNameController.text,
@@ -61,7 +60,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         );
 
         bool passwordUpdated = true;
-        // Update password if provided
+
         if (_passwordController.text.isNotEmpty) {
           passwordUpdated = await _authService.changePassword(
             userId: user.id,
@@ -70,7 +69,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         }
 
         if (profileUpdated || passwordUpdated) {
-          // Refresh user data from server to get updated information
           await authProvider.refreshUser();
 
           if (mounted) {
@@ -151,7 +149,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                 key: _formKey,
                 child: ListView(
                   children: [
-                    // Avatar section
                     Center(
                       child: Stack(
                         children: [
@@ -186,7 +183,8 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: Colors.blue,
-                                  border: Border.all(color: Colors.white, width: 2),
+                                  border:
+                                      Border.all(color: Colors.white, width: 2),
                                 ),
                                 child: const Icon(
                                   Icons.camera_alt,
@@ -199,8 +197,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Profile info
                     _buildProfileField(
                       label: 'Имя',
                       controller: _firstNameController,
@@ -213,7 +209,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
                     _buildProfileField(
                       label: 'Фамилия',
                       controller: _lastNameController,
@@ -226,7 +221,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
                     _buildProfileField(
                       label: 'Телефон',
                       controller: _phoneController,
@@ -239,15 +233,12 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
                     _buildProfileField(
                       label: 'Роль',
                       controller: TextEditingController(text: user.role),
                       enabled: false,
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Password change section (only when editing)
                     if (_isEditing) ...[
                       const Divider(),
                       const SizedBox(height: 16),
@@ -259,29 +250,29 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
                       _buildProfileField(
                         label: 'Новый пароль',
                         controller: _passwordController,
                         enabled: true,
                         isPassword: true,
                         validator: (value) {
-                          if (value != null && value.isNotEmpty && value.length < 6) {
+                          if (value != null &&
+                              value.isNotEmpty &&
+                              value.length < 6) {
                             return 'Пароль должен содержать не менее 6 символов';
                           }
                           return null;
                         },
                       ),
                       const SizedBox(height: 16),
-                      
                       _buildProfileField(
                         label: 'Подтвердите пароль',
                         controller: _confirmPasswordController,
                         enabled: true,
                         isPassword: true,
                         validator: (value) {
-                          if (value != null && 
-                              _passwordController.text.isNotEmpty && 
+                          if (value != null &&
+                              _passwordController.text.isNotEmpty &&
                               value != _passwordController.text) {
                             return 'Пароли не совпадают';
                           }
@@ -289,10 +280,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                         },
                       ),
                     ],
-                    
                     const SizedBox(height: 24),
-                    
-                    // Action buttons
                     if (_isEditing) ...[
                       ElevatedButton(
                         onPressed: _saveProfile,
@@ -306,7 +294,6 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                             : const Text('Сохранить изменения'),
                       ),
                       const SizedBox(height: 12),
-                      
                       OutlinedButton(
                         onPressed: () {
                           setState(() {

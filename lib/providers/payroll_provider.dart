@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../core/services/payroll_service.dart';
 import '../models/payroll_model.dart';
@@ -6,7 +5,7 @@ import 'package:intl/intl.dart';
 
 class PayrollProvider with ChangeNotifier {
   final PayrollService _payrollService = PayrollService();
-  
+
   List<Payroll> _payrolls = [];
   Payroll? _currentPayroll;
   bool _isLoading = false;
@@ -21,7 +20,6 @@ class PayrollProvider with ChangeNotifier {
 
   String get currentPeriod => DateFormat('yyyy-MM').format(_currentDate);
 
-  // Load payroll for current selected month
   Future<void> loadMyPayroll() async {
     _isLoading = true;
     _errorMessage = null;
@@ -31,16 +29,16 @@ class PayrollProvider with ChangeNotifier {
       final period = currentPeriod;
       final result = await _payrollService.getMyPayrolls(period: period);
       _payrolls = result;
-      
+
       if (result.isNotEmpty) {
         _currentPayroll = result.first;
-        // After loading the basic payroll, load the detailed one with shift details
+
         if (_currentPayroll?.id != null) {
           try {
-            final detailedPayroll = await _payrollService.getPayrollWithShiftDetails(_currentPayroll!.id!);
+            final detailedPayroll = await _payrollService
+                .getPayrollWithShiftDetails(_currentPayroll!.id!);
             _currentPayroll = detailedPayroll;
           } catch (e) {
-            // Log this error but don't block the UI. The basic info is still useful.
             print('Could not load shift details: $e');
           }
         }
@@ -56,7 +54,6 @@ class PayrollProvider with ChangeNotifier {
     }
   }
 
-  // Change month logic
   void prevMonth() {
     _currentDate = DateTime(_currentDate.year, _currentDate.month - 1);
     loadMyPayroll();

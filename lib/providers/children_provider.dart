@@ -4,16 +4,15 @@ import '../core/services/children_service.dart';
 
 class ChildrenProvider with ChangeNotifier {
   final ChildrenService _childrenService = ChildrenService();
-  
+
   List<Child> _children = [];
   bool _isLoading = false;
   String? _errorMessage;
 
   List<Child> get children => _children;
- bool get isLoading => _isLoading;
+  bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 
-  // Load all children
   Future<void> loadChildren() async {
     _isLoading = true;
     notifyListeners();
@@ -29,12 +28,11 @@ class ChildrenProvider with ChangeNotifier {
     }
   }
 
-  // Get child by ID
   Child? getChildById(String id) {
-    return _children.firstWhere((child) => child.id == id, orElse: () => _children.first);
+    return _children.firstWhere((child) => child.id == id,
+        orElse: () => _children.first);
   }
 
-  // Add a new child
   Future<void> addChild(Child child) async {
     try {
       final newChild = await _childrenService.createChild(child);
@@ -46,7 +44,6 @@ class ChildrenProvider with ChangeNotifier {
     }
   }
 
-  // Update a child
   Future<void> updateChild(String id, Child updatedChild) async {
     try {
       final updated = await _childrenService.updateChild(id, updatedChild);
@@ -61,8 +58,7 @@ class ChildrenProvider with ChangeNotifier {
     }
   }
 
-  // Delete a child
- Future<void> deleteChild(String id) async {
+  Future<void> deleteChild(String id) async {
     try {
       final success = await _childrenService.deleteChild(id);
       if (success) {
@@ -75,7 +71,6 @@ class ChildrenProvider with ChangeNotifier {
     }
   }
 
-  // Clear error message
   void clearError() {
     _errorMessage = null;
     notifyListeners();

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart'; // Для работы с буфером обмена
+import 'package:flutter/services.dart';
 import '../../../models/child_model.dart';
 import '../../../models/user_model.dart';
 import '../../../core/services/children_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/groups_provider.dart';
-import 'add_child_screen.dart'; // Импорт экрана добавления ребенка
+import 'add_child_screen.dart';
 
 class ChildrenListScreen extends StatefulWidget {
   const ChildrenListScreen({super.key});
@@ -29,7 +29,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
   }
 
   Future<void> _loadChildren() async {
-    final ctx = context; // сохраняем контекст
+    final ctx = context;
     if (!ctx.mounted) {
       return;
     }
@@ -38,68 +38,64 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       final groupsProvider = Provider.of<GroupsProvider>(ctx, listen: false);
       final User? currentUser = authProvider.user;
 
-      // Load all groups to have them available for name lookups
       await groupsProvider.loadGroups();
       if (!ctx.mounted) return;
       final allGroups = groupsProvider.groups;
-      
-      // Debug logging
+
       print('ChildrenListScreen | Loaded ${allGroups.length} groups');
       print('ChildrenListScreen | Current user ID: ${currentUser?.id}');
       print('ChildrenListScreen | Current user role: ${currentUser?.role}');
       for (var group in allGroups) {
-        print('ChildrenListScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
+        print(
+            'ChildrenListScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
 
-      // Проверяем, является ли пользователь преподавателем или заменителем
       bool isTeacherOrSubstitute = currentUser != null &&
           (currentUser.role == 'teacher' || currentUser.role == 'substitute');
 
-      // Проверяем, имеет ли пользователь права администратора
       bool isAdmin = currentUser != null &&
           (currentUser.role == 'admin' ||
               currentUser.role == 'director' ||
               currentUser.role == 'owner');
 
       if (isAdmin) {
-        // Для администраторов и руководителей загружаем всех детей
         children = await _childrenService.getAllChildren();
-        if (!ctx.mounted) return; // проверяем контекст после await
+        if (!ctx.mounted) return;
       } else if (isTeacherOrSubstitute) {
-        // Find groups assigned to the current teacher from the list of all groups
-        final teacherGroups = allGroups.where((group) => group.teacher == currentUser.id).toList();
-        print('ChildrenListScreen | Teacher groups found: ${teacherGroups.length}');
+        final teacherGroups = allGroups
+            .where((group) => group.teacher == currentUser.id)
+            .toList();
+        print(
+            'ChildrenListScreen | Teacher groups found: ${teacherGroups.length}');
         for (var group in teacherGroups) {
           print('ChildrenListScreen | Teacher group: ${group.name}');
         }
         List<Child> teacherChildren = [];
 
         if (teacherGroups.isNotEmpty) {
-          // For each teacher group, get the children in that group
           for (var group in teacherGroups) {
-            List<Child> childrenInGroup = await _childrenService.getChildrenByGroupId(group.id);
-            print('ChildrenListScreen | Children in group ${group.name}: ${childrenInGroup.length}');
+            List<Child> childrenInGroup =
+                await _childrenService.getChildrenByGroupId(group.id);
+            print(
+                'ChildrenListScreen | Children in group ${group.name}: ${childrenInGroup.length}');
             teacherChildren.addAll(childrenInGroup);
           }
         } else {
-          // Если у преподавателя нет назначенных групп, не загружаем детей
           teacherChildren = [];
         }
 
         children = teacherChildren;
-        print('ChildrenListScreen | Total children for teacher: ${children.length}');
+        print(
+            'ChildrenListScreen | Total children for teacher: ${children.length}');
       } else {
-        // Для других ролей также загружаем всех детей, но с возможными ограничениями на бэкенде
         children = await _childrenService.getAllChildren();
-        if (!ctx.mounted) return; // проверяем контекст после await
+        if (!ctx.mounted) return;
       }
 
-      // Применяем фильтрацию после загрузки детей
       _applyFilters();
     } on Exception catch (e) {
       String errorMessage = e.toString();
 
-      // Check for specific error messages
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для просмотра') ||
@@ -114,7 +110,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         errorMessage =
             'Ошибка загрузки списка детей. Проверьте подключение к интернету';
       }
-      final ctx = context; // сохраняем контекст
+      final ctx = context;
       if (!ctx.mounted) {
         return;
       }
@@ -128,7 +124,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
           'Ошибка загрузки списка детей. Проверьте подключение к интернету';
 
       if (mounted) {
-        final ctx = context; // сохраняем контекст
+        final ctx = context;
         if (!ctx.mounted) {
           return;
         }
@@ -149,12 +145,9 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     if (_selectedFilter == 'all') {
       _filteredChildren = children;
     } else if (_selectedFilter == 'by_group') {
-      // For now, just show all children, but in a real implementation
-      // this would filter by the user's assigned group
       _filteredChildren = children;
     }
     setState(() {
-      // Update filtered list
       _filteredChildren = List.from(_filteredChildren);
     });
   }
@@ -168,7 +161,6 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         foregroundColor: Colors.black,
         elevation: 0,
         actions: [
-          // Проверяем права пользователя на добавление ребенка
           Consumer<AuthProvider>(
             builder: (context, authProvider, child) {
               final currentUser = authProvider.user;
@@ -181,21 +173,19 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                 return IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () async {
-                    // Навигация к экрану добавления ребенка
                     final result = await Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const AddChildScreen()),
                     );
 
-                    // Если ребенок был успешно добавлен, обновляем список
                     if (result == true) {
-                      _loadChildren(); // Перезагружаем список детей
+                      _loadChildren();
                     }
                   },
                 );
               } else {
-                return Container(); // Не отображаем кнопку, если нет прав
+                return Container();
               }
             },
           ),
@@ -225,8 +215,6 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                     color: Colors.grey[800]),
               ),
               const SizedBox(height: 16),
-
-              // Filter controls - only visible to admins and alternative staff members
               Consumer<AuthProvider>(
                 builder: (context, authProvider, child) {
                   final currentUser = authProvider.user;
@@ -234,8 +222,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                       (currentUser.role == 'admin' ||
                           currentUser.role == 'director' ||
                           currentUser.role == 'owner' ||
-                          currentUser.role ==
-                              'substitute'); // assuming 'substitute' is alternative staff
+                          currentUser.role == 'substitute');
 
                   if (isAdminOrAlternative) {
                     return Container(
@@ -277,8 +264,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                   });
                                   _applyFilters();
                                 },
-                                selectedColor: Colors.blue
-                                    .shade200, // Changed from purple to blue
+                                selectedColor: Colors.blue.shade200,
                                 backgroundColor: Colors.grey.shade200,
                                 checkmarkColor: Colors.blue.shade700,
                               ),
@@ -292,8 +278,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                   });
                                   _applyFilters();
                                 },
-                                selectedColor: Colors.blue
-                                    .shade200, // Changed from purple to blue
+                                selectedColor: Colors.blue.shade200,
                                 backgroundColor: Colors.grey.shade200,
                                 checkmarkColor: Colors.blue.shade700,
                               ),
@@ -303,13 +288,11 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                       ),
                     );
                   } else {
-                    // Return empty container if user is not admin or substitute
                     return Container();
                   }
                 },
               ),
               const SizedBox(height: 16),
-
               Expanded(
                 child: isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -342,9 +325,11 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                     style: TextStyle(
                                         color: Colors.grey, fontSize: 16),
                                   ),
-                                  if (children.isNotEmpty && _filteredChildren.isEmpty)
+                                  if (children.isNotEmpty &&
+                                      _filteredChildren.isEmpty)
                                     const SizedBox(height: 8),
-                                  if (children.isNotEmpty && _filteredChildren.isEmpty)
+                                  if (children.isNotEmpty &&
+                                      _filteredChildren.isEmpty)
                                     const Text(
                                       'Попробуйте изменить фильтры',
                                       textAlign: TextAlign.center,
@@ -425,14 +410,13 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                             const SizedBox(width: 4),
                                             GestureDetector(
                                               onTap: () async {
-                                                final ctx =
-                                                    context; // сохраняем контекст до await
+                                                final ctx = context;
                                                 await Clipboard.setData(
                                                     ClipboardData(
                                                         text: child
                                                             .parentPhone!));
                                                 if (!ctx.mounted) {
-                                                  return; // правильная проверка
+                                                  return;
                                                 }
                                                 ScaffoldMessenger.of(ctx)
                                                     .showSnackBar(
@@ -448,9 +432,8 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                                   'Телефон: ${child.parentPhone}',
                                                   style: const TextStyle(
                                                       color: Colors.blue,
-                                                      decoration:
-                                                          TextDecoration
-                                                              .underline)),
+                                                      decoration: TextDecoration
+                                                          .underline)),
                                             ),
                                           ],
                                         ),
@@ -461,8 +444,8 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue.withAlpha(
-                                                (0.1 * 255).round()),
+                                            color: Colors.blue
+                                                .withAlpha((0.1 * 255).round()),
                                             borderRadius:
                                                 BorderRadius.circular(12),
                                           ),
@@ -487,36 +470,28 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     );
   }
 
-  // Helper method to get child group info
   String _getChildGroupInfo(Child child) {
-   // Use groupName from populated API response first
-   if (child.groupName != null && child.groupName!.isNotEmpty) {
-     return child.groupName!;
-   }
-   
-   // Fallback to groupId if groupName is not available
-   if (child.groupId == null) {
-     return 'Группа не указана';
-   }
+    if (child.groupName != null && child.groupName!.isNotEmpty) {
+      return child.groupName!;
+    }
 
-   // Try to find group in provider
-   final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-   final group = groupsProvider.getGroupById(child.groupId!);
-   if (group != null) {
-     return group.name;
-   }
-   
-   // Last resort - return the ID
-   return child.groupId!;
- }
+    if (child.groupId == null) {
+      return 'Группа не указана';
+    }
 
-  // Helper method to format birthday in the format: day, month (in words), year
+    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
+    final group = groupsProvider.getGroupById(child.groupId!);
+    if (group != null) {
+      return group.name;
+    }
+
+    return child.groupId!;
+  }
+
   String _formatBirthday(String birthdayString) {
     try {
-      // Parse the birthday string to a DateTime object
       DateTime date = DateTime.parse(birthdayString);
 
-      // Define month names in Russian
       const List<String> months = [
         'января',
         'февраля',
@@ -532,16 +507,12 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         'декабря'
       ];
 
-      // Extract day, month, and year
       int day = date.day;
-      int monthIndex =
-          date.month - 1; // month is 1-indexed, but our list is 0-indexed
+      int monthIndex = date.month - 1;
       int year = date.year;
 
-      // Format the string as "day, month (in words), year"
       return '$day ${months[monthIndex]}, $year';
     } catch (e) {
-      // If parsing fails, return the original string
       return birthdayString;
     }
   }

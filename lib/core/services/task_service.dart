@@ -6,7 +6,6 @@ import 'dart:io';
 class TaskService {
   final ApiService _apiService = ApiService();
 
-  // Get all tasks
   Future<List<Task>> getAllTasks(
       {String? assignedTo, String? status, String? category}) async {
     try {
@@ -30,7 +29,6 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
         throw Exception('Ошибка получения задач: Некорректный формат данных');
       }
@@ -38,7 +36,6 @@ class TaskService {
     }
   }
 
-  // Get tasks by user
   Future<List<Task>> getTasksByUser(String userId) async {
     try {
       final response =
@@ -51,15 +48,14 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
-        throw Exception('Ошибка получения задач пользователя: Некорректный формат данных');
+        throw Exception(
+            'Ошибка получения задач пользователя: Некорректный формат данных');
       }
       throw Exception('Ошибка получения задач пользователя: $e');
     }
   }
 
-  // Get overdue tasks
   Future<List<Task>> getOverdueTasks() async {
     try {
       final response = await _apiService.get(ApiConstants.taskListOverdue);
@@ -71,15 +67,14 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
-        throw Exception('Ошибка получения просроченных задач: Некорректный формат данных');
+        throw Exception(
+            'Ошибка получения просроченных задач: Некорректный формат данных');
       }
       throw Exception('Ошибка получения просроченных задач: $e');
     }
   }
 
-  // Get task by ID
   Future<Task> getTaskById(String taskId) async {
     try {
       final response =
@@ -91,7 +86,6 @@ class TaskService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
         throw Exception('Ошибка получения задачи: Некорректный формат данных');
       }
@@ -99,7 +93,6 @@ class TaskService {
     }
   }
 
-  // Create task
   Future<Task> createTask(Task task) async {
     try {
       final response = await _apiService.post(
@@ -111,7 +104,6 @@ class TaskService {
       }
       throw Exception('Ошибка создания задачи');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
         throw Exception('Ошибка создания задачи: Некорректный формат данных');
       }
@@ -119,7 +111,6 @@ class TaskService {
     }
   }
 
-  // Update task
   Future<Task> updateTask(String taskId, Task task) async {
     try {
       final response = await _apiService.put(
@@ -131,7 +122,6 @@ class TaskService {
       }
       throw Exception('Ошибка обновления задачи');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
         throw Exception('Ошибка обновления задачи: Некорректный формат данных');
       }
@@ -139,7 +129,6 @@ class TaskService {
     }
   }
 
-  // Toggle task status
   Future<Task> toggleTaskStatus(String taskId, String userId) async {
     try {
       final response = await _apiService.patch(
@@ -151,15 +140,14 @@ class TaskService {
       }
       throw Exception('Ошибка переключения статуса задачи');
     } catch (e) {
-      // Check if this is a type error related to parsing
       if (e is TypeError || e.toString().contains('type')) {
-        throw Exception('Ошибка переключения статуса задачи: Некорректный формат данных');
+        throw Exception(
+            'Ошибка переключения статуса задачи: Некорректный формат данных');
       }
       throw Exception('Ошибка переключения статуса задачи: $e');
     }
   }
 
-  // Delete task
   Future<bool> deleteTask(String taskId) async {
     try {
       final response =

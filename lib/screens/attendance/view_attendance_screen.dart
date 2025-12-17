@@ -32,26 +32,23 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
       attendanceRecords = await _attendanceService.getAttendanceRecords(date);
     } on Exception catch (e) {
       String errorMessage = e.toString();
-      
-      // Check for specific error messages
+
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для просмотра') ||
-                 errorMessage.contains('unauthorized') ||
-                 errorMessage.contains('403')) {
+          errorMessage.contains('unauthorized') ||
+          errorMessage.contains('403')) {
         errorMessage = 'Нет прав для просмотра посещаемости на эту дату';
       } else if (errorMessage.contains('Дата не указана') ||
-                 errorMessage.contains('date required') ||
-                 errorMessage.contains('invalid date')) {
+          errorMessage.contains('date required') ||
+          errorMessage.contains('invalid date')) {
         errorMessage = 'Некорректная дата для просмотра посещаемости';
       } else if (errorMessage.contains('404')) {
-        // 404 means no attendance records exist for this date, which is not an error
-        // The service should handle this and return an empty list
-        // We'll continue without showing an error message
         attendanceRecords = [];
-        return; // Exit early to avoid setState after dispose
+        return;
       } else {
-        errorMessage = 'Ошибка загрузки посещаемости. Проверьте подключение к интернету';
+        errorMessage =
+            'Ошибка загрузки посещаемости. Проверьте подключение к интернету';
       }
 
       if (mounted) {
@@ -60,8 +57,9 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
         );
       }
     } catch (e) {
-      String errorMessage = 'Ошибка загрузки посещаемости. Проверьте подключение к интернету';
-      
+      String errorMessage =
+          'Ошибка загрузки посещаемости. Проверьте подключение к интернету';
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(errorMessage)),
@@ -146,7 +144,6 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Date selection
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -198,9 +195,7 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 16),
-
                     const Text(
                       'Записи посещаемости',
                       style: TextStyle(
@@ -209,7 +204,6 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                           color: Colors.grey),
                     ),
                     const SizedBox(height: 8),
-
                     Expanded(
                       child: attendanceRecords.isEmpty
                           ? Center(
@@ -220,7 +214,8 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                      color: Colors.grey
+                                          .withAlpha((0.1 * 255).round()),
                                       spreadRadius: 1,
                                       blurRadius: 5,
                                       offset: const Offset(0, 2),
@@ -249,8 +244,9 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                                 final record = attendanceRecords[index];
 
                                 String childName = record.child.fullName;
-                                String childGroup = record.child.groupId is Map 
-                                    ? (record.child.groupId as Map)['name'] ?? 'Группа не указана' 
+                                String childGroup = record.child.groupId is Map
+                                    ? (record.child.groupId as Map)['name'] ??
+                                        'Группа не указана'
                                     : 'Группа не указана';
 
                                 return Container(
@@ -260,7 +256,8 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.grey.withAlpha((0.1 * 255).round()),
+                                        color: Colors.grey
+                                            .withAlpha((0.1 * 255).round()),
                                         spreadRadius: 1,
                                         blurRadius: 5,
                                         offset: const Offset(0, 2),
@@ -286,8 +283,10 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                                               ),
                                             ),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8, vertical: 4),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4),
                                               decoration: BoxDecoration(
                                                 color: _getStatusColor(
                                                     record.status),
@@ -306,8 +305,8 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
                                         const SizedBox(height: 4),
                                         Text(
                                           childGroup,
-                                          style:
-                                              TextStyle(color: Colors.grey[600]),
+                                          style: TextStyle(
+                                              color: Colors.grey[600]),
                                         ),
                                       ],
                                     ),

@@ -2,16 +2,16 @@ import 'dart:convert';
 
 class Attendance {
   final String id;
-  final String userId; // For backward compatibility
-  final String? childId; // Primary field for child attendance (matches backend)
-  final String groupId; // Added groupId
+  final String userId;
+  final String? childId;
+  final String groupId;
   final String date;
   final String checkIn;
   final String? checkOut;
-  final String status; // 'present' | 'absent' | 'late' | 'early_departure'
+  final String status;
   final String? notes;
-  final String? markedBy; // Added markedBy field
- final String? createdAt;
+  final String? markedBy;
+  final String? createdAt;
   final String? updatedAt;
 
   Attendance({
@@ -24,14 +24,12 @@ class Attendance {
     this.checkOut,
     required this.status,
     this.notes,
-    this.markedBy, // Added markedBy parameter
+    this.markedBy,
     this.createdAt,
     this.updatedAt,
   });
 
-  // Convert from JSON
   factory Attendance.fromJson(Map<String, dynamic> json) {
-    // Handle childId - it can be a string or an object with _id
     String? parsedChildId;
     if (json['childId'] != null) {
       if (json['childId'] is String) {
@@ -42,8 +40,7 @@ class Attendance {
         parsedChildId = json['childId']['id'].toString();
       }
     }
-    
-    // Handle userId for backward compatibility
+
     String? parsedUserId;
     if (json['userId'] != null) {
       if (json['userId'] is String) {
@@ -52,34 +49,40 @@ class Attendance {
         parsedUserId = json['userId']['_id'].toString();
       }
     }
-    
-    // Handle date - can be ISO string or Date object
+
     String parsedDate = '';
     if (json['date'] != null) {
       if (json['date'] is String) {
-        parsedDate = json['date'].split('T')[0]; // Extract YYYY-MM-DD from ISO string
+        parsedDate = json['date'].split('T')[0];
       } else {
         parsedDate = json['date'].toString();
       }
     }
-    
+
     return Attendance(
       id: json['_id'] ?? json['id'] ?? '',
       userId: parsedUserId ?? parsedChildId ?? '',
       childId: parsedChildId ?? parsedUserId,
-      groupId: json['groupId']?.toString() ?? (json['groupId'] is Map ? (json['groupId']['_id'] ?? json['groupId']['id'])?.toString() : '') ?? '',
+      groupId: json['groupId']?.toString() ??
+          (json['groupId'] is Map
+              ? (json['groupId']['_id'] ?? json['groupId']['id'])?.toString()
+              : '') ??
+          '',
       date: parsedDate,
-      checkIn: json['checkIn']?.toString() ?? json['actualStart']?.toString() ?? '',
+      checkIn:
+          json['checkIn']?.toString() ?? json['actualStart']?.toString() ?? '',
       checkOut: json['checkOut']?.toString() ?? json['actualEnd']?.toString(),
       status: json['status'] ?? 'absent',
       notes: json['notes'],
-      markedBy: json['markedBy']?.toString() ?? (json['markedBy'] is Map ? (json['markedBy']['_id'] ?? json['markedBy']['id'])?.toString() : null),
+      markedBy: json['markedBy']?.toString() ??
+          (json['markedBy'] is Map
+              ? (json['markedBy']['_id'] ?? json['markedBy']['id'])?.toString()
+              : null),
       createdAt: json['createdAt']?.toString(),
       updatedAt: json['updatedAt']?.toString(),
     );
   }
 
- // Convert to JSON
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{
       '_id': id,
@@ -87,31 +90,29 @@ class Attendance {
       'date': date,
       'status': status,
     };
-    
-    // Use childId if available, otherwise userId (for backward compatibility)
+
     if (childId != null && childId!.isNotEmpty) {
       json['childId'] = childId;
     } else if (userId.isNotEmpty) {
       json['childId'] = userId;
     }
-    
-    // Add optional fields
+
     if (checkIn.isNotEmpty) json['checkIn'] = checkIn;
     if (checkOut != null && checkOut!.isNotEmpty) json['checkOut'] = checkOut;
     if (notes != null && notes!.isNotEmpty) json['notes'] = notes;
-    if (markedBy != null && markedBy!.isNotEmpty) json['markedBy'] = markedBy; // Added markedBy
-    if (createdAt != null && createdAt!.isNotEmpty) json['createdAt'] = createdAt;
-    if (updatedAt != null && updatedAt!.isNotEmpty) json['updatedAt'] = updatedAt;
-    
+    if (markedBy != null && markedBy!.isNotEmpty) json['markedBy'] = markedBy;
+    if (createdAt != null && createdAt!.isNotEmpty)
+      json['createdAt'] = createdAt;
+    if (updatedAt != null && updatedAt!.isNotEmpty)
+      json['updatedAt'] = updatedAt;
+
     return json;
   }
 
-  // Convert to JSON string
   String toJsonString() {
     return jsonEncode(toJson());
   }
 
- // Convert from JSON string
   factory Attendance.fromJsonString(String jsonString) {
     try {
       final Map<String, dynamic> json = jsonDecode(jsonString);
@@ -121,34 +122,33 @@ class Attendance {
     }
   }
 
-  // Copy with method for updates
-   Attendance copyWith({
-     String? id,
-     String? userId,
-     String? childId,
-     String? groupId,
-     String? date,
-     String? checkIn,
-     String? checkOut,
-     String? status,
-     String? notes,
-     String? markedBy, // Added markedBy parameter
-     String? createdAt,
-     String? updatedAt,
-   }) {
-     return Attendance(
-       id: id ?? this.id,
-       userId: userId ?? this.userId,
-       childId: childId ?? this.childId,
-       groupId: groupId ?? this.groupId,
-       date: date ?? this.date,
-       checkIn: checkIn ?? this.checkIn,
-       checkOut: checkOut ?? this.checkOut,
-       status: status ?? this.status,
-       notes: notes ?? this.notes,
-       markedBy: markedBy ?? this.markedBy, // Added markedBy field
-       createdAt: createdAt ?? this.createdAt,
-       updatedAt: updatedAt ?? this.updatedAt,
-     );
-   }
+  Attendance copyWith({
+    String? id,
+    String? userId,
+    String? childId,
+    String? groupId,
+    String? date,
+    String? checkIn,
+    String? checkOut,
+    String? status,
+    String? notes,
+    String? markedBy,
+    String? createdAt,
+    String? updatedAt,
+  }) {
+    return Attendance(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      childId: childId ?? this.childId,
+      groupId: groupId ?? this.groupId,
+      date: date ?? this.date,
+      checkIn: checkIn ?? this.checkIn,
+      checkOut: checkOut ?? this.checkOut,
+      status: status ?? this.status,
+      notes: notes ?? this.notes,
+      markedBy: markedBy ?? this.markedBy,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 }

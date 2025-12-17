@@ -20,7 +20,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
   void initState() {
     super.initState();
     initializeDateFormatting('ru', null);
-    // Load payroll data on init
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PayrollProvider>().loadMyPayroll();
     });
@@ -61,26 +61,19 @@ class _SalaryScreenState extends State<SalaryScreen> {
               padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  // Month Selector
                   _buildMonthSelector(context, provider),
                   const SizedBox(height: 20),
-
                   if (provider.currentPayroll == null)
                     const Center(child: Text('Нет данных за выбранный период'))
                   else ...[
-                    // Total Card
                     _buildTotalCard(context, provider.currentPayroll!.total),
                     const SizedBox(height: 20),
-                    // Details Grid
                     _buildDetailsGrid(context, provider),
                     const SizedBox(height: 20),
-                    // Fines Section if any
                     if (provider.currentPayroll!.fines.isNotEmpty)
                       _buildFinesSection(
                           context, provider.currentPayroll!.fines),
-
                     const SizedBox(height: 20),
-                    // Shift Details Section
                     if (provider.currentPayroll!.shiftDetails.isNotEmpty)
                       _buildShiftDetailsSection(
                           context, provider.currentPayroll!.shiftDetails),
@@ -155,9 +148,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
       children: [
         Row(
           children: [
-            Expanded(
-                child: _buildInfoCard('Оклад', p.baseSalary,
-                    Colors.blue)), // Using baseSalary for Oklad
+            Expanded(child: _buildInfoCard('Оклад', p.baseSalary, Colors.blue)),
             const SizedBox(width: 16),
             Expanded(child: _buildInfoCard('Бонусы', p.bonuses, Colors.orange)),
           ],
@@ -167,7 +158,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
           children: [
             Expanded(child: _buildInfoCard('Аванс', p.advance, Colors.purple)),
             const SizedBox(width: 16),
-            Expanded(child: _buildInfoCard('Штрафы', p.penalties, Colors.red)),
+            Expanded(child: _buildInfoCard('Вычеты', p.penalties, Colors.red)),
           ],
         ),
         const SizedBox(height: 16),
@@ -219,7 +210,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
               children: [
                 const Icon(Icons.warning_amber_rounded, color: Colors.red),
                 const SizedBox(width: 8),
-                Text('Детализация штрафов',
+                Text('Детализация Вычетов',
                     style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
@@ -232,7 +223,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
             else
               ...fines.map((fine) => ListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text(fine.reason.isNotEmpty ? fine.reason : 'Штраф'),
+                    title: Text(fine.reason.isNotEmpty ? fine.reason : 'Вычет'),
                     subtitle: Text(DateFormat('dd.MM.yyyy HH:mm')
                         .format(fine.date.add(const Duration(hours: 5)))),
                     trailing: Text(
@@ -292,7 +283,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                           children: [
                             if (detail.fines > 0)
                               Text(
-                                  'Штраф: -${currencyFormat.format(detail.fines)}',
+                                  'Вычет: -${currencyFormat.format(detail.fines)}',
                                   style: const TextStyle(
                                       fontSize: 12, color: Colors.red)),
                             Text(currencyFormat.format(detail.net),

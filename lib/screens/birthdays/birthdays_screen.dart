@@ -29,9 +29,8 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
       final childrenService = ChildrenService();
 
-      // Для всех сотрудников загружаем всех детей с днями рождения (без фильтрации по группам)
       List<Child> allChildren = await childrenService.getAllChildren();
-      
+
       if (mounted) {
         setState(() {
           _upcomingBirthdays = _filterAndSortBirthdays(allChildren);
@@ -40,7 +39,6 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     } on Exception catch (e) {
       String errorMessage = e.toString();
 
-      // Check for specific error messages
       if (errorMessage.contains('Нет подключения к интернету')) {
         errorMessage = 'Нет подключения к интернету';
       } else if (errorMessage.contains('Нет прав для просмотра') ||
@@ -82,11 +80,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
   List<Child> _filterAndSortBirthdays(List<Child> children) {
     final now = DateTime.now();
 
-    // Фильтруем детей с датами рождения
     List<Child> childrenWithBirthdays =
         children.where((child) => child.birthday != null).toList();
 
-    // Сортируем по ближайшим дням рождения
     childrenWithBirthdays.sort((child1, child2) {
       DateTime? date1 = _getNextBirthdayDate(child1.birthday, now);
       DateTime? date2 = _getNextBirthdayDate(child2.birthday, now);
@@ -106,11 +102,9 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     try {
       DateTime birthday = DateTime.parse(birthdayString);
 
-      // Создаем дату дня рождения в текущем году
       DateTime birthdayThisYear =
           DateTime(currentDate.year, birthday.month, birthday.day);
 
-      // Если день рождения уже прошел в этом году, берем следующий год
       if (birthdayThisYear.isBefore(currentDate)) {
         birthdayThisYear =
             DateTime(currentDate.year + 1, birthday.month, birthday.day);
@@ -144,16 +138,16 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
     return '$day ${months[monthIndex]}, $year';
   }
- 
+
   int? _calculateAge(String? birthdayString, DateTime currentDate) {
     if (birthdayString == null) return null;
-    
+
     try {
       DateTime birthday = DateTime.parse(birthdayString);
-      DateTime? nextBirthday = _getNextBirthdayDate(birthdayString, currentDate);
-      
+      DateTime? nextBirthday =
+          _getNextBirthdayDate(birthdayString, currentDate);
+
       if (nextBirthday != null) {
-        // Calculate age based on the next birthday
         int years = nextBirthday.year - birthday.year;
         return years;
       }
@@ -162,17 +156,18 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       return null;
     }
   }
- 
+
   String _getAgeSuffix(int age) {
     if (age % 10 == 1 && age % 100 != 11) {
       return 'год';
-    } else if ((age % 10 >= 2 && age % 10 <= 4) && (age % 100 < 10 || age % 100 >= 20)) {
+    } else if ((age % 10 >= 2 && age % 10 <= 4) &&
+        (age % 100 < 10 || age % 100 >= 20)) {
       return 'года';
     } else {
       return 'лет';
     }
   }
- 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -317,20 +312,15 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
     );
   }
 
-  // Helper method to get child group info
   String _getChildGroupInfo(Child child) {
-    // Use groupName from populated API response first
     if (child.groupName != null && child.groupName!.isNotEmpty) {
       return 'Группа: ${child.groupName}';
     }
-    
-    // Fallback when groupName is not available
+
     if (child.groupId == null) {
       return 'Группа не указана';
     }
 
-    // Return groupId as fallback
     return 'Группа: ${child.groupId}';
   }
 }
-
