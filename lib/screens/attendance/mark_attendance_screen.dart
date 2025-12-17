@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/utils/logger.dart';
 import '../../../models/child_model.dart';
 import '../../../models/attendance_model.dart';
 import '../../../core/services/children_service.dart';
@@ -45,11 +46,11 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       await groupsProvider.loadGroups();
       final allGroups = groupsProvider.groups;
 
-      print('MarkAttendanceScreen | Loaded ${allGroups.length} groups');
-      print('MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
-      print('MarkAttendanceScreen | Current user role: ${currentUser?.role}');
+      AppLogger.info('MarkAttendanceScreen | Loaded ${allGroups.length} groups');
+      AppLogger.debug('MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
+      AppLogger.debug('MarkAttendanceScreen | Current user role: ${currentUser?.role}');
       for (var group in allGroups) {
-        print(
+        AppLogger.debug(
             'MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
 
@@ -59,10 +60,10 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
         final teacherGroups = allGroups
             .where((group) => group.teacher == currentUser.id)
             .toList();
-        print(
+        AppLogger.info(
             'MarkAttendanceScreen | Teacher groups found: ${teacherGroups.length}');
         for (var group in teacherGroups) {
-          print('MarkAttendanceScreen | Teacher group: ${group.name}');
+          AppLogger.debug('MarkAttendanceScreen | Teacher group: ${group.name}');
         }
 
         if (teacherGroups.isNotEmpty) {
@@ -70,12 +71,12 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
           for (var group in teacherGroups) {
             List<Child> childrenInGroup =
                 await _childrenService.getChildrenByGroupId(group.id);
-            print(
+            AppLogger.info(
                 'MarkAttendanceScreen | Children in group ${group.name}: ${childrenInGroup.length}');
             teacherChildren.addAll(childrenInGroup);
           }
           fetchedChildren = teacherChildren;
-          print(
+          AppLogger.info(
               'MarkAttendanceScreen | Total children for teacher: ${fetchedChildren.length}');
         } else {
           fetchedChildren = [];
@@ -150,7 +151,9 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
           return attendanceRecord.status == 'present';
         });
       });
-    } catch (e) {}
+    } catch (e) {
+      // Игнорируем ошибки при обновлении локального состояния посещаемости
+    }
   }
 
   Future<void> _markAttendance() async {

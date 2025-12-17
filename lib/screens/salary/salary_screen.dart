@@ -7,7 +7,7 @@ import '../../models/fine_model.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 class SalaryScreen extends StatefulWidget {
-  const SalaryScreen({Key? key}) : super(key: key);
+  const SalaryScreen({super.key});
 
   @override
   State<SalaryScreen> createState() => _SalaryScreenState();

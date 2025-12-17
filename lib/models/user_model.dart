@@ -48,12 +48,9 @@ class User {
         middleName = nameParts.sublist(2).join(' ');
       }
     } else {
-      firstName:
-      (json['firstName'] ?? '').toString();
-      lastName:
-      (json['lastName'] ?? '').toString();
-      middleName:
-      json['middleName']?.toString();
+      firstName = (json['firstName'] ?? '').toString();
+      lastName = (json['lastName'] ?? '').toString();
+      middleName = json['middleName']?.toString();
     }
 
     return User(

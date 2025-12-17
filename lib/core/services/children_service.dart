@@ -1,6 +1,7 @@
 import '../constants/api_constants.dart';
 import '../../models/child_model.dart';
 import 'api_service.dart';
+import '../utils/logger.dart';
 import 'dart:io';
 
 class ChildrenService {
@@ -59,19 +60,19 @@ class ChildrenService {
   Future<List<Child>> getChildrenByGroupId(String groupId) async {
     try {
       final url = ApiConstants.childrenByGroup(groupId);
-      print('ChildrenService | GET $url');
+      AppLogger.debug('ChildrenService | GET $url');
       final response = await _apiService.get(url);
-      print('ChildrenService | Status: ${response.statusCode}');
+      AppLogger.debug('ChildrenService | Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final dynamic data = response.data;
-        print('ChildrenService | Data type: ${data.runtimeType}');
+        AppLogger.debug('ChildrenService | Data type: ${data.runtimeType}');
         if (data is List) {
           final children = data
               .where((json) =>
                   json is Map<String, dynamic> && json['fullName'] != null)
               .map((json) => Child.fromJson(json as Map<String, dynamic>))
               .toList();
-          print('ChildrenService | Parsed ${children.length} children');
+          AppLogger.debug('ChildrenService | Parsed ${children.length} children');
           return children;
         } else if (data is Map) {
           final dynamic childrenList = data['children'] ?? data['data'];
@@ -81,20 +82,20 @@ class ChildrenService {
                     json is Map<String, dynamic> && json['fullName'] != null)
                 .map((json) => Child.fromJson(json as Map<String, dynamic>))
                 .toList();
-            print(
+            AppLogger.debug(
                 'ChildrenService | Parsed ${children.length} children from wrapper');
             return children;
           }
         }
         return [];
       } else {
-        print('ChildrenService | Error status: ${response.statusCode}');
+        AppLogger.debug('ChildrenService | Error status: ${response.statusCode}');
         return [];
       }
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      print('ChildrenService | Exception: $e');
+      AppLogger.error('ChildrenService | Exception: $e');
       throw Exception('Ошибка получения данных: $e');
     }
   }

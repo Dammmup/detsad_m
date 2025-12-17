@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/services/payroll_service.dart';
 import '../models/payroll_model.dart';
+import '../core/utils/logger.dart';
 import 'package:intl/intl.dart';
 
 class PayrollProvider with ChangeNotifier {
@@ -39,7 +40,7 @@ class PayrollProvider with ChangeNotifier {
                 .getPayrollWithShiftDetails(_currentPayroll!.id!);
             _currentPayroll = detailedPayroll;
           } catch (e) {
-            print('Could not load shift details: $e');
+            AppLogger.warning('Could not load shift details: $e');
           }
         }
       } else {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/child_model.dart';
 import '../core/services/children_service.dart';
+import '../core/utils/logger.dart';
 import '../screens/birthdays/birthdays_screen.dart';
 
 class BirthdaysWidget extends StatefulWidget {
@@ -32,14 +33,14 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
       final childrenService = ChildrenService();
 
       List<Child> allChildren = await childrenService.getAllChildren();
-      print('BirthdaysWidget | Children loaded: ${allChildren.length}');
+      AppLogger.debug('BirthdaysWidget | Children loaded: ${allChildren.length}');
 
       if (mounted) {
         Child? nextChild = _getNextBirthdayChild(allChildren);
         String? groupName;
 
         if (nextChild != null) {
-          print(
+          AppLogger.debug(
               'BirthdaysWidget | Next birthday: ${nextChild.fullName}, groupId=${nextChild.groupId}, groupName=${nextChild.groupName}');
           groupName = nextChild.groupName;
         }

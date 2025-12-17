@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/shifts_service.dart';
+import '../../core/utils/logger.dart';
 
 class StaffScheduleScreen extends StatefulWidget {
   const StaffScheduleScreen({super.key});
@@ -481,7 +482,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
 
   List<dynamic> _combineShiftAndAttendanceData(
       List<dynamic> scheduledShifts, List<dynamic> attendanceRecords) {
-    print(
+    AppLogger.info(
         'StaffScheduleScreen | Combining ${scheduledShifts.length} shifts with ${attendanceRecords.length} attendance records');
 
     Map<String, dynamic> attendanceMap = {};
@@ -496,7 +497,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         continue;
       }
       attendanceMap[dateStr] = record;
-      print(
+      AppLogger.debug(
           'StaffScheduleScreen | Attendance map: $dateStr -> actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
     }
 
@@ -524,7 +525,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         String? actualEndTime =
             _formatISOToTimeString(attendanceRecord['actualEnd']);
 
-        print(
+        AppLogger.debug(
             'StaffScheduleScreen | Shift $shiftDateStr: actualStart=$actualStartTime, actualEnd=$actualEndTime');
 
         combinedShift['actualStartTime'] = actualStartTime;
@@ -579,7 +580,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         return DateFormat('HH:mm').format(isoDateTime);
       }
     } catch (e) {
-      print('StaffScheduleScreen | Error formatting time: $e');
+      AppLogger.warning('StaffScheduleScreen | Error formatting time: $e');
     }
 
     return isoDateTime.toString();

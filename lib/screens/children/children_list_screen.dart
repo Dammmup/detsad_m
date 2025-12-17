@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import '../../../core/utils/logger.dart';
 import '../../../models/child_model.dart';
 import '../../../models/user_model.dart';
 import '../../../core/services/children_service.dart';
@@ -42,11 +43,11 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       if (!ctx.mounted) return;
       final allGroups = groupsProvider.groups;
 
-      print('ChildrenListScreen | Loaded ${allGroups.length} groups');
-      print('ChildrenListScreen | Current user ID: ${currentUser?.id}');
-      print('ChildrenListScreen | Current user role: ${currentUser?.role}');
+      AppLogger.info('ChildrenListScreen | Loaded ${allGroups.length} groups');
+      AppLogger.debug('ChildrenListScreen | Current user ID: ${currentUser?.id}');
+      AppLogger.debug('ChildrenListScreen | Current user role: ${currentUser?.role}');
       for (var group in allGroups) {
-        print(
+        AppLogger.debug(
             'ChildrenListScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
 
@@ -65,10 +66,10 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         final teacherGroups = allGroups
             .where((group) => group.teacher == currentUser.id)
             .toList();
-        print(
+        AppLogger.info(
             'ChildrenListScreen | Teacher groups found: ${teacherGroups.length}');
         for (var group in teacherGroups) {
-          print('ChildrenListScreen | Teacher group: ${group.name}');
+          AppLogger.debug('ChildrenListScreen | Teacher group: ${group.name}');
         }
         List<Child> teacherChildren = [];
 
@@ -76,7 +77,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
           for (var group in teacherGroups) {
             List<Child> childrenInGroup =
                 await _childrenService.getChildrenByGroupId(group.id);
-            print(
+            AppLogger.info(
                 'ChildrenListScreen | Children in group ${group.name}: ${childrenInGroup.length}');
             teacherChildren.addAll(childrenInGroup);
           }
@@ -85,7 +86,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         }
 
         children = teacherChildren;
-        print(
+        AppLogger.info(
             'ChildrenListScreen | Total children for teacher: ${children.length}');
       } else {
         children = await _childrenService.getAllChildren();

@@ -1,5 +1,6 @@
 import '../constants/api_constants.dart';
 import 'api_service.dart';
+import '../utils/logger.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
 
@@ -17,11 +18,15 @@ class ShiftsService {
       if (staffId != null && staffId.isNotEmpty) {
         queryParams.add('staffId=$staffId');
       }
-      if (startDate != null && startDate.isNotEmpty)
+      if (startDate != null && startDate.isNotEmpty) {
         queryParams.add('startDate=$startDate');
-      if (endDate != null && endDate.isNotEmpty)
+      }
+      if (endDate != null && endDate.isNotEmpty) {
         queryParams.add('endDate=$endDate');
-      if (date != null && date.isNotEmpty) queryParams.add('date=$date');
+      }
+      if (date != null && date.isNotEmpty) {
+        queryParams.add('date=$date');
+      }
 
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
@@ -68,24 +73,28 @@ class ShiftsService {
       if (staffId != null && staffId.isNotEmpty) {
         queryParams.add('staffId=$staffId');
       }
-      if (startDate != null && startDate.isNotEmpty)
+      if (startDate != null && startDate.isNotEmpty) {
         queryParams.add('startDate=$startDate');
-      if (endDate != null && endDate.isNotEmpty)
+      }
+      if (endDate != null && endDate.isNotEmpty) {
         queryParams.add('endDate=$endDate');
-      if (date != null && date.isNotEmpty) queryParams.add('date=$date');
+      }
+      if (date != null && date.isNotEmpty) {
+        queryParams.add('date=$date');
+      }
 
       if (queryParams.isNotEmpty) {
         url += '?${queryParams.join('&')}';
       }
 
-      print('ShiftsService | GET $url');
+      AppLogger.debug('ShiftsService | GET $url');
       final response = await _apiService.get(url);
-      print(
+      AppLogger.debug(
           'ShiftsService | attendance tracking status: ${response.statusCode}');
 
       if (response.statusCode == 200) {
         final dynamic data = response.data;
-        print('ShiftsService | attendance data type: ${data.runtimeType}');
+        AppLogger.debug('ShiftsService | attendance data type: ${data.runtimeType}');
 
         List<dynamic> records = [];
         if (data is List) {
@@ -98,9 +107,9 @@ class ShiftsService {
           }
         }
 
-        print('ShiftsService | attendance records count: ${records.length}');
+        AppLogger.debug('ShiftsService | attendance records count: ${records.length}');
         for (var record in records) {
-          print(
+          AppLogger.debug(
               'ShiftsService | record: date=${record['date']}, actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
         }
         return records;
@@ -117,7 +126,7 @@ class ShiftsService {
       }
       throw Exception('Ошибка получения данных: ${e.message}');
     } catch (e) {
-      print('ShiftsService | Exception: $e');
+      AppLogger.error('ShiftsService | Exception: $e');
       throw Exception('Ошибка получения данных: $e');
     }
   }

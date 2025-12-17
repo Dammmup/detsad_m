@@ -82,7 +82,9 @@ class AttendanceService {
           if (child != null) {
             childrenList.add(child);
           }
-        } catch (e) {}
+        } catch (e) {
+          // Игнорируем ошибки при получении отдельного ребенка
+        }
       }
 
       final childrenMap = {for (var child in childrenList) child.id: child};

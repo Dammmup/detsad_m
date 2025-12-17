@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/notification_service.dart';
+import 'core/utils/logger.dart';
 import 'providers/auth_provider.dart';
 import 'providers/children_provider.dart';
 import 'providers/attendance_provider.dart';
@@ -24,6 +25,8 @@ void main() async {
   await StorageService().init();
 
   await NotificationService().init();
+  
+  AppLogger.init();
 
   runApp(const MyApp());
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/services/groups_service.dart';
 import '../models/group_model.dart';
+import '../core/utils/logger.dart';
 
 class GroupsProvider with ChangeNotifier {
   final GroupsService _groupsService = GroupsService();
@@ -22,15 +23,15 @@ class GroupsProvider with ChangeNotifier {
 
     try {
       _groups = await _groupsService.getAllGroups();
-      print('GroupsProvider | Loaded ${_groups.length} groups');
+      AppLogger.info('GroupsProvider | Loaded ${_groups.length} groups');
       for (var group in _groups) {
-        print(
+        AppLogger.debug(
             'GroupsProvider | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
       }
       _errorMessage = null;
       _hasLoaded = true;
     } catch (e) {
-      print('GroupsProvider | Error loading groups: $e');
+      AppLogger.error('GroupsProvider | Error loading groups: $e');
       _errorMessage = e.toString();
     } finally {
       _isLoading = false;

@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 class ApiConstants {
   static String get baseUrl {
     if (kIsWeb) {
-      return 'https://mr7xwbv4-8080.euw.devtunnels.ms/';
+      return 'https://detsad-b.vercel.app//';
     } else {
       // Для локальной разработки на мобильном устройстве используем localhost
       // Если вы тестируете на физическом устройстве, замените на IP-адрес компьютера
-      return 'https://mr7xwbv4-8080.euw.devtunnels.ms';
+      return 'https://detsad-b.vercel.app/';
       // return 'http://10.0.2.2:8080'; // Для эмулятора Android
     }
   }

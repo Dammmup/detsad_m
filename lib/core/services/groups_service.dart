@@ -1,6 +1,7 @@
 import '../constants/api_constants.dart';
 import '../../models/group_model.dart';
 import 'api_service.dart';
+import '../utils/logger.dart';
 import 'dart:io';
 
 class GroupsService {
@@ -9,13 +10,13 @@ class GroupsService {
   Future<List<Group>> getAllGroups() async {
     try {
       final response = await _apiService.get(ApiConstants.groups);
-      print(
+      AppLogger.debug(
           'GroupsService | GET ${ApiConstants.groups} | Status: ${response.statusCode}');
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
-        print('GroupsService | Received ${data.length} groups');
+        AppLogger.debug('GroupsService | Received ${data.length} groups');
         for (var json in data) {
-          print(
+          AppLogger.debug(
               'GroupsService | Raw group JSON: name=${json['name']}, teacherId=${json['teacherId']}, teacher=${json['teacher']}');
         }
         return data.map((json) => Group.fromJson(json)).toList();
@@ -24,7 +25,7 @@ class GroupsService {
     } on SocketException {
       throw Exception('Нет подключения к интернету');
     } catch (e) {
-      print('GroupsService | Error: $e');
+      AppLogger.error('GroupsService | Error: $e');
       throw Exception('Ошибка получения данных: $e');
     }
   }

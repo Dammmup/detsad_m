@@ -101,10 +101,12 @@ class Attendance {
     if (checkOut != null && checkOut!.isNotEmpty) json['checkOut'] = checkOut;
     if (notes != null && notes!.isNotEmpty) json['notes'] = notes;
     if (markedBy != null && markedBy!.isNotEmpty) json['markedBy'] = markedBy;
-    if (createdAt != null && createdAt!.isNotEmpty)
+    if (createdAt != null && createdAt!.isNotEmpty) {
       json['createdAt'] = createdAt;
-    if (updatedAt != null && updatedAt!.isNotEmpty)
+    }
+    if (updatedAt != null && updatedAt!.isNotEmpty) {
       json['updatedAt'] = updatedAt;
+    }
 
     return json;
   }
