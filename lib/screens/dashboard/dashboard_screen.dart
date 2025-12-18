@@ -207,6 +207,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
+                  const TasksWidget(),
+                  const SizedBox(height: 24),
                   const GeolocationStatusWidget(),
                   const SizedBox(height: 16),
                   if (isStaff) ...[
@@ -373,7 +375,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   const SizedBox(height: 16),
                   const BirthdaysWidget(),
                   const SizedBox(height: 16),
-                  const TasksWidget(),
                   const SizedBox(height: 16),
                 ],
               ),
