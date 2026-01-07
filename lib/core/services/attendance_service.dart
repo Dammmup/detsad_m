@@ -11,7 +11,7 @@ class AttendanceService {
 
   Future<List<Attendance>> getAllAttendance() async {
     try {
-      final response = await _apiService.get(ApiConstants.attendanceEntries);
+      final response = await _apiService.get(ApiConstants.childAttendance);
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
         return data.map((json) => Attendance.fromJson(json)).toList();
@@ -27,7 +27,7 @@ class AttendanceService {
   Future<List<Attendance>> getAttendanceByUserId(String userId) async {
     try {
       final response = await _apiService.get(
-        '${ApiConstants.attendanceEntries}?userId=$userId',
+        '${ApiConstants.childAttendance}?childId=$userId',
       );
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;
@@ -223,7 +223,7 @@ class AttendanceService {
   Future<Attendance> updateAttendance(String id, Attendance attendance) async {
     try {
       final response = await _apiService.put(
-        '${ApiConstants.attendanceEntries}/$id',
+        '${ApiConstants.childAttendance}/$id',
         data: attendance.toJson(),
       );
       if (response.statusCode == 200) {
@@ -248,7 +248,7 @@ class AttendanceService {
   Future<bool> deleteAttendance(String id) async {
     try {
       final response =
-          await _apiService.delete('${ApiConstants.attendanceEntries}/$id');
+          await _apiService.delete('${ApiConstants.childAttendance}/$id');
       return response.statusCode == 200 || response.statusCode == 204;
     } catch (e) {
       return false;

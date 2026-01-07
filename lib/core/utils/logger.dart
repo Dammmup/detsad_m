@@ -7,9 +7,12 @@ class AppLogger {
     // Настройка уровня логирования
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
-      // Выводим сообщения только если это не продакшн
-      // В продакшене можно отключить или отправлять в удаленный сервис
-      _logger.info('${record.level.name}: ${record.time}: ${record.loggerName}: ${record.message}');
+      // Использовать print для предотвращения рекурсии
+      // Пропускаем логи от самого DetsadApp, чтобы не зацикливаться
+      if (record.loggerName != 'DetsadApp') {
+        _logger.fine(
+            '${record.level.name}: ${record.time}: ${record.loggerName}: ${record.message}');
+      }
     });
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
 import '../core/services/payroll_service.dart';
 import '../models/payroll_model.dart';
 import '../core/utils/logger.dart';
@@ -11,7 +12,7 @@ class PayrollProvider with ChangeNotifier {
   Payroll? _currentPayroll;
   bool _isLoading = false;
   String? _errorMessage;
-  DateTime _currentDate = DateTime.now();
+  DateTime _currentDate = tz.TZDateTime.now(tz.getLocation('Asia/Almaty'));
 
   List<Payroll> get payrolls => _payrolls;
   Payroll? get currentPayroll => _currentPayroll;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:timezone/timezone.dart' as tz;
 import '../core/services/shifts_service.dart';
 import 'geolocation_provider.dart';
 
@@ -34,7 +35,9 @@ class ShiftsProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      String today = DateTime.now().toIso8601String().split('T')[0];
+      final almaty = tz.getLocation('Asia/Almaty');
+      final nowAlmaty = tz.TZDateTime.now(almaty);
+      String today = nowAlmaty.toIso8601String().split('T')[0];
 
       List<dynamic> shifts = await _shiftsService.getStaffShifts(
         staffId: userId,
@@ -128,17 +131,6 @@ class ShiftsProvider with ChangeNotifier {
     try {
       double? latitude;
       double? longitude;
-      String? status;
-
-      final now = DateTime.now();
-      final currentHour = now.hour;
-      final currentMinute = now.minute;
-
-      if (currentHour == 7 || (currentHour == 8 && currentMinute == 0)) {
-        status = 'on_time';
-      } else {
-        status = 'late';
-      }
 
       if (_geolocationProvider != null && _geolocationProvider!.enabled) {
         if (_geolocationProvider!.isLocationTemporarilyUnavailable) {
@@ -171,8 +163,9 @@ class ShiftsProvider with ChangeNotifier {
       }
 
       if (_shiftId != null) {
+        // Backend handles status (late/on_time) based on actual shift settings
         await _shiftsService.checkIn(_shiftId!,
-            latitude: latitude, longitude: longitude, status: status);
+            latitude: latitude, longitude: longitude);
 
         await fetchShiftStatus(userId);
         _errorMessage = null;
@@ -198,9 +191,6 @@ class ShiftsProvider with ChangeNotifier {
     try {
       double? latitude;
       double? longitude;
-      String? status;
-
-      status = 'on_time';
 
       if (_geolocationProvider != null && _geolocationProvider!.enabled) {
         if (_geolocationProvider!.isLocationTemporarilyUnavailable) {
@@ -234,7 +224,7 @@ class ShiftsProvider with ChangeNotifier {
 
       if (_shiftId != null) {
         await _shiftsService.checkOut(_shiftId!,
-            latitude: latitude, longitude: longitude, status: status);
+            latitude: latitude, longitude: longitude);
 
         await fetchShiftStatus(userId);
         _errorMessage = null;
