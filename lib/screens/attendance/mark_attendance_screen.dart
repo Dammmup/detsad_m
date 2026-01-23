@@ -46,9 +46,12 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       await groupsProvider.loadGroups();
       final allGroups = groupsProvider.groups;
 
-      AppLogger.info('MarkAttendanceScreen | Loaded ${allGroups.length} groups');
-      AppLogger.debug('MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
-      AppLogger.debug('MarkAttendanceScreen | Current user role: ${currentUser?.role}');
+      AppLogger.info(
+          'MarkAttendanceScreen | Loaded ${allGroups.length} groups');
+      AppLogger.debug(
+          'MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
+      AppLogger.debug(
+          'MarkAttendanceScreen | Current user role: ${currentUser?.role}');
       for (var group in allGroups) {
         AppLogger.debug(
             'MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
@@ -56,14 +59,20 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
       List<Child> fetchedChildren;
       if (currentUser != null &&
-          (currentUser.role == 'teacher' || currentUser.role == 'substitute')) {
-        final teacherGroups = allGroups
-            .where((group) => group.teacher == currentUser.id)
-            .toList();
+          (currentUser.role == 'teacher' ||
+              currentUser.role == 'assistant' ||
+              currentUser.role == 'substitute')) {
+        final teacherGroups = allGroups.where((group) {
+          final isTeacher = group.teacher == currentUser.id ||
+              group.teacherId == currentUser.id;
+          final isAssistant = group.assistantId == currentUser.id;
+          return isTeacher || isAssistant;
+        }).toList();
         AppLogger.info(
-            'MarkAttendanceScreen | Teacher groups found: ${teacherGroups.length}');
+            'MarkAttendanceScreen | Teacher/Assistant groups found: ${teacherGroups.length}');
         for (var group in teacherGroups) {
-          AppLogger.debug('MarkAttendanceScreen | Teacher group: ${group.name}');
+          AppLogger.debug(
+              'MarkAttendanceScreen | Teacher group: ${group.name}');
         }
 
         if (teacherGroups.isNotEmpty) {

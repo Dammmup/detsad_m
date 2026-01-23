@@ -94,7 +94,8 @@ class ShiftsService {
 
       if (response.statusCode == 200) {
         final dynamic data = response.data;
-        AppLogger.debug('ShiftsService | attendance data type: ${data.runtimeType}');
+        AppLogger.debug(
+            'ShiftsService | attendance data type: ${data.runtimeType}');
 
         List<dynamic> records = [];
         if (data is List) {
@@ -107,7 +108,8 @@ class ShiftsService {
           }
         }
 
-        AppLogger.debug('ShiftsService | attendance records count: ${records.length}');
+        AppLogger.debug(
+            'ShiftsService | attendance records count: ${records.length}');
         for (var record in records) {
           AppLogger.debug(
               'ShiftsService | record: date=${record['date']}, actualStart=${record['actualStart']}, actualEnd=${record['actualEnd']}');
@@ -132,7 +134,10 @@ class ShiftsService {
   }
 
   Future<void> checkIn(String shiftId,
-      {double? latitude, double? longitude, String? status}) async {
+      {double? latitude,
+      double? longitude,
+      String? status,
+      Map<String, dynamic>? deviceMetadata}) async {
     try {
       if (shiftId.isEmpty) {
         throw Exception('ID смены не указан');
@@ -145,6 +150,9 @@ class ShiftsService {
       }
       if (status != null) {
         data['status'] = status;
+      }
+      if (deviceMetadata != null) {
+        data['deviceMetadata'] = deviceMetadata;
       }
 
       final response = await _apiService.post(
@@ -182,7 +190,10 @@ class ShiftsService {
   }
 
   Future<void> checkOut(String shiftId,
-      {double? latitude, double? longitude, String? status}) async {
+      {double? latitude,
+      double? longitude,
+      String? status,
+      Map<String, dynamic>? deviceMetadata}) async {
     try {
       final data = <String, dynamic>{};
       if (latitude != null && longitude != null) {
@@ -191,6 +202,9 @@ class ShiftsService {
       }
       if (status != null) {
         data['status'] = status;
+      }
+      if (deviceMetadata != null) {
+        data['deviceMetadata'] = deviceMetadata;
       }
 
       final response = await _apiService.post(

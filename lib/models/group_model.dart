@@ -6,6 +6,8 @@ class Group {
   final String? description;
   final int? childrenCount;
   final String? teacher;
+  final String? teacherId;
+  final String? assistantId;
   final String? assistantTeacher;
   final bool? isActive;
   final int? maxStudents;
@@ -24,6 +26,8 @@ class Group {
     this.description,
     this.childrenCount,
     this.teacher,
+    this.teacherId,
+    this.assistantId,
     this.assistantTeacher,
     this.isActive,
     this.maxStudents,
@@ -57,6 +61,16 @@ class Group {
       teacherId = rawTeacher.toString();
     }
 
+    dynamic rawAssistant = json['assistantId'] ?? json['assistant_id'];
+    String? assistantId;
+    if (rawAssistant == null) {
+      assistantId = null;
+    } else if (rawAssistant is Map) {
+      assistantId = (rawAssistant['_id'] ?? rawAssistant['id'])?.toString();
+    } else {
+      assistantId = rawAssistant.toString();
+    }
+
     List<String>? ageGroupList;
     if (json['ageGroup'] != null) {
       if (json['ageGroup'] is List) {
@@ -72,6 +86,8 @@ class Group {
       description: json['description'],
       childrenCount: json['childrenCount'],
       teacher: teacherId,
+      teacherId: teacherId,
+      assistantId: assistantId,
       assistantTeacher: json['assistantTeacher'],
       isActive: json['isActive'],
       maxStudents: json['maxStudents'],

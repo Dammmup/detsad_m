@@ -52,6 +52,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     bool canManageChildren = user != null &&
         (user.role == 'admin' ||
             user.role == 'teacher' ||
+            user.role == 'assistant' ||
             user.role == 'substitute');
 
     WidgetsBinding.instance.addPostFrameCallback((_) {

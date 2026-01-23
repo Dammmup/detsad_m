@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:timezone/timezone.dart' as tz;
+import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:io';
 import '../core/services/shifts_service.dart';
+import '../core/utils/logger.dart';
 import 'geolocation_provider.dart';
 
 class ShiftsProvider with ChangeNotifier {
@@ -128,6 +131,13 @@ class ShiftsProvider with ChangeNotifier {
     _errorMessage = null;
     notifyListeners();
 
+    Map<String, dynamic>? deviceMetadata;
+    try {
+      deviceMetadata = await _getDeviceMetadata();
+    } catch (e) {
+      AppLogger.error('ShiftsProvider | Error getting device metadata: $e');
+    }
+
     try {
       double? latitude;
       double? longitude;
@@ -165,7 +175,9 @@ class ShiftsProvider with ChangeNotifier {
       if (_shiftId != null) {
         // Backend handles status (late/on_time) based on actual shift settings
         await _shiftsService.checkIn(_shiftId!,
-            latitude: latitude, longitude: longitude);
+            latitude: latitude,
+            longitude: longitude,
+            deviceMetadata: deviceMetadata);
 
         await fetchShiftStatus(userId);
         _errorMessage = null;
@@ -187,6 +199,13 @@ class ShiftsProvider with ChangeNotifier {
     _loading = true;
     _errorMessage = null;
     notifyListeners();
+
+    Map<String, dynamic>? deviceMetadata;
+    try {
+      deviceMetadata = await _getDeviceMetadata();
+    } catch (e) {
+      AppLogger.error('ShiftsProvider | Error getting device metadata: $e');
+    }
 
     try {
       double? latitude;
@@ -224,7 +243,9 @@ class ShiftsProvider with ChangeNotifier {
 
       if (_shiftId != null) {
         await _shiftsService.checkOut(_shiftId!,
-            latitude: latitude, longitude: longitude);
+            latitude: latitude,
+            longitude: longitude,
+            deviceMetadata: deviceMetadata);
 
         await fetchShiftStatus(userId);
         _errorMessage = null;
@@ -250,5 +271,31 @@ class ShiftsProvider with ChangeNotifier {
   void setNotificationsScheduled() {
     _notificationsScheduled = true;
     notifyListeners();
+  }
+
+  Future<Map<String, dynamic>> _getDeviceMetadata() async {
+    final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    Map<String, dynamic> metadata = {
+      'source': 'app',
+      'deviceType': 'mobile',
+    };
+
+    if (Platform.isAndroid) {
+      final AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      metadata.addAll({
+        'deviceModel': '${androidInfo.manufacturer} ${androidInfo.model}',
+        'os': 'Android ${androidInfo.version.release}',
+        'platform': 'android',
+      });
+    } else if (Platform.isIOS) {
+      final IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      metadata.addAll({
+        'deviceModel': iosInfo.utsname.machine,
+        'os': 'iOS ${iosInfo.systemVersion}',
+        'platform': 'ios',
+      });
+    }
+
+    return metadata;
   }
 }

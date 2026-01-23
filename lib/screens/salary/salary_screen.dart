@@ -162,6 +162,21 @@ class _SalaryScreenState extends State<SalaryScreen> {
           ],
         ),
         const SizedBox(height: 16),
+        // Отображаем долг если есть
+        if (p.carryOverDebt > 0) ...[
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoCard(
+                  'Долг с прошлого месяца',
+                  p.carryOverDebt,
+                  Colors.deepOrange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+        ],
         Row(
           children: [
             Expanded(

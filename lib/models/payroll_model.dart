@@ -16,6 +16,8 @@ class Payroll {
   final double userFines;
   final double bonuses;
   final double advance;
+  final double carryOverDebt; // Долг с предыдущего месяца
+  final bool carryOverDebtCalculated; // Флаг: долг рассчитан
   final List<Fine> fines;
   final double workedDays;
   final double workedShifts;
@@ -36,6 +38,8 @@ class Payroll {
     required this.userFines,
     required this.bonuses,
     required this.advance,
+    this.carryOverDebt = 0.0,
+    this.carryOverDebtCalculated = false,
     required this.fines,
     required this.workedDays,
     required this.workedShifts,
@@ -60,6 +64,8 @@ class Payroll {
       userFines: (json['userFines'] as num?)?.toDouble() ?? 0.0,
       bonuses: (json['bonuses'] as num?)?.toDouble() ?? 0.0,
       advance: (json['advance'] as num?)?.toDouble() ?? 0.0,
+      carryOverDebt: (json['carryOverDebt'] as num?)?.toDouble() ?? 0.0,
+      carryOverDebtCalculated: json['carryOverDebtCalculated'] ?? false,
       fines: (json['fines'] as List<dynamic>?)
               ?.map((e) => Fine.fromJson(e))
               .toList() ??
