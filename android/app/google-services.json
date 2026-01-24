@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "471117272148",
+    "project_id": "rise-d9a8a",
+    "storage_bucket": "rise-d9a8a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471117272148:android:a8c06dce7af5813d9549c1",
+        "android_client_info": {
+          "package_name": "com.example.aldamiram"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDOwAqN_tXy81oN7-Jbl9uymHhukGib_mE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

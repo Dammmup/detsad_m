@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import '../core/services/auth_service.dart';
 import '../models/user_model.dart';
 import '../core/services/storage_service.dart';
+import '../core/services/notification_service.dart';
+import '../core/utils/logger.dart';
 
 class AuthProvider with ChangeNotifier {
   final AuthService _authService = AuthService();
+  final NotificationService _notificationService = NotificationService();
 
   User? _user;
   bool _isLoading = false;
@@ -35,6 +38,9 @@ class AuthProvider with ChangeNotifier {
         if (updatedUser != null) {
           _user = updatedUser;
         }
+
+        // Register FCM if logged in
+        _registerFCM();
       }
     } catch (e) {
       _errorMessage = e.toString();
@@ -59,6 +65,10 @@ class AuthProvider with ChangeNotifier {
         _user = result['user'];
         _isLoggedIn = true;
         _isLoading = false;
+
+        // Register FCM after login
+        _registerFCM();
+
         notifyListeners();
         return true;
       } else {
@@ -75,11 +85,29 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<void> _registerFCM() async {
+    try {
+      final token = await _notificationService.getFCMToken();
+      if (token != null) {
+        AppLogger.debug('Registering FCM token: $token');
+        await _authService.registerFCMToken(token);
+      }
+    } catch (e) {
+      AppLogger.error('Failed to register FCM token: $e');
+    }
+  }
+
   Future<void> logout() async {
     _isLoading = true;
     notifyListeners();
 
     try {
+      // Try to unregister FCM token before logout
+      final token = await _notificationService.getFCMToken();
+      if (token != null) {
+        await _authService.unregisterFCMToken(token);
+      }
+
       await _authService.logout();
       _user = null;
       _isLoggedIn = false;

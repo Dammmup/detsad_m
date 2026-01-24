@@ -1,6 +1,13 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import '../utils/logger.dart';
+
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  AppLogger.debug("Handling a background message: ${message.messageId}");
+}
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -9,6 +16,7 @@ class NotificationService {
 
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
 
   Future<void> init() async {
     tz.initializeTimeZones();
@@ -33,6 +41,47 @@ class NotificationService {
       initializationSettings,
       onDidReceiveNotificationResponse: (NotificationResponse payload) {},
     );
+
+    // FCM setup
+    await _setupFCM();
+  }
+
+  Future<void> _setupFCM() async {
+    // Request permissions for iOS
+    NotificationSettings settings = await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    AppLogger.debug('User granted permission: ${settings.authorizationStatus}');
+
+    // Background messages
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Foreground messages
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      AppLogger.debug('Got a message whilst in the foreground!');
+      AppLogger.debug('Message data: ${message.data}');
+
+      if (message.notification != null) {
+        showNotification(
+          id: message.hashCode,
+          title: message.notification!.title ?? '',
+          body: message.notification!.body ?? '',
+          payload: message.data['url'],
+        );
+      }
+    });
+  }
+
+  Future<String?> getFCMToken() async {
+    try {
+      return await _fcm.getToken();
+    } catch (e) {
+      AppLogger.error('Error getting FCM token: $e');
+      return null;
+    }
   }
 
   Future<void> showNotification({

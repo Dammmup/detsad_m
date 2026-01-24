@@ -149,4 +149,28 @@ class AuthService {
       return false;
     }
   }
+
+  Future<bool> registerFCMToken(String token) async {
+    try {
+      final response = await _apiService.post(
+        ApiConstants.subscribeFCM,
+        data: {'token': token},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  Future<bool> unregisterFCMToken(String token) async {
+    try {
+      final response = await _apiService.post(
+        ApiConstants.unsubscribeFCM,
+        data: {'token': token},
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 }

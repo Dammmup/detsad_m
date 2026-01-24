@@ -275,9 +275,16 @@ class ShiftsProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>> _getDeviceMetadata() async {
     final DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+    // Get screen resolution
+    final window = WidgetsBinding.instance.platformDispatcher.views.first;
+    final size = window.physicalSize / window.devicePixelRatio;
+    final resolution = "${size.width.toInt()}x${size.height.toInt()}";
+
     Map<String, dynamic> metadata = {
       'source': 'app',
       'deviceType': 'mobile',
+      'screenResolution': resolution,
     };
 
     if (Platform.isAndroid) {

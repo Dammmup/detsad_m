@@ -19,6 +19,8 @@ class ApiConstants {
 
   static const String users = '/users';
   static String userById(String id) => '/users/$id';
+  static const String subscribeFCM = '/users/push/fcm/subscribe';
+  static const String unsubscribeFCM = '/users/push/fcm/unsubscribe';
 
   static const String children = '/children';
   static String childById(String id) => '/children/$id';
