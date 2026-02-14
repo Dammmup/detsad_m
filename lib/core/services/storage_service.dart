@@ -9,7 +9,7 @@ class StorageService {
   }
 
   Future<void> init() async {
-    await ensureInitialized();
+    _preferences = await SharedPreferences.getInstance();
   }
 
   Future<void> saveToken(String token) async {

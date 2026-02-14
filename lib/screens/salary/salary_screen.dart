@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/payroll_provider.dart';
 import '../../models/payroll_model.dart';
 import '../../models/fine_model.dart';
@@ -35,6 +36,21 @@ class _SalaryScreenState extends State<SalaryScreen> {
       ),
       body: Consumer<PayrollProvider>(
         builder: (context, provider, child) {
+          final authProvider =
+              Provider.of<AuthProvider>(context, listen: false);
+          if (authProvider.user?.allowToSeePayroll == false) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'У вас нет доступа к информации о зарплате',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            );
+          }
+
           if (provider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }

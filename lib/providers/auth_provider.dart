@@ -20,29 +20,38 @@ class AuthProvider with ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   AuthProvider() {
-    _autoInitialize();
+    initialize();
   }
 
   Future<void> initialize() async {
+    if (_isLoading) return;
+
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
+      AppLogger.info('AuthProvider | Initializing session...');
+      await StorageService.ensureInitialized();
       await StorageService().init();
+
       _isLoggedIn = await _authService.isLoggedIn();
+      AppLogger.info('AuthProvider | Session active: $_isLoggedIn');
 
       if (_isLoggedIn) {
         _user = await _authService.getStoredUser();
+        AppLogger.info('AuthProvider | Restored user: ${_user?.fullName}');
 
         final updatedUser = await _authService.getCurrentUser();
         if (updatedUser != null) {
           _user = updatedUser;
+          AppLogger.info('AuthProvider | User info refreshed from server');
         }
 
-        // Register FCM if logged in
         _registerFCM();
       }
     } catch (e) {
+      AppLogger.error('AuthProvider | Session recovery error: $e');
       _errorMessage = e.toString();
       _isLoggedIn = false;
     } finally {
@@ -51,33 +60,38 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future<void> _autoInitialize() async {}
-
   Future<bool> login(String phone, String password) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
+      AppLogger.info('AuthProvider | Attempting login for $phone');
+      await StorageService.ensureInitialized();
+      await StorageService().init();
+
       final result = await _authService.login(phone, password);
 
       if (result['success'] == true) {
         _user = result['user'];
         _isLoggedIn = true;
         _isLoading = false;
+        AppLogger.info(
+            'AuthProvider | Login successful for ${_user?.fullName}');
 
-        // Register FCM after login
         _registerFCM();
 
         notifyListeners();
         return true;
       } else {
         _errorMessage = result['message'] ?? 'Ошибка входа';
+        AppLogger.warning('AuthProvider | Login failed: $_errorMessage');
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
+      AppLogger.error('AuthProvider | Login exception: $e');
       _errorMessage = 'Ошибка подключения к серверу';
       _isLoading = false;
       notifyListeners();

@@ -13,6 +13,7 @@ class User {
   final bool active;
   final DateTime? lastLoginAt;
   final String? email;
+  final bool? allowToSeePayroll;
 
   User({
     required this.id,
@@ -27,6 +28,7 @@ class User {
     this.active = true,
     this.lastLoginAt,
     this.email,
+    this.allowToSeePayroll,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -68,6 +70,7 @@ class User {
           ? DateTime.parse(json['lastLoginAt'] as String)
           : null,
       email: json['email'] as String?,
+      allowToSeePayroll: json['allowToSeePayroll'] as bool?,
     );
   }
 
@@ -86,6 +89,7 @@ class User {
       'active': active,
       'lastLoginAt': lastLoginAt?.toIso8601String(),
       'email': email,
+      'allowToSeePayroll': allowToSeePayroll,
     };
   }
 
@@ -115,6 +119,7 @@ class User {
     bool? active,
     DateTime? lastLoginAt,
     String? email,
+    bool? allowToSeePayroll,
   }) {
     return User(
       id: id ?? this.id,
@@ -129,8 +134,11 @@ class User {
       active: active ?? this.active,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       email: email ?? this.email,
+      allowToSeePayroll: allowToSeePayroll ?? this.allowToSeePayroll,
     );
   }
+
+  String get fullName => _getFullName();
 
   String _getFullName() {
     List<String> parts = [lastName, firstName];

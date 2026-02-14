@@ -2,12 +2,17 @@ import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
 import '../constants/app_constants.dart';
 import 'storage_service.dart';
+import '../utils/logger.dart';
 
 class ApiService {
   late final Dio _dio;
   final StorageService _storageService = StorageService();
 
-  ApiService() {
+  // Singleton pattern
+  static final ApiService _instance = ApiService._internal();
+  factory ApiService() => _instance;
+
+  ApiService._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
@@ -22,25 +27,47 @@ class ApiService {
 
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await _storageService.getToken();
-          if (token != null) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-          return handler.next(options);
-        },
         onResponse: (response, handler) {
           return handler.next(response);
         },
+        onRequest: (options, handler) async {
+          try {
+            AppLogger.debug(
+                'ApiService | REQUEST [${options.method}] ${options.path}');
+            await StorageService.ensureInitialized();
+            final token = await _storageService.getToken();
+
+            if (token != null && token.isNotEmpty) {
+              options.headers['Authorization'] = 'Bearer $token';
+              AppLogger.debug(
+                  'ApiService | Token added to headers (prefix: ${token.substring(0, min(5, token.length))}...)');
+            } else {
+              AppLogger.warning(
+                  'ApiService | No token found in storage for request to ${options.path}');
+            }
+          } catch (e) {
+            AppLogger.error('ApiService | Error in onRequest: $e');
+          }
+          return handler.next(options);
+        },
         onError: (DioException error, handler) async {
+          AppLogger.error(
+              'ApiService | ERROR [${error.response?.statusCode}] ${error.requestOptions.path}: ${error.message}');
+
           if (error.response?.statusCode == 401) {
-            await _storageService.clearToken();
+            AppLogger.warning(
+                'ApiService | Unauthorized access (401). Keeping token for investigation.');
+            // Мы больше не удаляем токен автоматически, чтобы избежать "смертельной петли"
+            // при случайных ошибках сервера.
           }
           return handler.next(error);
         },
       ),
     );
   }
+
+  // Вспомогательный метод для логов
+  int min(int a, int b) => a < b ? a : b;
 
   Future<Response> get(
     String path, {

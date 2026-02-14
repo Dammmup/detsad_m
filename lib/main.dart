@@ -19,11 +19,13 @@ import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'core/navigation/app_router.dart';
 import 'pages/splash_screen_page.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp();
+  final options = defaultFirebaseOptions.options;
+  await Firebase.initializeApp(options: options);
 
   await StorageService().init();
 
