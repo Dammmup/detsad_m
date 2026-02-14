@@ -24,7 +24,12 @@ class _StaffShiftStatusManagerState extends State<StaffShiftStatusManager> {
 
     if (user != null && user.id != _previousUserId) {
       _previousUserId = user.id;
-      shiftsProvider.fetchShiftStatus(user.id);
+      // Откладываем вызов до после завершения build
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          shiftsProvider.fetchShiftStatus(user.id);
+        }
+      });
     }
 
     return widget.child;

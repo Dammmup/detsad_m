@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/auth_service.dart';
+import '../../core/services/storage_service.dart';
 
 class StaffProfileScreen extends StatefulWidget {
   const StaffProfileScreen({super.key});
@@ -21,11 +22,34 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
   String? _selectedAvatar;
   bool _isLoading = false;
   bool _isEditing = false;
+  String _tokenStatus = 'Проверка...';
+  String? _tokenPreview;
 
   @override
   void initState() {
     super.initState();
     _loadUserProfile();
+    _checkTokenStatus();
+  }
+
+  Future<void> _checkTokenStatus() async {
+    try {
+      await StorageService.ensureInitialized();
+      final token = await StorageService().getToken();
+      setState(() {
+        if (token == null || token.isEmpty) {
+          _tokenStatus = 'Токен не найден';
+          _tokenPreview = null;
+        } else {
+          _tokenStatus = 'Токен найден (${token.length} символов)';
+          _tokenPreview = token.length > 20 ? '${token.substring(0, 20)}...' : token;
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _tokenStatus = 'Ошибка: $e';
+      });
+    }
   }
 
   Future<void> _loadUserProfile() async {
@@ -280,6 +304,47 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                         },
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    // Секция диагностики токена
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade200),
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.security, color: Colors.amber.shade800),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Диагностика токена',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.amber.shade900,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text('Статус: $_tokenStatus'),
+                          if (_tokenPreview != null)
+                            Text('Превью: $_tokenPreview', style: const TextStyle(fontSize: 12)),
+                          const SizedBox(height: 8),
+                          ElevatedButton(
+                            onPressed: _checkTokenStatus,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.amber.shade100,
+                              foregroundColor: Colors.amber.shade900,
+                            ),
+                            child: const Text('Обновить статус'),
+                          ),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     if (_isEditing) ...[
                       ElevatedButton(

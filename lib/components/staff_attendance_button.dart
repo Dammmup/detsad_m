@@ -52,6 +52,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonAction =
           user != null ? () => _handleCheckIn(context, user.id) : null;
 
+      // Проверка геолокации
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {
@@ -62,6 +63,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonAction =
           user != null ? () => _handleCheckOut(context, user.id) : null;
 
+      // Проверка геолокации
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {

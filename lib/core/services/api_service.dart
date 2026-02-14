@@ -34,19 +34,25 @@ class ApiService {
           try {
             AppLogger.debug(
                 'ApiService | REQUEST [${options.method}] ${options.path}');
+            
+            // Диагностика: проверяем состояние хранилища
             await StorageService.ensureInitialized();
+            AppLogger.debug('ApiService | StorageService initialized');
+            
             final token = await _storageService.getToken();
+            AppLogger.debug('ApiService | Token from storage: ${token != null ? "EXISTS (len=${token.length})" : "NULL"}');
 
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
               AppLogger.debug(
-                  'ApiService | Token added to headers (prefix: ${token.substring(0, min(5, token.length))}...)');
+                  'ApiService | Token ADDED to headers (prefix: ${token.substring(0, min(5, token.length))}...)');
             } else {
-              AppLogger.warning(
-                  'ApiService | No token found in storage for request to ${options.path}');
+              AppLogger.error(
+                  'ApiService | NO TOKEN FOUND for request to ${options.path}');
             }
-          } catch (e) {
+          } catch (e, stackTrace) {
             AppLogger.error('ApiService | Error in onRequest: $e');
+            AppLogger.error('ApiService | StackTrace: $stackTrace');
           }
           return handler.next(options);
         },

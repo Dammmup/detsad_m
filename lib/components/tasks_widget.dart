@@ -15,7 +15,12 @@ class _TasksWidgetState extends State<TasksWidget> {
   @override
   void initState() {
     super.initState();
-    _loadTasks();
+    // Откладываем загрузку до после завершения build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadTasks();
+      }
+    });
   }
 
   Future<void> _loadTasks() async {

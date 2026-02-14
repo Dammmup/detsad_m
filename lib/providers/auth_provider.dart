@@ -33,7 +33,6 @@ class AuthProvider with ChangeNotifier {
     try {
       AppLogger.info('AuthProvider | Initializing session...');
       await StorageService.ensureInitialized();
-      await StorageService().init();
 
       _isLoggedIn = await _authService.isLoggedIn();
       AppLogger.info('AuthProvider | Session active: $_isLoggedIn');
@@ -68,7 +67,6 @@ class AuthProvider with ChangeNotifier {
     try {
       AppLogger.info('AuthProvider | Attempting login for $phone');
       await StorageService.ensureInitialized();
-      await StorageService().init();
 
       final result = await _authService.login(phone, password);
 

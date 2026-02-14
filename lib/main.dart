@@ -24,10 +24,15 @@ import 'firebase_options.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Сначала инициализируем StorageService (SharedPreferences)
+  // до Firebase, чтобы избежать конфликтов
+  await StorageService.ensureInitialized();
+  AppLogger.info('StorageService initialized');
+
+  // Затем инициализируем Firebase
   final options = defaultFirebaseOptions.options;
   await Firebase.initializeApp(options: options);
-
-  await StorageService().init();
+  AppLogger.info('Firebase initialized');
 
   await NotificationService().init();
 

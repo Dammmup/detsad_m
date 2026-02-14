@@ -3,13 +3,22 @@ import '../../models/user_model.dart';
 
 class StorageService {
   static SharedPreferences? _preferences;
+  static Future<void>? _initFuture;
 
   static Future<void> ensureInitialized() async {
-    _preferences ??= await SharedPreferences.getInstance();
+    if (_preferences != null) return;
+    if (_initFuture != null) {
+      await _initFuture;
+      return;
+    }
+    _initFuture = SharedPreferences.getInstance().then((prefs) {
+      _preferences = prefs;
+    });
+    await _initFuture;
   }
 
   Future<void> init() async {
-    _preferences = await SharedPreferences.getInstance();
+    await ensureInitialized();
   }
 
   Future<void> saveToken(String token) async {
