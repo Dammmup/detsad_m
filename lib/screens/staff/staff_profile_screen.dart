@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/storage_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
 
 class StaffProfileScreen extends StatefulWidget {
   const StaffProfileScreen({super.key});
@@ -130,7 +132,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
       appBar: AppBar(
         title: const Text('Профиль сотрудника'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
           if (!_isEditing)
@@ -150,16 +152,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground,
         child: Consumer<AuthProvider>(
           builder: (context, authProvider, child) {
             final user = authProvider.user;
@@ -206,7 +199,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                                 height: 40,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.blue,
+                                  color: AppColors.primary,
                                   border:
                                       Border.all(color: Colors.white, width: 2),
                                 ),
@@ -347,16 +340,34 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                     ),
                     const SizedBox(height: 24),
                     if (_isEditing) ...[
-                      ElevatedButton(
-                        onPressed: _saveProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.primaryGradient,
+                          borderRadius: const BorderRadius.all(Radius.circular(25)),
+                          boxShadow: const [AppColors.shadowButton],
                         ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator()
-                            : const Text('Сохранить изменения'),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: const BorderRadius.all(Radius.circular(25)),
+                            onTap: _saveProfile,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              child: Center(
+                                child: _isLoading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : const Text(
+                                        'Сохранить изменения',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
@@ -390,18 +401,7 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
     String? Function(String?)? validator,
   }) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((0.1 * 255).round()),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: AppDecorations.cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../models/child_model.dart';
 import '../../core/services/children_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
 
 class BirthdaysScreen extends StatefulWidget {
   const BirthdaysScreen({super.key});
@@ -174,20 +176,11 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
       appBar: AppBar(
         title: const Text('Дни рождения'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: _isLoading
@@ -209,19 +202,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
 
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey
-                                          .withAlpha((0.1 * 255).round()),
-                                      spreadRadius: 1,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
+                                decoration: AppDecorations.cardDecoration,
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
@@ -255,12 +236,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                         Row(
                                           children: [
                                             const Icon(Icons.cake,
-                                                size: 16, color: Colors.orange),
+                                                size: 16, color: AppColors.primary),
                                             const SizedBox(width: 4),
                                             Text(
                                               'День рождения: ${_formatBirthdayDate(birthdayDate)}',
                                               style: const TextStyle(
-                                                color: Colors.orange,
+                                                color: AppColors.primary,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -270,12 +251,12 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                         Row(
                                           children: [
                                             const Icon(Icons.cake,
-                                                size: 16, color: Colors.blue),
+                                                size: 16, color: AppColors.primary),
                                             const SizedBox(width: 4),
                                             Text(
                                               'Исполняется: ${_calculateAge(child.birthday, DateTime.now()) ?? 0} ${_getAgeSuffix(_calculateAge(child.birthday, DateTime.now()) ?? 0)}',
                                               style: const TextStyle(
-                                                color: Colors.blue,
+                                                color: AppColors.primary,
                                                 fontWeight: FontWeight.w500,
                                               ),
                                             ),
@@ -288,7 +269,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue
+                                            color: AppColors.primary
                                                 .withAlpha((0.1 * 255).round()),
                                             borderRadius:
                                                 BorderRadius.circular(12),
@@ -296,7 +277,7 @@ class _BirthdaysScreenState extends State<BirthdaysScreen> {
                                           child: Text(
                                             _getChildGroupInfo(child),
                                             style: const TextStyle(
-                                                color: Colors.blue),
+                                                color: AppColors.primary),
                                           ),
                                         ),
                                       ],

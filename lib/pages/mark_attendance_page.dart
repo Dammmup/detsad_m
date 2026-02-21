@@ -122,7 +122,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
           underline: Container(),
           icon: const Icon(
             Icons.arrow_downward,
-            color: Colors.redAccent,
+            color: Color(0xFF667eea),
           ),
           iconSize: 24.0,
           iconEnabledColor: Colors.blue,
@@ -166,7 +166,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                 padding: const EdgeInsets.all(0.0),
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30.0)),
+                    borderRadius: BorderRadius.circular(25.0)),
                 backgroundColor: Colors.white,
               ),
               onPressed: () {
@@ -182,11 +182,11 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                 alignment: Alignment.center,
                 width: _width! / 2,
                 decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                  gradient: LinearGradient(
+                  borderRadius: const BorderRadius.all(Radius.circular(25.0)),
+                  gradient: const LinearGradient(
                     colors: <Color>[
-                      Colors.orange[200]!,
-                      Colors.pinkAccent,
+                      Color(0xFF667eea),
+                      Color(0xFF764ba2),
                     ],
                   ),
                 ),
@@ -223,7 +223,7 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
           trailing: present[index]
               ? const Icon(
                   Icons.check,
-                  color: Colors.redAccent,
+                  color: Color(0xFF667eea),
                 )
               : const Icon(
                   Icons.close,

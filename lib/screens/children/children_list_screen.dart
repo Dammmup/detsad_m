@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import '../../../core/utils/logger.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_decorations.dart';
 import '../../../models/child_model.dart';
 import '../../../models/user_model.dart';
 import '../../../core/services/children_service.dart';
@@ -159,7 +161,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
       appBar: AppBar(
         title: const Text('Дети'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
         actions: [
           Consumer<AuthProvider>(
@@ -193,16 +195,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -228,18 +221,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                   if (isAdminOrAlternative) {
                     return Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withAlpha((0.1 * 255).round()),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
+                      decoration: AppDecorations.cardDecoration,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -265,9 +247,9 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                   });
                                   _applyFilters();
                                 },
-                                selectedColor: Colors.blue.shade200,
+                                selectedColor: AppColors.primaryLight,
                                 backgroundColor: Colors.grey.shade200,
-                                checkmarkColor: Colors.blue.shade700,
+                                checkmarkColor: AppColors.primary,
                               ),
                               FilterChip(
                                 label: const Text('По группам'),
@@ -279,9 +261,9 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                   });
                                   _applyFilters();
                                 },
-                                selectedColor: Colors.blue.shade200,
+                                selectedColor: AppColors.primaryLight,
                                 backgroundColor: Colors.grey.shade200,
-                                checkmarkColor: Colors.blue.shade700,
+                                checkmarkColor: AppColors.primary,
                               ),
                             ],
                           ),
@@ -301,19 +283,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                         ? Center(
                             child: Container(
                               padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey
-                                        .withAlpha((0.1 * 255).round()),
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                              decoration: AppDecorations.cardDecoration,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -347,19 +317,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                               final child = _filteredChildren[index];
                               return Container(
                                 margin: const EdgeInsets.only(bottom: 8),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey
-                                          .withAlpha((0.1 * 255).round()),
-                                      spreadRadius: 1,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
+                                decoration: AppDecorations.cardDecoration,
                                 child: Padding(
                                   padding: const EdgeInsets.all(16.0),
                                   child: Column(
@@ -432,7 +390,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                               child: Text(
                                                   'Телефон: ${child.parentPhone}',
                                                   style: const TextStyle(
-                                                      color: Colors.blue,
+                                                      color: AppColors.primary,
                                                       decoration: TextDecoration
                                                           .underline)),
                                             ),
@@ -445,7 +403,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                           padding: const EdgeInsets.symmetric(
                                               horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Colors.blue
+                                            color: AppColors.primary
                                                 .withAlpha((0.1 * 255).round()),
                                             borderRadius:
                                                 BorderRadius.circular(12),
@@ -453,7 +411,7 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                                           child: Text(
                                             _getChildGroupInfo(child),
                                             style: const TextStyle(
-                                                color: Colors.blue),
+                                                color: AppColors.primary),
                                           ),
                                         ),
                                       ],

@@ -73,7 +73,7 @@ class _ViewAttendanceStudScreenState extends State<ViewAttendanceStudScreen> {
                       DataCell(Text(element['hrs'])),
                       DataCell((!element['attendance'])
                           ? const Icon(Icons.close, color: Colors.grey)
-                          : const Icon(Icons.check, color: Colors.redAccent))
+                          : const Icon(Icons.check, color: Color(0xFF667eea)))
                     ]))
                 .toList(),
           );

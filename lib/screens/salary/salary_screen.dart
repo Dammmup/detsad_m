@@ -6,6 +6,7 @@ import '../../providers/payroll_provider.dart';
 import '../../models/payroll_model.dart';
 import '../../models/fine_model.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import '../../core/theme/app_colors.dart';
 
 class SalaryScreen extends StatefulWidget {
   const SalaryScreen({super.key});
@@ -129,10 +130,12 @@ class _SalaryScreenState extends State<SalaryScreen> {
   }
 
   Widget _buildTotalCard(BuildContext context, double total) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.green.shade600,
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: const [AppColors.shadowHero],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -164,17 +167,17 @@ class _SalaryScreenState extends State<SalaryScreen> {
       children: [
         Row(
           children: [
-            Expanded(child: _buildInfoCard('Оклад', p.baseSalary, Colors.blue)),
+            Expanded(child: _buildInfoCard('Оклад', p.baseSalary, AppColors.primary)),
             const SizedBox(width: 16),
-            Expanded(child: _buildInfoCard('Бонусы', p.bonuses, Colors.orange)),
+            Expanded(child: _buildInfoCard('Бонусы', p.bonuses, AppColors.warning)),
           ],
         ),
         const SizedBox(height: 16),
         Row(
           children: [
-            Expanded(child: _buildInfoCard('Аванс', p.advance, Colors.purple)),
+            Expanded(child: _buildInfoCard('Аванс', p.advance, AppColors.primaryDark)),
             const SizedBox(width: 16),
-            Expanded(child: _buildInfoCard('Вычеты', p.penalties, Colors.red)),
+            Expanded(child: _buildInfoCard('Вычеты', p.penalties, AppColors.error)),
           ],
         ),
         const SizedBox(height: 16),
@@ -186,7 +189,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                 child: _buildInfoCard(
                   'Долг с прошлого месяца',
                   p.carryOverDebt,
-                  Colors.deepOrange,
+                  AppColors.error,
                 ),
               ),
             ],
@@ -196,9 +199,9 @@ class _SalaryScreenState extends State<SalaryScreen> {
         Row(
           children: [
             Expanded(
-                child: _buildInfoCard('Смен', p.workedShifts, Colors.teal)),
+                child: _buildInfoCard('Смен', p.workedShifts, AppColors.info)),
             const SizedBox(width: 16),
-            Expanded(child: _buildInfoCard('Дней', p.workedDays, Colors.teal)),
+            Expanded(child: _buildInfoCard('Дней', p.workedDays, AppColors.info)),
           ],
         ),
       ],
@@ -239,7 +242,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.red),
+                const Icon(Icons.warning_amber_rounded, color: AppColors.error),
                 const SizedBox(width: 8),
                 Text('Детализация Вычетов',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -260,7 +263,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
                     trailing: Text(
                       '-${currencyFormat.format(fine.amount)}',
                       style: const TextStyle(
-                          color: Colors.red, fontWeight: FontWeight.bold),
+                          color: AppColors.error, fontWeight: FontWeight.bold),
                     ),
                   )),
           ],
@@ -280,7 +283,7 @@ class _SalaryScreenState extends State<SalaryScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.history, color: Colors.blue),
+                const Icon(Icons.history, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text('Детализация смен',
                     style: Theme.of(context).textTheme.titleMedium),
@@ -316,13 +319,13 @@ class _SalaryScreenState extends State<SalaryScreen> {
                               Text(
                                   'Вычет: -${currencyFormat.format(detail.fines)}',
                                   style: const TextStyle(
-                                      fontSize: 12, color: Colors.red)),
+                                      fontSize: 12, color: AppColors.error)),
                             Text(currencyFormat.format(detail.net),
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: detail.net > 0
-                                        ? Colors.green
-                                        : Colors.red)),
+                                        ? AppColors.success
+                                        : AppColors.error)),
                           ],
                         ),
                       )

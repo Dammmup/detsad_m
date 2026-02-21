@@ -5,6 +5,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/services/shifts_service.dart';
 import '../../core/utils/logger.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
 
 class StaffScheduleScreen extends StatefulWidget {
   const StaffScheduleScreen({super.key});
@@ -112,15 +114,15 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'scheduled':
-        return Colors.blue;
+        return AppColors.info;
       case 'in_progress':
-        return Colors.orange;
+        return AppColors.warning;
       case 'completed':
-        return Colors.green;
+        return AppColors.success;
       case 'late':
-        return Colors.red;
+        return AppColors.error;
       case 'pending_approval':
-        return Colors.yellow;
+        return AppColors.warning;
       default:
         return Colors.grey;
     }
@@ -135,38 +137,18 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
       appBar: AppBar(
         title: const Text('Мой график'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withAlpha((0.1 * 255).round()),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                decoration: AppDecorations.cardDecoration,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Row(
@@ -193,18 +175,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
               ),
               const SizedBox(height: 16),
               Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withAlpha((0.1 * 255).round()),
-                      spreadRadius: 1,
-                      blurRadius: 5,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
+                decoration: AppDecorations.cardDecoration,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
@@ -237,19 +208,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                         ? Center(
                             child: Container(
                               padding: const EdgeInsets.all(24),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey
-                                        .withAlpha((0.1 * 255).round()),
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
+                              decoration: AppDecorations.cardDecoration,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -270,19 +229,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                             ? Center(
                                 child: Container(
                                   padding: const EdgeInsets.all(24),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey
-                                            .withAlpha((0.1 * 255).round()),
-                                        spreadRadius: 1,
-                                        blurRadius: 5,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
+                                  decoration: AppDecorations.cardDecoration,
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -347,19 +294,7 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
 
                                   return Container(
                                     margin: const EdgeInsets.only(bottom: 8),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey
-                                              .withAlpha((0.1 * 255).round()),
-                                          spreadRadius: 1,
-                                          blurRadius: 5,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
+                                    decoration: AppDecorations.cardDecoration,
                                     child: Padding(
                                       padding: const EdgeInsets.all(16.0),
                                       child: Column(
@@ -428,12 +363,12 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                                               children: [
                                                 const Icon(Icons.access_time,
                                                     size: 16,
-                                                    color: Colors.blue),
+                                                    color: AppColors.primary),
                                                 const SizedBox(width: 8),
                                                 Text(
                                                   'Отмечено: $displayStartTime - $displayEndTime',
                                                   style: const TextStyle(
-                                                    color: Colors.blue,
+                                                    color: AppColors.primary,
                                                     fontWeight: FontWeight.w500,
                                                   ),
                                                 ),

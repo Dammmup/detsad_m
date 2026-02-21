@@ -71,11 +71,8 @@ class AuthService {
 
   Future<bool> validateToken() async {
     try {
-      AppLogger.info('AuthService.validateToken | Validating with server...');
       final response = await _apiService.get(ApiConstants.validateToken);
-      final isValid = response.statusCode == 200 && response.data['valid'] == true;
-      AppLogger.info('AuthService.validateToken | Response: ${response.statusCode}, valid: ${response.data['valid']}, result: $isValid');
-      return isValid;
+      return response.statusCode == 200 && response.data['valid'] == true;
     } catch (e) {
       AppLogger.error('AuthService.validateToken | Validation error: $e');
       return false;
@@ -99,21 +96,14 @@ class AuthService {
   }
 
   Future<bool> isLoggedIn() async {
-    AppLogger.info('AuthService.isLoggedIn | Starting...');
     await StorageService.ensureInitialized();
-    AppLogger.info('AuthService.isLoggedIn | Storage initialized');
-    
     final token = await _storageService.getToken();
-    AppLogger.info('AuthService.isLoggedIn | Token: ${token != null ? "EXISTS (${token.length} chars)" : "NULL"}');
-    
+
     if (token == null) {
-      AppLogger.warning('AuthService.isLoggedIn | No token found');
       return false;
     }
-    
-    final isValid = await validateToken();
-    AppLogger.info('AuthService.isLoggedIn | Token validation result: $isValid');
-    return isValid;
+
+    return await validateToken();
   }
 
   Future<User?> getStoredUser() async {

@@ -120,11 +120,11 @@ class _LoginPageState extends State<LoginPage> {
       child: TextFormField(
         onSaved: (input) => _email = input!,
         keyboardType: TextInputType.emailAddress,
-        cursorColor: Colors.redAccent,
+        cursorColor: const Color(0xFF667eea),
         obscureText: false,
         decoration: InputDecoration(
           prefixIcon:
-              const Icon(Icons.email, color: Colors.redAccent, size: 20),
+              const Icon(Icons.email, color: Color(0xFF667eea), size: 20),
           hintText: "Email ID",
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30.0),
@@ -141,15 +141,15 @@ class _LoginPageState extends State<LoginPage> {
       child: TextFormField(
         onSaved: (input) => _password = input!,
         keyboardType: TextInputType.visiblePassword,
-        cursorColor: Colors.redAccent,
+        cursorColor: const Color(0xFF667eea),
         obscureText: _showPassword,
         decoration: InputDecoration(
           prefixIcon:
-              const Icon(Icons.lock, color: Colors.redAccent, size: 20),
+              const Icon(Icons.lock, color: Color(0xFF667eea), size: 20),
           suffixIcon: IconButton(
             icon: Icon(
               Icons.remove_red_eye,
-              color: _showPassword ? Colors.grey : Colors.redAccent,
+              color: _showPassword ? Colors.grey : const Color(0xFF667eea),
             ),
             onPressed: () {
               setState(() => _showPassword = !_showPassword);
@@ -184,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
             child: const Text(
               "Recover",
               style: TextStyle(
-                  fontWeight: FontWeight.w600, color: Colors.redAccent),
+                  fontWeight: FontWeight.w600, color: Color(0xFF667eea)),
             ),
           )
         ],
@@ -198,7 +198,7 @@ class _LoginPageState extends State<LoginPage> {
             style: ElevatedButton.styleFrom(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0)),
+                  borderRadius: BorderRadius.circular(25.0)),
               padding: const EdgeInsets.all(0.0),
             ),
             onPressed: () {
@@ -227,11 +227,11 @@ class _LoginPageState extends State<LoginPage> {
               alignment: Alignment.center,
               width: _width! / 2,
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                gradient: LinearGradient(
+                borderRadius: const BorderRadius.all(Radius.circular(25.0)),
+                gradient: const LinearGradient(
                   colors: <Color>[
-                    Colors.orange[200]!,
-                    Colors.pinkAccent,
+                    Color(0xFF667eea),
+                    Color(0xFF764ba2),
                   ],
                 ),
               ),

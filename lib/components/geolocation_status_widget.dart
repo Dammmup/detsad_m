@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
 import '../providers/geolocation_provider.dart';
 
 class GeolocationStatusWidget extends StatelessWidget {
@@ -16,18 +18,7 @@ class GeolocationStatusWidget extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((0.1 * 255).round()),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: AppDecorations.cardDecoration,
       child: _buildStatus(context, geolocationProvider),
     );
   }
@@ -50,7 +41,7 @@ class GeolocationStatusWidget extends StatelessWidget {
     if (!provider.isServiceEnabled) {
       return Row(
         children: [
-          const Icon(Icons.location_disabled, color: Colors.orange),
+          const Icon(Icons.location_disabled, color: AppColors.warning),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -60,7 +51,7 @@ class GeolocationStatusWidget extends StatelessWidget {
                   'Службы геолокации отключены',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+                    color: AppColors.warning,
                   ),
                 ),
                 Text(
@@ -77,7 +68,7 @@ class GeolocationStatusWidget extends StatelessWidget {
     if (!provider.hasPermission) {
       return Row(
         children: [
-          const Icon(Icons.location_off, color: Colors.red),
+          const Icon(Icons.location_off, color: AppColors.error),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -87,7 +78,7 @@ class GeolocationStatusWidget extends StatelessWidget {
                   'Нет разрешения на геолокацию',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.red,
+                    color: AppColors.error,
                   ),
                 ),
                 Text(
@@ -105,7 +96,7 @@ class GeolocationStatusWidget extends StatelessWidget {
     if (provider.isLocationTemporarilyUnavailable) {
       return Row(
         children: [
-          const Icon(Icons.location_searching, color: Colors.blue),
+          const Icon(Icons.location_searching, color: AppColors.info),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -115,7 +106,7 @@ class GeolocationStatusWidget extends StatelessWidget {
                   'Поиск местоположения...',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue,
+                    color: AppColors.info,
                   ),
                 ),
                 Text(
@@ -132,7 +123,7 @@ class GeolocationStatusWidget extends StatelessWidget {
     if (provider.errorMessage != null && !provider.isPositionLoaded) {
       return Row(
         children: [
-          const Icon(Icons.location_off, color: Colors.orange),
+          const Icon(Icons.location_off, color: AppColors.warning),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -142,7 +133,7 @@ class GeolocationStatusWidget extends StatelessWidget {
                   'Геолокация недоступна',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.orange,
+                    color: AppColors.warning,
                   ),
                 ),
                 Text(
@@ -180,7 +171,7 @@ class GeolocationStatusWidget extends StatelessWidget {
       children: [
         Icon(
           isInZone ? Icons.check_circle : Icons.error,
-          color: isInZone ? Colors.green : Colors.red,
+          color: isInZone ? AppColors.success : AppColors.error,
           size: 32,
         ),
         const SizedBox(width: 12),
@@ -192,7 +183,7 @@ class GeolocationStatusWidget extends StatelessWidget {
                 isInZone ? 'В рабочей зоне' : 'Вне рабочей зоны',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isInZone ? Colors.green : Colors.red,
+                  color: isInZone ? AppColors.success : AppColors.error,
                 ),
               ),
               Text(
@@ -205,7 +196,7 @@ class GeolocationStatusWidget extends StatelessWidget {
         IconButton(
           icon: Icon(
             Icons.map,
-            color: isInZone ? Colors.green : Colors.red,
+            color: isInZone ? AppColors.success : AppColors.error,
           ),
           onPressed: () {
             Navigator.pushNamed(context, '/map');

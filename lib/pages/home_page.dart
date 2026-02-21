@@ -284,7 +284,7 @@ class _HomePageState extends State<HomePage> {
       style: ElevatedButton.styleFrom(
         elevation: 0,
         shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.0)),
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(25.0)),
         padding: const EdgeInsets.all(0.0),
       ),
       onPressed: () {
@@ -306,9 +306,9 @@ class _HomePageState extends State<HomePage> {
         alignment: Alignment.center,
         width: _width! / 2,
         decoration: BoxDecoration(
-          borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-          gradient: LinearGradient(
-            colors: <Color>[Colors.orange[200]!, Colors.pinkAccent],
+          borderRadius: const BorderRadius.all(Radius.circular(25.0)),
+          gradient: const LinearGradient(
+            colors: <Color>[Color(0xFF667eea), Color(0xFF764ba2)],
           ),
         ),
         padding: const EdgeInsets.all(12.0),

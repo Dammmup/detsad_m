@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../core/theme/app_colors.dart';
 import '../../providers/auth_provider.dart';
 import '../dashboard/dashboard_screen.dart';
 
@@ -22,15 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
+        decoration: const BoxDecoration(
+          gradient: AppColors.primaryGradient,
         ),
         child: Center(
           child: SingleChildScrollView(
@@ -38,7 +32,7 @@ class _LoginScreenState extends State<LoginScreen> {
               width: 400,
               padding: const EdgeInsets.all(24.0),
               child: Card(
-                elevation: 8,
+                elevation: 12,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -57,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: AppColors.primary,
                             ),
                           ),
                         ),
@@ -68,19 +62,19 @@ class _LoginScreenState extends State<LoginScreen> {
                             labelText: 'Телефон',
                             hintText: 'Введите ваш телефон',
                             prefixIcon:
-                                const Icon(Icons.phone, color: Colors.blue),
+                                const Icon(Icons.phone, color: AppColors.primary),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide:
-                                  BorderSide(color: Colors.grey.shade300),
+                                  const BorderSide(color: AppColors.border),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
-                                  color: Colors.blue, width: 2),
+                                  color: AppColors.primary, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -98,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             labelText: 'Пароль',
                             hintText: 'Введите ваш пароль',
                             prefixIcon:
-                                const Icon(Icons.lock, color: Colors.blue),
+                                const Icon(Icons.lock, color: AppColors.primary),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
@@ -118,12 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide:
-                                  BorderSide(color: Colors.grey.shade300),
+                                  const BorderSide(color: AppColors.border),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(
-                                  color: Colors.blue, width: 2),
+                                  color: AppColors.primary, width: 2),
                             ),
                           ),
                           validator: (value) {
@@ -139,51 +133,59 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 50,
                           child: authProvider.isLoading
                               ? const Center(child: CircularProgressIndicator())
-                              : ElevatedButton(
-                                  onPressed: () async {
-                                    if (_formKey.currentState!.validate()) {
-                                      final ctx = context;
-
-                                      final success = await authProvider.login(
-                                        _phoneController.text.trim(),
-                                        _passwordController.text,
-                                      );
-
-                                      if (!ctx.mounted) {
-                                        return;
-                                      }
-
-                                      if (success) {
-                                        Navigator.of(ctx).pushReplacement(
-                                          MaterialPageRoute(
-                                            builder: (_) =>
-                                                const DashboardScreen(),
-                                          ),
-                                        );
-                                      } else {
-                                        final errorColor =
-                                            Theme.of(ctx).colorScheme.error;
-
-                                        ScaffoldMessenger.of(ctx).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                                authProvider.errorMessage ??
-                                                    'Ошибка входа'),
-                                            backgroundColor: errorColor,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.blue,
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
+                              : Container(
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(25),
+                                    boxShadow: const [AppColors.shadowButton],
                                   ),
-                                  child: const Text('Войти',
-                                      style: TextStyle(fontSize: 16)),
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      if (_formKey.currentState!.validate()) {
+                                        final ctx = context;
+
+                                        final success = await authProvider.login(
+                                          _phoneController.text.trim(),
+                                          _passwordController.text,
+                                        );
+
+                                        if (!ctx.mounted) {
+                                          return;
+                                        }
+
+                                        if (success) {
+                                          Navigator.of(ctx).pushReplacement(
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  const DashboardScreen(),
+                                            ),
+                                          );
+                                        } else {
+                                          final errorColor =
+                                              Theme.of(ctx).colorScheme.error;
+
+                                          ScaffoldMessenger.of(ctx).showSnackBar(
+                                            SnackBar(
+                                              content: Text(
+                                                  authProvider.errorMessage ??
+                                                      'Ошибка входа'),
+                                              backgroundColor: errorColor,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      shadowColor: Colors.transparent,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(25),
+                                      ),
+                                    ),
+                                    child: const Text('Войти',
+                                        style: TextStyle(
+                                            fontSize: 16, color: Colors.white)),
+                                  ),
                                 ),
                         ),
                         if (authProvider.errorMessage != null)
@@ -191,8 +193,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             padding: const EdgeInsets.only(top: 16.0),
                             child: Text(
                               authProvider.errorMessage!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                              style: const TextStyle(
+                                color: AppColors.error,
                               ),
                             ),
                           ),

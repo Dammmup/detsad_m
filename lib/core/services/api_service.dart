@@ -34,18 +34,11 @@ class ApiService {
           try {
             AppLogger.debug(
                 'ApiService | REQUEST [${options.method}] ${options.path}');
-            
-            // Диагностика: проверяем состояние хранилища
-            await StorageService.ensureInitialized();
-            AppLogger.debug('ApiService | StorageService initialized');
-            
+
             final token = await _storageService.getToken();
-            AppLogger.debug('ApiService | Token from storage: ${token != null ? "EXISTS (len=${token.length})" : "NULL"}');
 
             if (token != null && token.isNotEmpty) {
               options.headers['Authorization'] = 'Bearer $token';
-              AppLogger.debug(
-                  'ApiService | Token ADDED to headers (prefix: ${token.substring(0, min(5, token.length))}...)');
             } else {
               AppLogger.error(
                   'ApiService | NO TOKEN FOUND for request to ${options.path}');
@@ -71,9 +64,6 @@ class ApiService {
       ),
     );
   }
-
-  // Вспомогательный метод для логов
-  int min(int a, int b) => a < b ? a : b;
 
   Future<Response> get(
     String path, {

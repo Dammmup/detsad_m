@@ -84,11 +84,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           }
         },
         keyboardType: TextInputType.emailAddress,
-        cursorColor: Colors.redAccent,
+        cursorColor: const Color(0xFF667eea),
         obscureText: false,
         decoration: InputDecoration(
           prefixIcon:
-              const Icon(Icons.email, color: Colors.redAccent, size: 20),
+              const Icon(Icons.email, color: Color(0xFF667eea), size: 20),
           hintText: "Email ID",
           border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(30.0),
@@ -104,7 +104,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             style: ElevatedButton.styleFrom(
               elevation: 0,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30.0)),
+                  borderRadius: BorderRadius.circular(25.0)),
               padding: const EdgeInsets.all(0.0),
             ),
             onPressed: () {
@@ -134,11 +134,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               alignment: Alignment.center,
               width: _width! / 2,
               decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-                gradient: LinearGradient(
+                borderRadius: const BorderRadius.all(Radius.circular(25.0)),
+                gradient: const LinearGradient(
                   colors: <Color>[
-                    Colors.orange[200]!,
-                    Colors.pinkAccent,
+                    Color(0xFF667eea),
+                    Color(0xFF764ba2),
                   ],
                 ),
               ),

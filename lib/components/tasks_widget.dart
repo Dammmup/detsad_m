@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
 import '../providers/auth_provider.dart';
@@ -15,7 +17,6 @@ class _TasksWidgetState extends State<TasksWidget> {
   @override
   void initState() {
     super.initState();
-    // Откладываем загрузку до после завершения build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _loadTasks();
@@ -42,18 +43,7 @@ class _TasksWidgetState extends State<TasksWidget> {
         .toList();
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((0.1 * 255).round()),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: AppDecorations.cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -61,14 +51,14 @@ class _TasksWidgetState extends State<TasksWidget> {
           children: [
             Row(
               children: [
-                const Icon(Icons.task, color: Colors.orange),
+                const Icon(Icons.task, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Задачи',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.grey600,
                   ),
                 ),
               ],
@@ -81,7 +71,7 @@ class _TasksWidgetState extends State<TasksWidget> {
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
                   taskProvider.errorMessage!,
-                  style: const TextStyle(color: Colors.red),
+                  style: const TextStyle(color: AppColors.error),
                 ),
               )
             else if (pendingTasks.isEmpty)
@@ -90,7 +80,7 @@ class _TasksWidgetState extends State<TasksWidget> {
                 child: Center(
                   child: Text(
                     'Нет активных задач',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               )
@@ -140,9 +130,9 @@ class _TasksWidgetState extends State<TasksWidget> {
                     Expanded(
                       child: Text(
                         task.title,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontWeight: FontWeight.w500,
-                          color: Colors.grey[800],
+                          color: AppColors.grey600,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -155,9 +145,9 @@ class _TasksWidgetState extends State<TasksWidget> {
                   const SizedBox(height: 4),
                   Text(
                     task.description!,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.grey[600],
+                      color: AppColors.textSecondary,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -168,7 +158,7 @@ class _TasksWidgetState extends State<TasksWidget> {
                   Row(
                     children: [
                       const Icon(Icons.access_time,
-                          size: 12, color: Colors.grey),
+                          size: 12, color: AppColors.textSecondary),
                       const SizedBox(width: 2),
                       Text(
                         'До: ${_formatDate(task.dueDate!)}',
@@ -187,8 +177,8 @@ class _TasksWidgetState extends State<TasksWidget> {
           IconButton(
             onPressed: () => _toggleTaskStatus(task.id, taskProvider),
             icon: task.status == 'completed'
-                ? const Icon(Icons.check_circle, color: Colors.green)
-                : const Icon(Icons.radio_button_unchecked, color: Colors.grey),
+                ? const Icon(Icons.check_circle, color: AppColors.success)
+                : const Icon(Icons.radio_button_unchecked, color: AppColors.textSecondary),
             iconSize: 24,
           ),
         ],
@@ -199,13 +189,13 @@ class _TasksWidgetState extends State<TasksWidget> {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return AppColors.success;
       case 'in_progress':
-        return Colors.blue;
+        return AppColors.info;
       case 'cancelled':
-        return Colors.grey;
+        return AppColors.grey500;
       default:
-        return Colors.orange;
+        return AppColors.warning;
     }
   }
 
@@ -227,13 +217,13 @@ class _TasksWidgetState extends State<TasksWidget> {
     final difference = dueDate.difference(now).inDays;
 
     if (difference < 0) {
-      return Colors.red;
+      return const Color(0xFFdc3545);
     } else if (difference == 0) {
-      return Colors.orange;
+      return const Color(0xFFffc107);
     } else if (difference <= 2) {
-      return Colors.amber;
+      return AppColors.warning;
     } else {
-      return Colors.grey;
+      return AppColors.textSecondary;
     }
   }
 

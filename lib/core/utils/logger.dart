@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
 class AppLogger {
@@ -7,8 +8,9 @@ class AppLogger {
     // Настройка уровня логирования
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
-      // Показываем только логи от нашего приложения, скрываем логи библиотек
-      if (record.loggerName == 'DetsadApp') {
+      // Показываем логи только в режиме отладки и только от нашего приложения
+      if (kDebugMode && record.loggerName == 'DetsadApp') {
+        // ignore: avoid_print
         print('${record.level.name}: ${record.message}');
       }
     });

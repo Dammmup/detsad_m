@@ -16,6 +16,8 @@ import '../../components/birthdays_widget.dart';
 import '../../components/tasks_widget.dart';
 import '../../components/geolocation_status_widget.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_decorations.dart';
 import '../staff/staff_profile_screen.dart';
 import '../staff/staff_schedule_screen.dart';
 import '../salary/salary_screen.dart';
@@ -76,8 +78,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Дашборд'),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.black,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: AppColors.primaryGradient,
+            ),
+          ),
+          foregroundColor: Colors.white,
           elevation: 0,
           actions: [
             IconButton(
@@ -94,16 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
         body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.blue.shade50,
-                Colors.white,
-              ],
-            ),
-          ),
+          decoration: AppDecorations.pageBackground,
           child: SingleChildScrollView(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -116,19 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         flex: 2,
                         child: Container(
                           padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    Colors.grey.withAlpha((0.1 * 255).round()),
-                                spreadRadius: 1,
-                                blurRadius: 5,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
+                          decoration: AppDecorations.cardDecoration,
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -142,7 +127,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 style: const TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue,
+                                  color: AppColors.primary,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -170,33 +155,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             },
                             child: Container(
                               padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.grey
-                                        .withAlpha((0.1 * 255).round()),
-                                    spreadRadius: 1,
-                                    blurRadius: 5,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
+                              decoration: AppDecorations.cardDecoration,
+                              child: const Column(
                                 children: [
                                   Icon(
                                     Icons.person,
                                     size: 32,
-                                    color: Colors.blue.shade600,
+                                    color: AppColors.primary,
                                   ),
-                                  const SizedBox(height: 8),
+                                  SizedBox(height: 8),
                                   Text(
                                     'Мой профиль',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.grey[800],
+                                      color: AppColors.grey600,
                                     ),
                                     textAlign: TextAlign.center,
                                   ),
@@ -215,18 +188,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (isStaff) ...[
                     Container(
                       margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withAlpha((0.1 * 255).round()),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
+                      decoration: AppDecorations.cardDecoration,
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Row(
@@ -278,7 +240,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           context,
                           'Отметить детей',
                           Icons.child_care,
-                          Colors.green.shade600,
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -292,7 +253,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         context,
                         'Посещаемость детей',
                         Icons.visibility,
-                        Colors.orange.shade600,
                         () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -306,7 +266,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         context,
                         'Список детей',
                         Icons.people,
-                        Colors.purple.shade600,
                         () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -320,7 +279,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           context,
                           'Добавить ребёнка',
                           Icons.add,
-                          Colors.teal.shade600,
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -334,7 +292,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           context,
                           'Мой график',
                           Icons.schedule,
-                          Colors.indigo.shade600,
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -349,7 +306,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           context,
                           'Моя зарплата',
                           Icons.account_balance_wallet,
-                          Colors.teal.shade700,
                           () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
@@ -362,7 +318,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         context,
                         'Дни рождения',
                         Icons.cake,
-                        Colors.orange.shade600,
                         () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
@@ -390,21 +345,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     BuildContext context,
     String title,
     IconData icon,
-    Color color,
     VoidCallback onTap,
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: AppColors.primaryGradient,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((0.1 * 255).round()),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        boxShadow: const [AppColors.shadowHero],
       ),
       child: InkWell(
         onTap: onTap,
@@ -417,23 +364,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withAlpha((0.1 * 255).round()),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.white.withAlpha((0.2 * 255).round()),
+                  borderRadius: BorderRadius.circular(50),
                 ),
                 child: Icon(
                   icon,
                   size: 32,
-                  color: color,
+                  color: Colors.white,
                 ),
               ),
               const SizedBox(height: 12),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Colors.grey[800],
+                  color: Colors.white,
                 ),
               ),
             ],

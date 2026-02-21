@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
 import '../models/child_model.dart';
 import '../core/services/children_service.dart';
 import '../core/utils/logger.dart';
@@ -163,18 +165,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withAlpha((0.1 * 255).round()),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      decoration: AppDecorations.cardDecoration,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -182,14 +173,14 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
           children: [
             Row(
               children: [
-                const Icon(Icons.cake, color: Colors.orange),
+                const Icon(Icons.cake, color: AppColors.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Предстоящие дни рождения',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800],
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.grey600,
                   ),
                 ),
               ],
@@ -201,7 +192,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(_errorMessage!,
-                    style: const TextStyle(color: Colors.red)),
+                    style: const TextStyle(color: AppColors.error)),
               )
             else if (_nextBirthdayChild == null)
               const Padding(
@@ -209,7 +200,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                 child: Center(
                   child: Text(
                     'Нет предстоящих дней рождения',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: AppColors.textSecondary),
                   ),
                 ),
               )
@@ -231,7 +222,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                         width: 8,
                         height: 8,
                         decoration: const BoxDecoration(
-                          color: Colors.orange,
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -242,31 +233,31 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                           children: [
                             Text(
                               _nextBirthdayChild!.fullName,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w500,
-                                color: Colors.grey[800],
+                                color: AppColors.grey600,
                               ),
                             ),
                             if (_nextBirthdayGroupName != null)
                               Text(
                                 'Группа: $_nextBirthdayGroupName',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[600],
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             Text(
                               'Следующий день рождения: ${_formatBirthdayDate(_getNextBirthdayDate(_nextBirthdayChild!.birthday, DateTime.now())!)}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey[600],
+                                color: AppColors.textSecondary,
                               ),
                             ),
                             Text(
                               'Исполняется: ${_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0} ${_getAgeSuffix(_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0)}',
                               style: const TextStyle(
                                 fontSize: 12,
-                                color: Colors.blue,
+                                color: AppColors.primary,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -276,7 +267,7 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
                       const Icon(
                         Icons.arrow_forward_ios,
                         size: 16,
-                        color: Colors.grey,
+                        color: AppColors.textSecondary,
                       ),
                     ],
                   ),

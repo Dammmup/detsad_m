@@ -1,32 +1,37 @@
 import 'package:flutter/material.dart';
+import 'app_colors.dart';
 
 class AppTheme {
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue,
+        seedColor: const Color(0xFF667eea),
         brightness: Brightness.light,
       ),
+      scaffoldBackgroundColor: AppColors.background,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF667eea),
         foregroundColor: Colors.white,
         elevation: 0,
+        shadowColor: Color(0x1A667eea),
       ),
       cardTheme: const CardThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(12)),
         ),
-        elevation: 4,
+        elevation: 0,
+        color: AppColors.backgroundCard,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(25),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          elevation: 0,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -35,16 +40,21 @@ class AppTheme {
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: AppColors.borderFocused, width: 2),
         ),
       ),
       snackBarTheme: const SnackBarThemeData(
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF667eea),
         behavior: SnackBarBehavior.floating,
+      ),
+      textTheme: const TextTheme(
+        titleLarge: TextStyle(fontWeight: FontWeight.w600),
+        titleMedium: TextStyle(fontWeight: FontWeight.w600),
+        titleSmall: TextStyle(fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -53,7 +63,7 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue,
+        seedColor: const Color(0xFF667eea),
         brightness: Brightness.dark,
       ),
       appBarTheme: AppBarTheme(
@@ -66,16 +76,17 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
-        elevation: 4,
+        elevation: 0,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.blue,
+          backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(25),
           ),
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          elevation: 0,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -88,11 +99,11 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderSide: const BorderSide(color: AppColors.borderFocused, width: 2),
         ),
       ),
       snackBarTheme: const SnackBarThemeData(
-        backgroundColor: Colors.blue,
+        backgroundColor: Color(0xFF667eea),
         behavior: SnackBarBehavior.floating,
       ),
     );

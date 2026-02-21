@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../models/child_model.dart';
 import '../../../core/services/children_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_decorations.dart';
 
 class DocumentsListScreen extends StatefulWidget {
   const DocumentsListScreen({super.key});
@@ -46,20 +48,11 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
       appBar: AppBar(
         title: const Text('Документы'),
         backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
+        foregroundColor: AppColors.textPrimary,
         elevation: 0,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
-          ),
-        ),
+        decoration: AppDecorations.pageBackground,
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : Padding(
@@ -80,18 +73,7 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
                           ? Center(
                               child: Container(
                                 padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withAlpha((0.1 * 255).round()),
-                                      spreadRadius: 1,
-                                      blurRadius: 5,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
+                                decoration: AppDecorations.cardDecoration,
                                 child: const Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -114,18 +96,7 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
                                 final child = children[index];
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.grey.withAlpha((0.1 * 255).round()),
-                                        spreadRadius: 1,
-                                        blurRadius: 5,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
+                                  decoration: AppDecorations.cardDecoration,
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
                                     child: Column(
@@ -203,14 +174,14 @@ class _DocumentsListScreenState extends State<DocumentsListScreen> {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 8, vertical: 4),
                                             decoration: BoxDecoration(
-                                              color: Colors.blue.withAlpha((0.1 * 255).round()),
+                                              color: AppColors.primary.withAlpha((0.1 * 255).round()),
                                               borderRadius:
                                                   BorderRadius.circular(12),
                                             ),
                                             child: Text(
                                               'Группа: ${child.groupId}',
                                               style: const TextStyle(
-                                                  color: Colors.blue),
+                                                  color: AppColors.primary),
                                             ),
                                           ),
                                         ],

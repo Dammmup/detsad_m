@@ -150,7 +150,7 @@ class _ViewAttendanceAllScreenState extends State<ViewAttendanceAllScreen> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: <Widget>[
         (data == '1')
-            ? const Icon(Icons.check, color: Colors.redAccent)
+            ? const Icon(Icons.check, color: Color(0xFF667eea))
             : (data == '0')
                 ? const Icon(Icons.close, color: Colors.grey)
                 : Text(data),

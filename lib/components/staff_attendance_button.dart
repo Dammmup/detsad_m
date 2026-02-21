@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/theme/app_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/shifts_provider.dart';
 import '../providers/geolocation_provider.dart';
@@ -52,7 +53,6 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonAction =
           user != null ? () => _handleCheckIn(context, user.id) : null;
 
-      // Проверка геолокации
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {
@@ -63,7 +63,6 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonAction =
           user != null ? () => _handleCheckOut(context, user.id) : null;
 
-      // Проверка геолокации
       if (geolocationProvider.enabled &&
           geolocationProvider.isPositionLoaded &&
           !geolocationProvider.isWithinGeofence) {
@@ -79,6 +78,8 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       buttonDisabled = true;
     }
 
+    final gradient = _getButtonGradient(shiftsProvider.status);
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -89,35 +90,45 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
         SizedBox(
           width: 200,
           height: 50,
-          child: ElevatedButton(
-            onPressed: buttonDisabled ? null : buttonAction,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _getButtonColor(shiftsProvider.status),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-              shadowColor: Colors.black.withAlpha((0.1 * 255).round()),
-              elevation: 4,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: buttonDisabled ? AppColors.disabledGradient : gradient,
+              borderRadius: BorderRadius.circular(25),
+              boxShadow: buttonDisabled
+                  ? []
+                  : const [AppColors.shadowButton],
             ),
-            child: shiftsProvider.loading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            child: ElevatedButton(
+              onPressed: buttonDisabled ? null : buttonAction,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                shadowColor: Colors.transparent,
+                disabledBackgroundColor: Colors.transparent,
+                disabledForegroundColor: Colors.white70,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+              ),
+              child: shiftsProvider.loading
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      buttonText,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
-                  )
-                : Text(
-                    buttonText,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+            ),
           ),
         ),
         if (shiftsProvider.errorMessage != null)
@@ -126,7 +137,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
             child: Text(
               shiftsProvider.errorMessage!,
               style: const TextStyle(
-                color: Colors.red,
+                color: AppColors.error,
                 fontSize: 12,
               ),
             ),
@@ -141,10 +152,10 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blue.withAlpha((0.1 * 255).round()),
+          color: AppColors.info.withAlpha((0.1 * 255).round()),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: Colors.blue,
+            color: AppColors.info,
             width: 1,
           ),
         ),
@@ -153,7 +164,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
           children: [
             Icon(
               Icons.location_searching,
-              color: Colors.blue,
+              color: AppColors.info,
               size: 16,
             ),
             SizedBox(width: 6),
@@ -161,7 +172,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
               child: Text(
                 'GPS сигнал недоступен, ожидание позиции...',
                 style: TextStyle(
-                  color: Colors.blue,
+                  color: AppColors.info,
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                 ),
@@ -184,11 +195,11 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isInZone
-            ? Colors.green.withAlpha((0.1 * 255).round())
-            : Colors.red.withAlpha((0.1 * 255).round()),
+            ? AppColors.success.withAlpha((0.1 * 255).round())
+            : AppColors.error.withAlpha((0.1 * 255).round()),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isInZone ? Colors.green : Colors.red,
+          color: isInZone ? AppColors.success : AppColors.error,
           width: 1,
         ),
       ),
@@ -197,7 +208,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
         children: [
           Icon(
             isInZone ? Icons.check_circle : Icons.error,
-            color: isInZone ? Colors.green : Colors.red,
+            color: isInZone ? AppColors.success : AppColors.error,
             size: 16,
           ),
           const SizedBox(width: 6),
@@ -205,7 +216,7 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
             child: Text(
               statusText,
               style: TextStyle(
-                color: isInZone ? Colors.green : Colors.red,
+                color: isInZone ? AppColors.success : AppColors.error,
                 fontSize: 11,
                 fontWeight: FontWeight.w500,
               ),
@@ -217,16 +228,16 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     );
   }
 
-  Color _getButtonColor(String status) {
+  LinearGradient _getButtonGradient(String status) {
     switch (status) {
       case 'completed':
-        return Colors.green;
+        return AppColors.successGradient;
       case 'in_progress':
-        return Colors.purple;
+        return AppColors.dangerGradient;
       case 'error':
-        return Colors.grey;
+        return AppColors.disabledGradient;
       default:
-        return Colors.blue;
+        return AppColors.primaryGradient;
     }
   }
 
@@ -239,9 +250,9 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
 
     if (shiftsProvider.errorMessage == null) {
       widget.onStatusChange?.call();
-      _showSnackbar(ctx, 'Отметка о приходе успешно сохранена', Colors.green);
+      _showSnackbar(ctx, 'Отметка о приходе успешно сохранена', AppColors.success);
     } else {
-      _showSnackbar(ctx, shiftsProvider.errorMessage!, Colors.red);
+      _showSnackbar(ctx, shiftsProvider.errorMessage!, AppColors.error);
     }
   }
 
@@ -255,9 +266,9 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
 
     if (shiftsProvider.errorMessage == null) {
       widget.onStatusChange?.call();
-      _showSnackbar(ctx, 'Отметка об уходе успешно сохранена', Colors.green);
+      _showSnackbar(ctx, 'Отметка об уходе успешно сохранена', AppColors.success);
     } else {
-      _showSnackbar(ctx, shiftsProvider.errorMessage!, Colors.red);
+      _showSnackbar(ctx, shiftsProvider.errorMessage!, AppColors.error);
     }
   }
 
