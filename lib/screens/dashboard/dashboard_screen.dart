@@ -301,7 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             );
                           },
                         ),
-                      if (isStaff)
+                      if (isStaff && user?.allowToSeePayroll == true)
                         _buildDashboardCard(
                           context,
                           'Моя зарплата',
