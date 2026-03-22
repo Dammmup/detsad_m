@@ -226,9 +226,9 @@ class _LoginPageState extends State<LoginPage> {
             child: Container(
               alignment: Alignment.center,
               width: _width! / 2,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.all(Radius.circular(25.0)),
-                gradient: const LinearGradient(
+              decoration: const BoxDecoration(
+                borderRadius: BorderRadius.all(Radius.circular(25.0)),
+                gradient: LinearGradient(
                   colors: <Color>[
                     Color(0xFF667eea),
                     Color(0xFF764ba2),

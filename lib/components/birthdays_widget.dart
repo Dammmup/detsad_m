@@ -171,10 +171,10 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.cake, color: AppColors.primary),
-                const SizedBox(width: 8),
+                Icon(Icons.cake, color: AppColors.primary),
+                SizedBox(width: 8),
                 Text(
                   'Предстоящие дни рождения',
                   style: TextStyle(

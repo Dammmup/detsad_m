@@ -49,10 +49,10 @@ class _TasksWidgetState extends State<TasksWidget> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
+            const Row(
               children: [
-                const Icon(Icons.task, color: AppColors.primary),
-                const SizedBox(width: 8),
+                Icon(Icons.task, color: AppColors.primary),
+                SizedBox(width: 8),
                 Text(
                   'Задачи',
                   style: TextStyle(

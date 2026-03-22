@@ -341,10 +341,10 @@ class _StaffProfileScreenState extends State<StaffProfileScreen> {
                     const SizedBox(height: 24),
                     if (_isEditing) ...[
                       Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: AppColors.primaryGradient,
-                          borderRadius: const BorderRadius.all(Radius.circular(25)),
-                          boxShadow: const [AppColors.shadowButton],
+                          borderRadius: BorderRadius.all(Radius.circular(25)),
+                          boxShadow: [AppColors.shadowButton],
                         ),
                         child: Material(
                           color: Colors.transparent,
