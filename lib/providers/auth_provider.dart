@@ -90,7 +90,7 @@ class AuthProvider with ChangeNotifier {
       }
     } catch (e) {
       AppLogger.error('AuthProvider | Login exception: $e');
-      _errorMessage = 'Ошибка подключения к серверу';
+      _errorMessage = e.toString();
       _isLoading = false;
       notifyListeners();
       return false;

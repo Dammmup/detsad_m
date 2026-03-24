@@ -81,19 +81,32 @@ class GeolocationProvider with ChangeNotifier {
       permission = await Geolocator.requestPermission();
       _isRequestingPermission = false;
     }
-
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
+ 
+    if (permission == LocationPermission.denied) {
       _hasPermission = false;
       _errorMessage = 'Разрешение на доступ к местоположению отклонено.';
       notifyListeners();
       return;
-    } else {
-      _hasPermission = true;
-      _errorMessage = null;
     }
 
+    if (permission == LocationPermission.deniedForever) {
+      _hasPermission = false;
+      _errorMessage = 'Доступ к местоположению заблокирован навсегда. Пожалуйста, включите его в настройках приложения.';
+      notifyListeners();
+      return;
+    }
+ 
+    _hasPermission = true;
+    _errorMessage = null;
     await startLocationUpdates();
+  }
+ 
+  Future<void> openAppSettings() async {
+    await Geolocator.openAppSettings();
+  }
+ 
+  Future<void> openLocationSettings() async {
+    await Geolocator.openLocationSettings();
   }
 
   Future<void> startLocationUpdates() async {

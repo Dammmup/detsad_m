@@ -147,6 +147,87 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
   }
 
   Widget _buildGeolocationStatus(GeolocationProvider provider) {
+    if (provider.errorMessage != null && (provider.errorMessage!.contains('отклонено') || provider.errorMessage!.contains('заблокирован'))) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.error.withAlpha((0.1 * 255).round()),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.error),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.location_off, color: AppColors.error, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    provider.errorMessage!,
+                    style: const TextStyle(color: AppColors.error, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                TextButton.icon(
+                  onPressed: () => provider.openAppSettings(),
+                  icon: const Icon(Icons.settings, size: 16),
+                  label: const Text('В настройки', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                ),
+                TextButton.icon(
+                  onPressed: () => provider.initializeLocation(),
+                  icon: const Icon(Icons.refresh, size: 16),
+                  label: const Text('Обновить', style: TextStyle(fontSize: 12)),
+                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!provider.isServiceEnabled && provider.enabled) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.warning.withAlpha((0.1 * 255).round()),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warning),
+        ),
+        child: Column(
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.gps_off, color: AppColors.warning, size: 20),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'GPS выключен. Включите его для отметки посещаемости.',
+                    style: TextStyle(color: AppColors.warning, fontSize: 12),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            TextButton.icon(
+              onPressed: () => provider.openLocationSettings(),
+              icon: const Icon(Icons.location_on, size: 16),
+              label: const Text('Включить GPS', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(foregroundColor: AppColors.warning),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (provider.isLocationTemporarilyUnavailable) {
       return Container(
         margin: const EdgeInsets.only(bottom: 8),

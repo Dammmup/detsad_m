@@ -50,19 +50,55 @@ class ApiService {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
+          final errorMessage = _handleDioError(error);
           AppLogger.error(
-              'ApiService | ERROR [${error.response?.statusCode}] ${error.requestOptions.path}: ${error.message}');
+              'ApiService | ERROR [${error.response?.statusCode}] ${error.requestOptions.path}: $errorMessage');
 
           if (error.response?.statusCode == 401) {
             AppLogger.warning(
                 'ApiService | Unauthorized access (401). Keeping token for investigation.');
-            // Мы больше не удаляем токен автоматически, чтобы избежать "смертельной петли"
-            // при случайных ошибках сервера.
           }
-          return handler.next(error);
+          
+          // Пробрасываем ошибку с понятным сообщением
+          return handler.next(error.copyWith(message: errorMessage));
         },
       ),
     );
+  }
+
+  String _handleDioError(DioException error) {
+    final responseData = error.response?.data;
+    if (responseData != null && 
+        responseData is Map && 
+        responseData['error'] != null) {
+      return responseData['error'].toString();
+    }
+
+    switch (error.type) {
+      case DioExceptionType.connectionTimeout:
+        return 'Превышено время ожидания подключения. Проверьте интернет.';
+      case DioExceptionType.sendTimeout:
+        return 'Ошибка отправки данных. Попробуйте снова.';
+      case DioExceptionType.receiveTimeout:
+        return 'Сервер слишком долго отвечает. Попробуйте позже.';
+      case DioExceptionType.badResponse:
+        final statusCode = error.response?.statusCode;
+        if (statusCode == 400) return 'Некорректный запрос к серверу.';
+        if (statusCode == 401) return 'Ошибка авторизации. Войдите заново.';
+        if (statusCode == 403) return 'Доступ запрещен.';
+        if (statusCode == 404) return 'Ресурс не найден.';
+        if (statusCode == 429) return 'Слишком много запросов. Подождите немного.';
+        if (statusCode != null && statusCode >= 500) {
+          return 'Ошибка на стороне сервера. Мы скоро это исправим.';
+        }
+        return 'Произошла ошибка сервера: $statusCode';
+      case DioExceptionType.cancel:
+        return 'Запрос был отменен.';
+      case DioExceptionType.connectionError:
+        return 'Отсутствует интернет-соединение.';
+      default:
+        return 'Произошла непредвиденная ошибка. Попробуйте позже.';
+    }
   }
 
   Future<Response> get(
