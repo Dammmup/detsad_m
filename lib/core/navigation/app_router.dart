@@ -10,6 +10,8 @@ import '../../screens/children/children_list_screen.dart';
 import '../../pages/map_view_page.dart';
 import '../../screens/staff/staff_profile_screen.dart';
 import '../../screens/staff/staff_schedule_screen.dart';
+import '../../screens/medical/medical_check_screen.dart';
+import '../../screens/kitchen/kitchen_menu_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -18,6 +20,10 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case '/home':
         return MaterialPageRoute(builder: (_) => const HomePage());
+      case '/medical-check':
+        return MaterialPageRoute(builder: (_) => const MedicalCheckScreen());
+      case '/kitchen-menu':
+        return MaterialPageRoute(builder: (_) => const KitchenMenuScreen());
       case '/mark-attendance':
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(

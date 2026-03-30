@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/utils/logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_decorations.dart';
@@ -316,106 +317,126 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
                             itemBuilder: (context, index) {
                               final child = _filteredChildren[index];
                               return Container(
-                                margin: const EdgeInsets.only(bottom: 8),
+                                margin: const EdgeInsets.only(bottom: 12),
                                 decoration: AppDecorations.cardDecoration,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        child.fullName,
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.grey[800],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      if (child.birthday != null) ...[
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.cake,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                                'День рождения: ${_formatBirthday(child.birthday!)}',
+                                child: InkWell(
+                                  onTap: () {
+                                    // Можно добавить переход к деталям ребенка
+                                  },
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        _buildChildAvatar(child),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                child.fullName,
                                                 style: TextStyle(
-                                                    color: Colors.grey[700])),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                      ],
-                                      if (child.parentName != null) ...[
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.person,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                                'Родитель: ${child.parentName}',
-                                                style: TextStyle(
-                                                    color: Colors.grey[700])),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                      ],
-                                      if (child.parentPhone != null) ...[
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.phone,
-                                                size: 16, color: Colors.grey),
-                                            const SizedBox(width: 4),
-                                            GestureDetector(
-                                              onTap: () async {
-                                                final ctx = context;
-                                                await Clipboard.setData(
-                                                    ClipboardData(
-                                                        text: child
-                                                            .parentPhone!));
-                                                if (!ctx.mounted) {
-                                                  return;
-                                                }
-                                                ScaffoldMessenger.of(ctx)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: Text(
-                                                        'Номер телефона скопирован: ${child.parentPhone}'),
-                                                    duration: const Duration(
-                                                        seconds: 2),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.grey[800],
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              if (child.birthday != null) ...[
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.cake,
+                                                        size: 14,
+                                                        color: Colors.grey),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                        _formatBirthday(
+                                                            child.birthday!),
+                                                        style: TextStyle(
+                                                            fontSize: 13,
+                                                            color: Colors
+                                                                .grey[600])),
+                                                  ],
+                                                ),
+                                              ],
+                                              if (child.parentPhone != null) ...[
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    const Icon(Icons.phone,
+                                                        size: 14,
+                                                        color: Colors.grey),
+                                                    const SizedBox(width: 4),
+                                                    GestureDetector(
+                                                      onTap: () async {
+                                                        final ctx = context;
+                                                        await Clipboard.setData(
+                                                            ClipboardData(
+                                                                text: child
+                                                                    .parentPhone!));
+                                                        if (!ctx.mounted) {
+                                                          return;
+                                                        }
+                                                        ScaffoldMessenger.of(
+                                                                ctx)
+                                                            .showSnackBar(
+                                                          SnackBar(
+                                                            content: Text(
+                                                                'Номер скопирован: ${child.parentPhone}'),
+                                                            duration:
+                                                                const Duration(
+                                                                    seconds: 1),
+                                                          ),
+                                                        );
+                                                      },
+                                                      child: Text(
+                                                          child.parentPhone!,
+                                                          style: const TextStyle(
+                                                              fontSize: 13,
+                                                              color: AppColors
+                                                                  .primary,
+                                                              decoration:
+                                                                  TextDecoration
+                                                                      .underline)),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                              if (child.groupId != null) ...[
+                                                const SizedBox(height: 8),
+                                                Container(
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary
+                                                        .withAlpha(
+                                                            (0.1 * 255).round()),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
                                                   ),
-                                                );
-                                              },
-                                              child: Text(
-                                                  'Телефон: ${child.parentPhone}',
-                                                  style: const TextStyle(
-                                                      color: AppColors.primary,
-                                                      decoration: TextDecoration
-                                                          .underline)),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                      if (child.groupId != null) ...[
-                                        const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.primary
-                                                .withAlpha((0.1 * 255).round()),
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                          ),
-                                          child: Text(
-                                            _getChildGroupInfo(child),
-                                            style: const TextStyle(
-                                                color: AppColors.primary),
+                                                  child: Text(
+                                                    _getChildGroupInfo(child),
+                                                    style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color:
+                                                            AppColors.primary,
+                                                        fontWeight:
+                                                            FontWeight.w500),
+                                                  ),
+                                                ),
+                                              ],
+                                            ],
                                           ),
                                         ),
                                       ],
-                                    ],
+                                    ),
                                   ),
                                 ),
                               );
@@ -426,6 +447,34 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildChildAvatar(Child child) {
+    String? photoUrl = child.photo;
+    if (photoUrl != null &&
+        photoUrl.isNotEmpty &&
+        !photoUrl.startsWith('http')) {
+      photoUrl =
+          '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
+    }
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+          ? NetworkImage(photoUrl)
+          : null,
+      child: photoUrl == null || photoUrl.isEmpty
+          ? Text(
+              child.fullName.isNotEmpty ? child.fullName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            )
+          : null,
     );
   }
 

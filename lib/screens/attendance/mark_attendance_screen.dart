@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_decorations.dart';
 import '../../../core/utils/logger.dart';
 import '../../../models/child_model.dart';
 import '../../../models/attendance_model.dart';
@@ -437,33 +440,60 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                       child: ListView.builder(
                         itemCount: children.length,
                         itemBuilder: (context, index) {
+                          final child = children[index];
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey
-                                      .withAlpha((0.1 * 255).round()),
-                                  spreadRadius: 1,
-                                  blurRadius: 5,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: CheckboxListTile(
-                              title: Text(children[index].fullName),
-                              subtitle:
-                                  Text(_getChildGroupInfo(children[index])),
-                              value: present[index],
-                              onChanged: (value) {
+                            decoration: AppDecorations.cardDecoration,
+                            child: InkWell(
+                              onTap: () {
                                 setState(() {
-                                  present[index] = value ?? false;
+                                  present[index] = !present[index];
                                 });
                               },
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                                child: Row(
+                                  children: [
+                                    _buildChildAvatar(child),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            child.fullName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          Text(
+                                            _getChildGroupInfo(child),
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Checkbox(
+                                      value: present[index],
+                                      onChanged: (value) {
+                                        setState(() {
+                                          present[index] = value ?? false;
+                                        });
+                                      },
+                                      activeColor: AppColors.primary,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -491,6 +521,34 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
                 ),
               ),
       ),
+    );
+  }
+
+  Widget _buildChildAvatar(Child child) {
+    String? photoUrl = child.photo;
+    if (photoUrl != null &&
+        photoUrl.isNotEmpty &&
+        !photoUrl.startsWith('http')) {
+      photoUrl =
+          '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
+    }
+
+    return CircleAvatar(
+      radius: 24,
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+          ? NetworkImage(photoUrl)
+          : null,
+      child: photoUrl == null || photoUrl.isEmpty
+          ? Text(
+              child.fullName.isNotEmpty ? child.fullName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            )
+          : null,
     );
   }
 

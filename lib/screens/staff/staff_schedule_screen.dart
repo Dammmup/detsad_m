@@ -7,6 +7,8 @@ import '../../core/services/shifts_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
+import '../../core/constants/api_constants.dart';
+import '../../models/user_model.dart';
 
 class StaffScheduleScreen extends StatefulWidget {
   const StaffScheduleScreen({super.key});
@@ -106,6 +108,10 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         return 'Опоздание';
       case 'pending_approval':
         return 'Ожидает подтверждения';
+      case 'vacation':
+        return 'Отпуск';
+      case 'sick_leave':
+        return 'Болезнь';
       default:
         return status;
     }
@@ -123,6 +129,10 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
         return AppColors.error;
       case 'pending_approval':
         return AppColors.warning;
+      case 'vacation':
+        return Colors.orange;
+      case 'sick_leave':
+        return Colors.redAccent;
       default:
         return Colors.grey;
     }
@@ -178,22 +188,30 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
                 decoration: AppDecorations.cardDecoration,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Text(
-                        'Сотрудник: ${user?.firstName ?? ''} ${user?.lastName ?? ''}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Роль: ${user?.role ?? ''}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                      _buildStaffAvatar(user),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Роль: ${user?.role ?? ''}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -519,5 +537,35 @@ class _StaffScheduleScreenState extends State<StaffScheduleScreen> {
     }
 
     return isoDateTime.toString();
+  }
+
+  Widget _buildStaffAvatar(User? user) {
+    if (user == null) return const SizedBox.shrink();
+
+    String? avatarUrl = user.avatar;
+    if (avatarUrl != null &&
+        avatarUrl.isNotEmpty &&
+        !avatarUrl.startsWith('http')) {
+      avatarUrl =
+          '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$avatarUrl';
+    }
+
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+      backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
+          ? NetworkImage(avatarUrl)
+          : null,
+      child: avatarUrl == null || avatarUrl.isEmpty
+          ? Text(
+              user.firstName.isNotEmpty ? user.firstName[0].toUpperCase() : '?',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            )
+          : null,
+    );
   }
 }

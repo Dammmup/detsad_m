@@ -31,4 +31,26 @@ class AppDecorations {
     borderRadius: BorderRadius.all(Radius.circular(25)),
     boxShadow: [AppColors.shadowButton],
   );
+
+  static InputDecoration searchInputDecoration({required String hintText}) {
+    return InputDecoration(
+      hintText: hintText,
+      prefixIcon: const Icon(Icons.search, color: AppColors.textSecondary),
+      filled: true,
+      fillColor: AppColors.backgroundCard,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.primary, width: 1),
+      ),
+    );
+  }
 }

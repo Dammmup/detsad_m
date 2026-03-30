@@ -2,7 +2,7 @@ class ApiConstants {
   static String get baseUrl {
     return const String.fromEnvironment(
       'API_URL',
-      defaultValue: 'https://detsad-b.vercel.app/',
+      defaultValue: 'https://detsad-b-git-682876035454.europe-west1.run.app/',
     );
   }
 

@@ -21,6 +21,10 @@ import '../../core/theme/app_decorations.dart';
 import '../staff/staff_profile_screen.dart';
 import '../staff/staff_schedule_screen.dart';
 import '../salary/salary_screen.dart';
+import '../../../providers/groups_provider.dart';
+import '../../../models/group_model.dart';
+import '../medical/medical_check_screen.dart';
+import '../kitchen/kitchen_menu_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -39,6 +43,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final geoProvider =
             Provider.of<GeolocationProvider>(context, listen: false);
         geoProvider.loadSettings();
+
+        // Загружаем группы при входе
+        final groupsProvider = 
+            Provider.of<GroupsProvider>(context, listen: false);
+        groupsProvider.loadGroups();
       }
     });
   }
@@ -182,6 +191,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 24),
                   const TasksWidget(),
+                  const SizedBox(height: 24),
+                  
+                  // Секция групп
+                  Consumer<GroupsProvider>(
+                    builder: (context, groupsProvider, child) {
+                      if (groupsProvider.isLoading) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      
+                      if (groupsProvider.groups.isEmpty) {
+                        return const SizedBox.shrink();
+                      }
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Ваши группы',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            height: 100,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: groupsProvider.groups.length,
+                              itemBuilder: (context, index) {
+                                final group = groupsProvider.groups[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 12.0),
+                                  child: GestureDetector(
+                                    onTap: () => _showGroupActionDialog(context, group),
+                                    child: Container(
+                                      width: 160,
+                                      decoration: AppDecorations.cardDecoration.copyWith(
+                                        gradient: AppColors.primaryGradient,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          group.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                        ],
+                      );
+                    },
+                  ),
                   const SizedBox(height: 24),
                   const GeolocationStatusWidget(),
                   const SizedBox(height: 16),
@@ -336,6 +408,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showGroupActionDialog(BuildContext context, Group group) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(group.name),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogButton(
+              context,
+              'Отметить посещаемость',
+              Icons.check_circle_outline,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const MarkAttendanceScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildDialogButton(
+              context,
+              'Посещаемость список',
+              Icons.list_alt,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ViewAttendanceScreen(),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildDialogButton(
+              context,
+              'Утренний фильтр (Мед)',
+              Icons.medical_services_outlined,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MedicalCheckScreen(
+                    groupId: group.id,
+                    groupName: group.name,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildDialogButton(
+              context,
+              'Меню кухни',
+              Icons.restaurant_menu,
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const KitchenMenuScreen(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Закрыть'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogButton(
+      BuildContext context, String title, IconData icon, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: () {
+          Navigator.pop(context);
+          onTap();
+        },
+        icon: Icon(icon, color: Colors.white),
+        label: Text(title, style: const TextStyle(color: Colors.white)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
     );

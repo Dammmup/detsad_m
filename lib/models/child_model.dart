@@ -12,6 +12,7 @@ class Child {
   final String? groupName;
   final bool? active;
   final String? gender;
+  final String? photo;
 
   Child({
     required this.id,
@@ -25,6 +26,7 @@ class Child {
     this.groupName,
     this.active,
     this.gender,
+    this.photo,
   });
 
   factory Child.fromJson(Map<String, dynamic> json) {
@@ -70,6 +72,7 @@ class Child {
       groupName: groupNameString,
       active: json['active'],
       gender: json['gender'],
+      photo: json['photo'] ?? json['imageUrl'] ?? json['photoUrl'],
     );
   }
 
@@ -83,6 +86,7 @@ class Child {
       'staffId': staffId,
       'active': active,
       'gender': gender,
+      'photo': photo,
     };
 
     if (id.isNotEmpty) {
@@ -126,6 +130,7 @@ class Child {
     String? groupName,
     bool? active,
     String? gender,
+    String? photo,
   }) {
     return Child(
       id: id ?? this.id,
@@ -139,6 +144,7 @@ class Child {
       groupName: groupName ?? this.groupName,
       active: active ?? this.active,
       gender: gender ?? this.gender,
+      photo: photo ?? this.photo,
     );
   }
 }
