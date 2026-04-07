@@ -2,6 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_typography.dart';
+import '../core/theme/app_decorations.dart';
+import '../core/widgets/animated_press.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,238 +16,192 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  double? _height, _width;
   String _email = '', _password = '';
   final GlobalKey<FormState> _key = GlobalKey();
-  bool _showPassword = true, _load = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _height = MediaQuery.of(context).size.height;
-    _width = MediaQuery.of(context).size.width;
-  }
+  bool _showPassword = false, _load = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Attendance'),
-      ),
       body: Container(
-        height: _height,
-        width: _width,
-        padding: const EdgeInsets.only(bottom: 5),
-        child: SingleChildScrollView(
-          child: Column(
-            children: <Widget>[
-              _image(),
-              _welcomeText(),
-              _loginText(),
-              _form(),
-              _forgetPassText(),
-              SizedBox(height: _height! / 12),
-              _button(),
-            ],
+        decoration: AppDecorations.pageBackground,
+        height: double.infinity,
+        width: double.infinity,
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: Column(
+              children: <Widget>[
+                const SizedBox(height: AppSpacing.xxxl),
+                _logo().animate().fadeIn(duration: 600.ms).scale(delay: 200.ms),
+                const SizedBox(height: AppSpacing.xxl),
+                _welcomeText().animate().fadeIn(delay: 400.ms).slideY(begin: 0.2),
+                const SizedBox(height: AppSpacing.xl),
+                _loginCard().animate().fadeIn(delay: 600.ms).slideY(begin: 0.1),
+                const SizedBox(height: AppSpacing.lg),
+                _forgetPassText().animate().fadeIn(delay: 800.ms),
+                const SizedBox(height: AppSpacing.xxxl),
+                _button().animate().fadeIn(delay: 1000.ms).scale(begin: const Offset(0.8, 0.8)),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _image() {
+  Widget _logo() {
     return Container(
-      margin: EdgeInsets.only(top: _height! / 15.0),
       height: 100.0,
       width: 100.0,
       decoration: const BoxDecoration(
+        color: AppColors.surface,
         shape: BoxShape.circle,
+        boxShadow: [AppColors.shadowLevel2],
       ),
-      child: Image.asset('assets/images/login.png'),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Image.asset(
+        'assets/images/logo.png',
+        errorBuilder: (context, error, stackTrace) => const Icon(
+          Icons.school_rounded,
+          size: 48,
+          color: AppColors.primary,
+        ),
+      ),
     );
   }
 
   Widget _welcomeText() {
-    return Container(
-      margin: EdgeInsets.only(left: _width! / 20, top: _height! / 100),
-      child: const Row(
-        children: <Widget>[
-          Text(
-            "Welcome",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 50,
-            ),
+    return Column(
+      children: [
+        Text(
+          "Welcome back",
+          style: AppTypography.displaySmall.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.textPrimary,
           ),
-        ],
-      ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          "Sign in to your account to continue",
+          style: AppTypography.bodyLarge.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 
-  Widget _loginText() {
+  Widget _loginCard() {
     return Container(
-      margin: EdgeInsets.only(left: _width! / 15.0),
-      child: const Row(
-        children: <Widget>[
-          Text(
-            "Sign in to your account",
-            style: TextStyle(
-              fontWeight: FontWeight.w200,
-              fontSize: 17,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _form() {
-    return Container(
-      margin: EdgeInsets.only(
-          left: _width! / 12.0, right: _width! / 12.0, top: _height! / 15.0),
+      decoration: AppDecorations.cardElevated3,
+      padding: const EdgeInsets.all(AppSpacing.xl),
       child: Form(
         key: _key,
         child: Column(
           children: <Widget>[
-            _emailBox(),
-            SizedBox(height: _height! / 40.0),
-            _passwordBox(),
+            TextFormField(
+              style: AppTypography.bodyLarge,
+              decoration: AppDecorations.inputDecoration(
+                labelText: "Email address",
+                prefixIcon: const Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
+              ),
+              keyboardType: TextInputType.emailAddress,
+              onSaved: (input) => _email = input!.trim(),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            TextFormField(
+              style: AppTypography.bodyLarge,
+              obscureText: !_showPassword,
+              decoration: AppDecorations.inputDecoration(
+                labelText: "Password",
+                prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColors.primary, size: 20),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _showPassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _showPassword = !_showPassword),
+                ),
+              ),
+              onSaved: (input) => _password = input!.trim(),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _emailBox() {
-    return Material(
-      borderRadius: BorderRadius.circular(30.0),
-      elevation: 10,
-      child: TextFormField(
-        onSaved: (input) => _email = input!,
-        keyboardType: TextInputType.emailAddress,
-        cursorColor: const Color(0xFF667eea),
-        obscureText: false,
-        decoration: InputDecoration(
-          prefixIcon:
-              const Icon(Icons.email, color: Color(0xFF667eea), size: 20),
-          hintText: "Email ID",
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30.0),
-              borderSide: BorderSide.none),
-        ),
-      ),
-    );
-  }
-
-  Widget _passwordBox() {
-    return Material(
-      borderRadius: BorderRadius.circular(30.0),
-      elevation: 10,
-      child: TextFormField(
-        onSaved: (input) => _password = input!,
-        keyboardType: TextInputType.visiblePassword,
-        cursorColor: const Color(0xFF667eea),
-        obscureText: _showPassword,
-        decoration: InputDecoration(
-          prefixIcon:
-              const Icon(Icons.lock, color: Color(0xFF667eea), size: 20),
-          suffixIcon: IconButton(
-            icon: Icon(
-              Icons.remove_red_eye,
-              color: _showPassword ? Colors.grey : const Color(0xFF667eea),
-            ),
-            onPressed: () {
-              setState(() => _showPassword = !_showPassword);
-            },
-          ),
-          hintText: "Password",
-          border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30.0),
-              borderSide: BorderSide.none),
-        ),
-      ),
-    );
-  }
-
   Widget _forgetPassText() {
-    return Container(
-      margin: EdgeInsets.only(top: _height! / 40.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          const Text(
-            "Forgot your password?",
-            style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13),
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: () => Navigator.of(context).pushNamed('forgotpassword'),
+        style: TextButton.styleFrom(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        ),
+        child: Text(
+          "Forgot your password?",
+          style: AppTypography.labelLarge.copyWith(
+            color: AppColors.primary,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(
-            width: 5,
-          ),
-          GestureDetector(
-            onTap: () {
-              Navigator.of(context).pushNamed('forgotpassword');
-            },
-            child: const Text(
-              "Recover",
-              style: TextStyle(
-                  fontWeight: FontWeight.w600, color: Color(0xFF667eea)),
-            ),
-          )
-        ],
+        ),
       ),
     );
   }
 
   Widget _button() {
-    return !_load
-        ? ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25.0)),
-              padding: const EdgeInsets.all(0.0),
-            ),
-            onPressed: () {
-              RegExp regExp = RegExp(
-                  r'^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$');
-              final formstate = _key.currentState;
-              formstate!.save();
-              if (_email.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Email Cannot be empty')));
-              } else if (_password.length < 6) {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                    content:
-                        Text('Password needs to be atleast six characters')));
-              } else if (!regExp.hasMatch(_email)) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Enter a Valid Email')));
-              } else {
-                setState(() {
-                  _load = true;
-                });
-                _signIn();
-              }
-            },
-            child: Container(
-              alignment: Alignment.center,
-              width: _width! / 2,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.all(Radius.circular(25.0)),
-                gradient: LinearGradient(
-                  colors: <Color>[
-                    Color(0xFF667eea),
-                    Color(0xFF764ba2),
-                  ],
-                ),
-              ),
-              padding: const EdgeInsets.all(12.0),
-              child: const Text('SIGN IN',
-                  style: TextStyle(fontSize: 15, color: Colors.white)),
-            ),
-          )
-        : const Center(
-            child: CircularProgressIndicator(),
-          );
+    if (_load) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+        ),
+      );
+    }
+
+    return AnimatedPress(
+      onTap: _onLoginPressed,
+      child: Container(
+        alignment: Alignment.center,
+        width: double.infinity,
+        height: 56,
+        decoration: AppDecorations.filledButtonDecoration,
+        child: Text(
+          'SIGN IN',
+          style: AppTypography.labelLarge.copyWith(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 1.1,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _onLoginPressed() {
+    RegExp regExp = RegExp(
+        r'^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,5})$');
+    final formstate = _key.currentState;
+    formstate!.save();
+    
+    if (_email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Email cannot be empty')));
+    } else if (_password.length < 6) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Password needs to be at least 6 characters')));
+    } else if (!regExp.hasMatch(_email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Enter a valid email')));
+    } else {
+      setState(() => _load = true);
+      _signIn();
+    }
   }
 
   Future<void> _signIn() async {
@@ -261,20 +220,15 @@ class _LoginPageState extends State<LoginPage> {
       await prefs.setString(
           'role', (snapshot.data() as Map<String, dynamic>)['role']);
       await prefs.setString('userid', user.uid);
-      if (mounted) {
-        setState(() {
-          _load = false;
-        });
-        Navigator.of(context).pushReplacementNamed('home');
-      }
+      
+      if (!mounted) return;
+      setState(() => _load = false);
+      Navigator.of(context).pushReplacementNamed('home');
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _load = false;
-        });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.toString())));
-      }
+      if (!mounted) return;
+      setState(() => _load = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(e.toString())));
     }
   }
 }

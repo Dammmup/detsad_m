@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
+import '../core/widgets/animated_press.dart';
 import '../models/child_model.dart';
 import '../core/services/children_service.dart';
-import '../core/utils/logger.dart';
 import '../screens/birthdays/birthdays_screen.dart';
+
+import '../core/widgets/shimmer_loading.dart';
 
 class BirthdaysWidget extends StatefulWidget {
   const BirthdaysWidget({super.key});
@@ -27,255 +32,213 @@ class _BirthdaysWidgetState extends State<BirthdaysWidget> {
 
   Future<void> _loadUpcomingBirthdays() async {
     try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-      });
-
+      if (!mounted) return;
+      setState(() => _isLoading = true);
       final childrenService = ChildrenService();
-
       List<Child> allChildren = await childrenService.getAllChildren();
-      AppLogger.debug('BirthdaysWidget | Children loaded: ${allChildren.length}');
-
       if (mounted) {
         Child? nextChild = _getNextBirthdayChild(allChildren);
-        String? groupName;
-
-        if (nextChild != null) {
-          AppLogger.debug(
-              'BirthdaysWidget | Next birthday: ${nextChild.fullName}, groupId=${nextChild.groupId}, groupName=${nextChild.groupName}');
-          groupName = nextChild.groupName;
-        }
-
         setState(() {
           _nextBirthdayChild = nextChild;
-          _nextBirthdayGroupName = groupName;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Ошибка загрузки дней рождения: $e';
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
+          _nextBirthdayGroupName = nextChild?.groupName;
           _isLoading = false;
         });
       }
+    } catch (e) {
+      if (mounted) setState(() { _errorMessage = 'Ошибка загрузки'; _isLoading = false; });
     }
   }
 
   Child? _getNextBirthdayChild(List<Child> children) {
     final now = DateTime.now();
-
-    List<Child> childrenWithBirthdays =
-        children.where((child) => child.birthday != null).toList();
-
-    if (childrenWithBirthdays.isEmpty) {
-      return null;
-    }
-
-    childrenWithBirthdays.sort((child1, child2) {
-      DateTime? date1 = _getNextBirthdayDate(child1.birthday, now);
-      DateTime? date2 = _getNextBirthdayDate(child2.birthday, now);
-
-      if (date1 == null) return 1;
-      if (date2 == null) return -1;
-
-      return date1.compareTo(date2);
+    List<Child> childrenWithBirthdays = children.where((child) => child.birthday != null).toList();
+    if (childrenWithBirthdays.isEmpty) return null;
+    childrenWithBirthdays.sort((a, b) {
+      DateTime? d1 = _getNextBirthdayDate(a.birthday, now);
+      DateTime? d2 = _getNextBirthdayDate(b.birthday, now);
+      if (d1 == null) return 1;
+      if (d2 == null) return -1;
+      return d1.compareTo(d2);
     });
-
     return childrenWithBirthdays.first;
   }
 
-  DateTime? _getNextBirthdayDate(String? birthdayString, DateTime currentDate) {
-    if (birthdayString == null) return null;
-
+  DateTime? _getNextBirthdayDate(String? bday, DateTime now) {
+    if (bday == null) return null;
     try {
-      DateTime birthday = DateTime.parse(birthdayString);
-
-      DateTime birthdayThisYear =
-          DateTime(currentDate.year, birthday.month, birthday.day);
-
-      if (birthdayThisYear.isBefore(currentDate)) {
-        birthdayThisYear =
-            DateTime(currentDate.year + 1, birthday.month, birthday.day);
-      }
-
-      return birthdayThisYear;
-    } catch (e) {
-      return null;
-    }
+      DateTime b = DateTime.parse(bday);
+      DateTime thisYear = DateTime(now.year, b.month, b.day);
+      return thisYear.isBefore(now) || (thisYear.month == now.month && thisYear.day == now.day) 
+        ? (thisYear.month == now.month && thisYear.day == now.day ? thisYear : DateTime(now.year + 1, b.month, b.day)) 
+        : thisYear;
+    } catch (_) { return null; }
   }
 
-  String _formatBirthdayDate(DateTime date) {
-    const List<String> months = [
-      'января',
-      'февраля',
-      'марта',
-      'апреля',
-      'мая',
-      'июня',
-      'июля',
-      'августа',
-      'сентября',
-      'октября',
-      'ноября',
-      'декабря'
-    ];
-
-    int day = date.day;
-    int monthIndex = date.month - 1;
-    int year = date.year;
-
-    return '$day ${months[monthIndex]}, $year';
+  String _formatDateShort(DateTime date) {
+    const months = ['янв', 'февр', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сент', 'окт', 'нояб', 'дек'];
+    return '${date.day}\n${months[date.month - 1]}';
   }
 
-  int? _calculateAge(String? birthdayString, DateTime currentDate) {
-    if (birthdayString == null) return null;
-
+  int _calculateAge(String? bday, DateTime now) {
+    if (bday == null) return 0;
     try {
-      DateTime birthday = DateTime.parse(birthdayString);
-      DateTime? nextBirthday =
-          _getNextBirthdayDate(birthdayString, currentDate);
-
-      if (nextBirthday != null) {
-        int years = nextBirthday.year - birthday.year;
-        return years;
-      }
-      return null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  String _getAgeSuffix(int age) {
-    if (age % 10 == 1 && age % 100 != 11) {
-      return 'год';
-    } else if ((age % 10 >= 2 && age % 10 <= 4) &&
-        (age % 100 < 10 || age % 100 >= 20)) {
-      return 'года';
-    } else {
-      return 'лет';
-    }
+      DateTime b = DateTime.parse(bday);
+      return now.year - b.year;
+    } catch (_) { return 0; }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (!_isLoading && _nextBirthdayChild == null) return const SizedBox.shrink();
+
+    final now = DateTime.now();
+    final nextBday = _nextBirthdayChild != null ? _getNextBirthdayDate(_nextBirthdayChild!.birthday, now) : null;
+    final isToday = nextBday != null && nextBday.month == now.month && nextBday.day == now.day;
+
     return Container(
-      decoration: AppDecorations.cardDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.cake, color: AppColors.primary),
-                SizedBox(width: 8),
-                Text(
-                  'Предстоящие дни рождения',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.grey600,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (_errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(_errorMessage!,
-                    style: const TextStyle(color: AppColors.error)),
-              )
-            else if (_nextBirthdayChild == null)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    'Нет предстоящих дней рождения',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-              )
-            else
-              InkWell(
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const BirthdaysScreen(),
+      decoration: AppDecorations.cardElevated1.copyWith(
+        color: isToday ? Colors.pink.withValues(alpha: 0.05) : AppColors.surface,
+        border: isToday ? Border.all(color: Colors.pink.withValues(alpha: 0.2), width: 1.5) : null,
+      ),
+      child: AnimatedPress(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const BirthdaysScreen())),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                   Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: isToday ? Colors.pink.withValues(alpha: 0.1) : AppColors.primaryContainer, 
+                      shape: BoxShape.circle
                     ),
-                  );
-                },
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.all(12.0),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primary,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              _nextBirthdayChild!.fullName,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.grey600,
-                              ),
-                            ),
-                            if (_nextBirthdayGroupName != null)
-                              Text(
-                                'Группа: $_nextBirthdayGroupName',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            Text(
-                              'Следующий день рождения: ${_formatBirthdayDate(_getNextBirthdayDate(_nextBirthdayChild!.birthday, DateTime.now())!)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            Text(
-                              'Исполняется: ${_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0} ${_getAgeSuffix(_calculateAge(_nextBirthdayChild!.birthday, DateTime.now()) ?? 0)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
+                    child: Icon(
+                      Symbols.cake_rounded, 
+                      color: isToday ? Colors.pink : AppColors.primary, 
+                      size: 20
+                    ),
                   ),
-                ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    'Дни рождения', 
+                    style: AppTypography.titleSmall.copyWith(
+                      color: isToday ? Colors.pink.shade900 : AppColors.primary90,
+                      fontWeight: FontWeight.w800,
+                    )
+                  ),
+                  const Spacer(),
+                  const Icon(Symbols.chevron_right_rounded, color: AppColors.outline, size: 20),
+                ],
               ),
-          ],
+              const SizedBox(height: AppSpacing.md),
+              if (_isLoading)
+                 const Row(
+                   children: [
+                     SkeletonLoader(width: 54, height: 54, borderRadius: AppRadius.md),
+                     SizedBox(width: AppSpacing.md),
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           SkeletonLoader(width: 140, height: 16),
+                           SizedBox(height: 8),
+                           SkeletonLoader(width: 80, height: 12),
+                         ],
+                       ),
+                     ),
+                   ],
+                 )
+              else if (_errorMessage != null)
+                Text(_errorMessage!, style: AppTypography.bodySmall.copyWith(color: AppColors.error))
+              else
+                Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        gradient: isToday 
+                          ? const LinearGradient(colors: [Colors.pinkAccent, Colors.orangeAccent]) 
+                          : AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        boxShadow: [
+                          if (isToday) 
+                            BoxShadow(
+                              color: Colors.pinkAccent.withValues(alpha: 0.3), 
+                              blurRadius: 10, 
+                              offset: const Offset(0, 4)
+                            ) 
+                          else 
+                            AppColors.shadowLevel1
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          _formatDateShort(nextBday!),
+                          textAlign: TextAlign.center,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: Colors.white, 
+                            fontSize: 10, 
+                            fontWeight: FontWeight.w900,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _nextBirthdayChild!.fullName, 
+                            style: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w700), 
+                            maxLines: 1, 
+                            overflow: TextOverflow.ellipsis
+                          ),
+                          Row(
+                            children: [
+                              Text(
+                                isToday ? 'СЕГОДНЯ! ' : 'Будет ', 
+                                style: AppTypography.bodySmall.copyWith(
+                                  color: isToday ? Colors.pink : AppColors.textSecondary, 
+                                  fontWeight: isToday ? FontWeight.w900 : null
+                                )
+                              ),
+                              Text(
+                                '${_calculateAge(_nextBirthdayChild!.birthday, now) + 1} лет', 
+                                style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_nextBirthdayGroupName != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryContainer, 
+                          borderRadius: BorderRadius.circular(8)
+                        ),
+                        child: Text(
+                          _nextBirthdayGroupName!, 
+                          style: AppTypography.labelSmall.copyWith(
+                            fontSize: 10, 
+                            color: AppColors.primary, 
+                            fontWeight: FontWeight.w800
+                          )
+                        ),
+                      ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 }

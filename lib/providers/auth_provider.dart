@@ -145,6 +145,76 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<bool> updateProfile({
+    String? firstName,
+    String? lastName,
+    String? phone,
+    String? avatar,
+  }) async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final success = await _authService.updateProfile(
+        userId: _user!.id,
+        firstName: firstName,
+        lastName: lastName,
+        phone: phone,
+        avatar: avatar,
+      );
+
+      if (success) {
+        // Обновляем локальную модель пользователя
+        _user = _user!.copyWith(
+          firstName: firstName,
+          lastName: lastName,
+          phone: phone,
+          avatar: avatar,
+        );
+        AppLogger.info('AuthProvider | Profile updated successfully');
+        return true;
+      } else {
+        _errorMessage = 'Не удалось обновить профиль';
+        return false;
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> changePassword(String newPassword) async {
+    if (_user == null) return false;
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final success = await _authService.changePassword(
+        userId: _user!.id,
+        newPassword: newPassword,
+      );
+
+      if (!success) {
+        _errorMessage = 'Не удалось изменить пароль';
+      }
+      return success;
+    } catch (e) {
+      _errorMessage = e.toString();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   void updateUser(User updatedUser) {
     _user = updatedUser;
     notifyListeners();

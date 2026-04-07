@@ -1,10 +1,10 @@
-import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
 import '../../models/medical_record.dart';
 import '../utils/logger.dart';
+import 'api_service.dart';
 
 class MedicalService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: ApiConstants.baseUrl));
+  final ApiService _apiService = ApiService();
 
   Future<List<MedicalRecord>> getMedicalRecords({
     required String childId,
@@ -12,8 +12,8 @@ class MedicalService {
     required String endDate,
   }) async {
     try {
-      final response = await _dio.get(
-        '/medical/records',
+      final response = await _apiService.get(
+        ApiConstants.medicalRecords,
         queryParameters: {
           'childId': childId,
           'startDate': startDate,
@@ -35,8 +35,8 @@ class MedicalService {
 
   Future<MedicalRecord> createMedicalRecord(MedicalRecord record) async {
     try {
-      final response = await _dio.post(
-        '/medical/records',
+      final response = await _apiService.post(
+        ApiConstants.medicalRecords,
         data: record.toJson(),
       );
 
@@ -51,11 +51,62 @@ class MedicalService {
     }
   }
 
+  Future<List<MedicalRecord>> getTodayRecordsForDate(DateTime date) async {
+    try {
+      String dateStr = date.toIso8601String().split('T')[0];
+      final response = await _apiService.get(
+        ApiConstants.medicalRecords,
+        queryParameters: {
+          'date': dateStr,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = response.data;
+        return data.map((json) => MedicalRecord.fromJson(json)).toList();
+      }
+      return [];
+    } catch (e) {
+      AppLogger.error('MedicalService | Error fetching records for date: $e');
+      return [];
+    }
+  }
+
+  Future<MedicalRecord> updateMedicalRecord(String id, MedicalRecord record) async {
+    try {
+      final response = await _apiService.put(
+        '${ApiConstants.medicalRecords}/$id',
+        data: record.toJson(),
+      );
+
+      if (response.statusCode == 200) {
+        return MedicalRecord.fromJson(response.data);
+      } else {
+        throw Exception('Failed to update medical record: ${response.data}');
+      }
+    } catch (e) {
+      AppLogger.error('MedicalService | Error updating medical record: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteMedicalRecord(String id) async {
+    try {
+      final response = await _apiService.delete('${ApiConstants.medicalRecords}/$id');
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Failed to delete medical record');
+      }
+    } catch (e) {
+      AppLogger.error('MedicalService | Error deleting medical record: $e');
+      rethrow;
+    }
+  }
+
   Future<MedicalRecord?> getTodayRecord(String childId) async {
     try {
       String today = DateTime.now().toIso8601String().split('T')[0];
-      final response = await _dio.get(
-        '/medical/records/today',
+      final response = await _apiService.get(
+        ApiConstants.medicalRecords,
         queryParameters: {
           'childId': childId,
           'date': today,
@@ -63,15 +114,14 @@ class MedicalService {
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        if (data != null) {
-          return MedicalRecord.fromJson(data);
+        final List<dynamic> data = response.data;
+        if (data.isNotEmpty) {
+          return MedicalRecord.fromJson(data.first);
         }
       }
       return null;
     } catch (e) {
-      // It's normal to have no record for today
-      AppLogger.debug('MedicalService | No record for today for child $childId');
+      AppLogger.debug('MedicalService | No record for today for child $childId: $e');
       return null;
     }
   }

@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/menu_model.dart';
 import '../../core/services/kitchen_service.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_decorations.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/widgets/animated_press.dart';
 import 'package:intl/intl.dart';
+
+import 'dart:ui';
+import '../../core/widgets/shimmer_loading.dart';
 
 class KitchenMenuScreen extends StatefulWidget {
   const KitchenMenuScreen({super.key});
@@ -32,37 +39,60 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
 
     try {
       final menu = await _kitchenService.getTodayMenu();
-      setState(() {
-        _menu = menu;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _menu = menu;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Ошибка загрузки меню: $e';
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _error = 'Ошибка загрузки меню: $e';
+          _isLoading = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Кухня: Меню на сегодня'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchMenu,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: Text(
+                'Меню на сегодня', 
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.primary90,
+                  fontWeight: FontWeight.w900,
+                )
+              ),
+              centerTitle: true,
+              backgroundColor: AppColors.surface.withValues(alpha: 0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Symbols.arrow_back_ios_new_rounded, color: AppColors.primary90, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Symbols.refresh_rounded, color: AppColors.primary90), 
+                  onPressed: _fetchMenu
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
       body: Container(
         decoration: AppDecorations.pageBackground,
         child: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+            ? _buildSkeletonLoading()
             : _error != null
                 ? _buildErrorView()
                 : _menu == null
@@ -72,17 +102,64 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
     );
   }
 
+  Widget _buildSkeletonLoading() {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 100, AppSpacing.lg, AppSpacing.lg),
+      children: [
+        const SkeletonLoader(width: double.infinity, height: 100, borderRadius: AppRadius.lg),
+        const SizedBox(height: AppSpacing.lg),
+        ...List.generate(4, (index) => const Padding(
+          padding: EdgeInsets.only(bottom: AppSpacing.md),
+          child: SkeletonLoader(width: double.infinity, height: 120, borderRadius: AppRadius.lg),
+        )),
+      ],
+    );
+  }
+
   Widget _buildErrorView() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, size: 48, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(_error!, style: const TextStyle(color: Colors.red)),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: _fetchMenu, child: const Text('Повторить')),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                shape: BoxShape.circle
+              ),
+              child: const Icon(Symbols.error_rounded, size: 48, color: AppColors.error),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Упс! Что-то пошло не так', 
+              style: AppTypography.titleSmall.copyWith(fontWeight: FontWeight.w800)
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              _error!, 
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary), 
+              textAlign: TextAlign.center
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            AnimatedPress(
+              onTap: _fetchMenu,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient, 
+                  borderRadius: BorderRadius.circular(AppRadius.full),
+                  boxShadow: const [AppColors.shadowLevel2]
+                ),
+                child: Text(
+                  'Попробовать снова', 
+                  style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w800)
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -92,11 +169,40 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.restaurant_menu, size: 48, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text('Меню на сегодня еще не сформировано', style: TextStyle(color: Colors.grey)),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: _fetchMenu, child: const Text('Обновить')),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.5),
+              shape: BoxShape.circle
+            ),
+            child: const Icon(Symbols.restaurant_menu_rounded, size: 48, color: AppColors.primary),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            'Меню скоро появится', 
+            style: AppTypography.titleSmall.copyWith(fontWeight: FontWeight.w800)
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Повар уже готовит список блюд ✨', 
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary)
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          AnimatedPress(
+            onTap: _fetchMenu,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.primary, 
+                borderRadius: BorderRadius.circular(AppRadius.full),
+                boxShadow: const [AppColors.shadowLevel1]
+              ),
+              child: Text(
+                'Обновить данные', 
+                style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w800)
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -104,92 +210,63 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
 
   Widget _buildMenuView() {
     return ListView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       children: [
-        _buildInfoCard(),
-        const SizedBox(height: 16),
-        _buildMealCard('breakfast', 'Завтрак', Icons.wb_sunny_outlined),
-        const SizedBox(height: 12),
-        _buildMealCard('lunch', 'Обед', Icons.light_mode_outlined),
-        const SizedBox(height: 12),
-        _buildMealCard('snack', 'Полдник', Icons.cookie_outlined),
-        const SizedBox(height: 12),
-        _buildMealCard('dinner', 'Ужин', Icons.nightlight_outlined),
+        const SizedBox(height: 110),
+        _buildInfoCard().animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
+        const SizedBox(height: AppSpacing.lg),
+        _buildMealCard('breakfast', 'Завтрак', Symbols.wb_sunny_rounded, 0),
+        const SizedBox(height: AppSpacing.md),
+        _buildMealCard('lunch', 'Обед', Symbols.light_mode_rounded, 1),
+        const SizedBox(height: AppSpacing.md),
+        _buildMealCard('snack', 'Полдник', Symbols.cookie_rounded, 2),
+        const SizedBox(height: AppSpacing.md),
+        _buildMealCard('dinner', 'Ужин', Symbols.nightlight_rounded, 3),
+        const SizedBox(height: 40),
       ],
     );
   }
 
   Widget _buildInfoCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.cardDecoration,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            DateFormat('EEEE, d MMMM yyyy', 'ru_RU').format(_menu!.date),
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              const Icon(Icons.people_outline, size: 16, color: Colors.grey),
-              const SizedBox(width: 8),
-              Text('Всего детей: ${_menu!.totalChildCount}', style: const TextStyle(color: Colors.grey)),
-            ],
-          ),
-        ],
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: AppDecorations.cardElevated1.copyWith(
+        color: AppColors.surface,
       ),
-    );
-  }
-
-  Widget _buildMealCard(String type, String title, IconData icon) {
-    final meal = _menu!.meals[type] ?? Meal(dishes: []);
-    bool isServed = meal.isServed;
-
-    return Container(
-      decoration: AppDecorations.cardDecoration,
-      child: ExpansionTile(
-        key: PageStorageKey(type),
-        leading: Icon(icon, color: isServed ? AppColors.success : AppColors.primary),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: isServed 
-          ? Text('Выдано в ${DateFormat('HH:mm').format(meal.servedAt!)} (${meal.childCount} дет.)', 
-                 style: const TextStyle(color: AppColors.success, fontSize: 12))
-          : const Text('Не выдано', style: TextStyle(color: Colors.grey, fontSize: 12)),
+      child: Row(
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.6), 
+              shape: BoxShape.circle
+            ),
+            child: const Icon(Symbols.calendar_today_rounded, color: AppColors.primary, size: 24),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Divider(),
-                ...meal.dishes.map((dish) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.circle, size: 8, color: AppColors.primary),
-                      const SizedBox(width: 8),
-                      Expanded(child: Text(dish.name)),
-                    ],
-                  ),
-                )),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: isServed ? Colors.grey[200] : AppColors.primary,
-                      foregroundColor: isServed ? Colors.black87 : Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    icon: Icon(isServed ? Icons.undo : Icons.check_circle_outline),
-                    label: Text(isServed ? 'Отменить выдачу' : 'Отметить выдачу'),
-                    onPressed: () => isServed ? _cancelMeal(type) : _showServeDialog(type),
-                  ),
+                Text(
+                  DateFormat('EEEE, d MMMM', 'ru').format(_menu!.date).toUpperCase(), 
+                  style: AppTypography.labelSmall.copyWith(color: AppColors.primary90, letterSpacing: 1.2, fontWeight: FontWeight.w900)
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Symbols.groups_rounded, size: 16, color: AppColors.textTertiary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Всего детей по списку: ', 
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textSecondary)
+                    ),
+                    Text(
+                      '${_menu!.totalChildCount}', 
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.w800)
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -198,35 +275,184 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
     );
   }
 
-  void _showServeDialog(String type) {
-    final TextEditingController countController = TextEditingController(
-      text: _menu!.totalChildCount.toString(),
-    );
+  Widget _buildMealCard(String type, String title, IconData icon, int index) {
+    final meal = _menu!.meals[type] ?? Meal(dishes: []);
+    bool isServed = meal.isServed;
 
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Выдача питания'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Container(
+      decoration: AppDecorations.cardElevated1.copyWith(
+        color: isServed ? AppColors.success.withValues(alpha: 0.02) : AppColors.surface,
+        border: isServed ? Border.all(color: AppColors.success.withValues(alpha: 0.15)) : null,
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          key: PageStorageKey(type),
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (isServed ? AppColors.success : AppColors.primary).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12)
+            ),
+            child: Icon(icon, color: isServed ? AppColors.success : AppColors.primary, size: 24),
+          ),
+          title: Text(
+            title, 
+            style: AppTypography.titleSmall.copyWith(
+              fontWeight: FontWeight.w800,
+              color: isServed ? AppColors.success : AppColors.textPrimary
+            )
+          ),
+          subtitle: isServed 
+            ? Row(
+                children: [
+                   const Icon(Symbols.done_all_rounded, size: 14, color: AppColors.success),
+                   const SizedBox(width: 4),
+                   Text(
+                     'Выдано в ${DateFormat('HH:mm').format(meal.servedAt!)}', 
+                     style: AppTypography.bodySmall.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)
+                   ),
+                ],
+              )
+            : Text(
+                'Ожидает подтверждения', 
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)
+              ),
+          childrenPadding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
           children: [
-            const Text('Укажите количество детей для списания продуктов:'),
-            TextField(
-              controller: countController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Количество детей'),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Divider(height: 1, color: AppColors.primary20),
+                const SizedBox(height: AppSpacing.md),
+                ...meal.dishes.map((dish) => Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          dish.name, 
+                          style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w500)
+                        )
+                      ),
+                    ],
+                  ),
+                )),
+                const SizedBox(height: AppSpacing.lg),
+                AnimatedPress(
+                  onTap: () => isServed ? _cancelMeal(type) : _showServeDialog(type),
+                  child: Container(
+                    height: 52,
+                    decoration: BoxDecoration(
+                      gradient: isServed ? null : AppColors.primaryGradient,
+                      color: isServed ? AppColors.surfaceVariant : null,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      boxShadow: isServed ? null : [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4)
+                        )
+                      ],
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            isServed ? Symbols.undo_rounded : Symbols.check_circle_rounded, 
+                            color: isServed ? AppColors.textPrimary : Colors.white, 
+                            size: 20
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            isServed ? 'Отменить отметку' : 'Подтвердить выдачу', 
+                            style: AppTypography.labelLarge.copyWith(
+                              color: isServed ? AppColors.textPrimary : Colors.white,
+                              fontWeight: FontWeight.w800,
+                            )
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+      ),
+    ).animate().fadeIn(delay: (index * 100).ms, duration: 400.ms).slideY(begin: 0.1, end: 0);
+  }
+
+  void _showServeDialog(String type) {
+    final TextEditingController countController = TextEditingController(text: _menu!.totalChildCount.toString());
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: Row(
+          children: [
+            const Icon(Symbols.restaurant_rounded, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.sm),
+            Text('Подтверждение', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w900)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Укажите количество детей, получивших питание:', 
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary)
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            TextField(
+              controller: countController,
+              keyboardType: TextInputType.number,
+              autofocus: true,
+              style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.w800),
+              decoration: AppDecorations.inputDecoration(
+                hintText: 'Например: 25', 
+                labelText: 'Количество детей'
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(0, 0, AppSpacing.md, AppSpacing.md),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
-          ElevatedButton(
-            onPressed: () {
+          TextButton(
+            onPressed: () => Navigator.pop(context), 
+            child: Text(
+              'Отмена', 
+              style: AppTypography.labelLarge.copyWith(color: AppColors.textTertiary)
+            )
+          ),
+          AnimatedPress(
+            onTap: () {
               final int count = int.tryParse(countController.text) ?? _menu!.totalChildCount;
               Navigator.pop(context);
               _serveMeal(type, count);
             },
-            child: const Text('Подтвердить'),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Text(
+                'Готово', 
+                style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.bold)
+              ),
+            ),
           ),
         ],
       ),
@@ -236,28 +462,22 @@ class _KitchenMenuScreenState extends State<KitchenMenuScreen> {
   Future<void> _serveMeal(String type, int count) async {
     try {
       final updatedMenu = await _kitchenService.serveMeal(_menu!.id, type, count);
-      if (updatedMenu != null) {
-        if (!mounted) return;
-        setState(() => _menu = updatedMenu);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Питание выдано, продукты списаны')));
-      }
+      if (!mounted) return;
+      if (updatedMenu != null) setState(() => _menu = updatedMenu);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error));
     }
   }
 
   Future<void> _cancelMeal(String type) async {
     try {
       final updatedMenu = await _kitchenService.cancelMeal(_menu!.id, type);
-      if (updatedMenu != null) {
-        if (!mounted) return;
-        setState(() => _menu = updatedMenu);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выдача отменена')));
-      }
+      if (!mounted) return;
+      if (updatedMenu != null) setState(() => _menu = updatedMenu);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error));
     }
   }
 }

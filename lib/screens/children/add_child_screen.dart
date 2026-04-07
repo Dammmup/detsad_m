@@ -1,13 +1,20 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../models/child_model.dart';
-import '../../../models/user_model.dart';
 import '../../../core/services/children_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/groups_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_decorations.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/animated_press.dart';
 
 class AddChildScreen extends StatefulWidget {
-  const AddChildScreen({super.key});
+  final Child? child;
+  const AddChildScreen({super.key, this.child});
 
   @override
   State<AddChildScreen> createState() => _AddChildScreenState();
@@ -31,22 +38,25 @@ class _AddChildScreenState extends State<AddChildScreen> {
   @override
   void initState() {
     super.initState();
-
+    if (widget.child != null) {
+      _fullNameController.text = widget.child!.fullName;
+      _iinController.text = widget.child!.iin ?? '';
+      _birthdayController.text = widget.child!.birthday ?? '';
+      _parentNameController.text = widget.child!.parentName ?? '';
+      _parentPhoneController.text = widget.child!.parentPhone ?? '';
+      _selectedGroupId = widget.child!.groupId is String ? widget.child!.groupId as String : (widget.child!.groupId is Map ? (widget.child!.groupId as Map)['_id'] ?? (widget.child!.groupId as Map)['id'] : null);
+      _selectedGender = widget.child!.gender;
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadGroups();
-      }
+      if (mounted) _loadGroups();
     });
   }
 
   Future<void> _loadGroups() async {
-    if (!mounted) return;
-    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final User? currentUser = authProvider.user;
+    final groupsProvider = context.read<GroupsProvider>();
+    final currentUser = context.read<AuthProvider>().user;
 
-    bool isTeacherOrSubstitute = currentUser != null &&
-        (currentUser.role == 'teacher' || currentUser.role == 'substitute');
+    bool isTeacherOrSubstitute = currentUser != null && (currentUser.role == 'teacher' || currentUser.role == 'substitute');
 
     if (isTeacherOrSubstitute) {
       await groupsProvider.loadGroupsByTeacherId(currentUser.id);
@@ -58,301 +68,269 @@ class _AddChildScreenState extends State<AddChildScreen> {
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primary, 
+              onPrimary: Colors.white, 
+              onSurface: AppColors.textPrimary
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
-      setState(() {
-        _birthdayController.text = picked.toIso8601String().split('T')[0];
-      });
+      setState(() => _birthdayController.text = picked.toIso8601String().split('T')[0]);
     }
   }
 
-  Future<void> _addChild() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = true;
-    });
+  Future<void> _saveChild() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
 
     try {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final currentUser = authProvider.user;
+      final currentUser = context.read<AuthProvider>().user;
 
-      final child = Child(
-        id: '',
+      final childData = Child(
+        id: widget.child?.id ?? '',
         fullName: _fullNameController.text.trim(),
-        iin: _iinController.text.trim().isEmpty
-            ? null
-            : _iinController.text.trim(),
-        birthday:
-            _birthdayController.text.isEmpty ? null : _birthdayController.text,
-        parentName: _parentNameController.text.trim().isEmpty
-            ? null
-            : _parentNameController.text.trim(),
-        parentPhone: _parentPhoneController.text.trim().isEmpty
-            ? null
-            : _parentPhoneController.text.trim(),
+        iin: _iinController.text.trim().isEmpty ? null : _iinController.text.trim(),
+        birthday: _birthdayController.text.isEmpty ? null : _birthdayController.text,
+        parentName: _parentNameController.text.trim().isEmpty ? null : _parentNameController.text.trim(),
+        parentPhone: _parentPhoneController.text.trim().isEmpty ? null : _parentPhoneController.text.trim(),
         groupId: _selectedGroupId,
-        staffId: currentUser?.id,
+        staffId: widget.child?.staffId ?? currentUser?.id,
         gender: _selectedGender,
-        active: true,
+        active: widget.child?.active ?? true,
       );
 
-      await _childrenService.createChild(child);
+      if (widget.child != null) {
+        await _childrenService.updateChild(widget.child!.id, childData);
+      } else {
+        await _childrenService.createChild(childData);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Ребенок успешно добавлен')),
+          SnackBar(
+            content: Text(widget.child != null ? 'Данные ребенка обновлены' : 'Ребенок успешно добавлен'), 
+            backgroundColor: AppColors.success, 
+            behavior: SnackBarBehavior.floating
+          )
         );
-
         Navigator.pop(context, true);
       }
-    } on Exception catch (e) {
-      String errorMessage = e.toString();
-
-      if (errorMessage.contains('Нет подключения к интернету')) {
-        errorMessage = 'Нет подключения к интернету';
-      } else if (errorMessage.contains('Нет прав для добавления') ||
-          errorMessage.contains('unauthorized') ||
-          errorMessage.contains('403')) {
-        errorMessage = 'Нет прав для добавления ребенка';
-      } else if (errorMessage.contains('Некорректные данные') ||
-          errorMessage.contains('invalid data') ||
-          errorMessage.contains('400')) {
-        errorMessage =
-            'Некорректные данные. Проверьте правильность введенной информации';
-      } else if (errorMessage.contains('Ребенок уже существует') ||
-          errorMessage.contains('child already exists') ||
-          errorMessage.contains('duplicate')) {
-        errorMessage = 'Ребенок с такими данными уже существует';
-      } else {
-        errorMessage =
-            'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
     } catch (e) {
-      String errorMessage =
-          'Ошибка при добавлении ребенка. Проверьте подключение к интернету';
-
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating)
         );
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Добавить ребенка'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: Text(
+                widget.child != null ? 'Редактирование' : 'Новый ребенок', 
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.primary90,
+                  fontWeight: FontWeight.w900,
+                )
+              ),
+              centerTitle: true,
+              backgroundColor: AppColors.surface.withValues(alpha: 0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Symbols.arrow_back_ios_new_rounded, color: AppColors.primary90, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
           ),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      ),
+      body: Container(
+        decoration: AppDecorations.pageBackground,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Form(
             key: _formKey,
-            child: ListView(
+            child: Column(
               children: [
-                TextFormField(
-                  controller: _fullNameController,
-                  decoration: InputDecoration(
-                    labelText: 'ФИО ребенка',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 110),
+                _buildFormSection('Основная информация', [
+                  TextFormField(
+                    controller: _fullNameController,
+                    style: AppTypography.bodyMedium,
+                    decoration: AppDecorations.inputDecoration(
+                      labelText: 'ФИО ребенка', 
+                      prefixIcon: const Icon(Symbols.person_rounded, size: 20)
                     ),
-                    filled: true,
-                    fillColor: Colors.white,
+                    validator: (v) => v == null || v.isEmpty ? 'Введите ФИО' : null,
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Пожалуйста, введите ФИО';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _iinController,
-                  decoration: InputDecoration(
-                    labelText: 'ИИН',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _birthdayController,
-                  decoration: InputDecoration(
-                    labelText: 'Дата рождения',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.calendar_today),
-                      onPressed: _selectDate,
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _iinController,
+                    style: AppTypography.bodyMedium,
+                    decoration: AppDecorations.inputDecoration(
+                      labelText: 'ИИН', 
+                      prefixIcon: const Icon(Symbols.fingerprint_rounded, size: 20)
                     ),
                   ),
-                  readOnly: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Пожалуйста, выберите дату рождения';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _addressController,
-                  decoration: InputDecoration(
-                    labelText: 'Адрес',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _parentNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Имя родителя',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _parentPhoneController,
-                  decoration: InputDecoration(
-                    labelText: 'Телефон родителя',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Consumer<GroupsProvider>(
-                  builder: (context, groupsProvider, child) {
-                    return DropdownButtonFormField<String>(
-                      initialValue: _selectedGender,
-                      decoration: InputDecoration(
-                        labelText: 'Пол',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _birthdayController,
+                          readOnly: true,
+                          style: AppTypography.bodyMedium,
+                          decoration: AppDecorations.inputDecoration(
+                            labelText: 'Дата рождения', 
+                            prefixIcon: const Icon(Symbols.cake_rounded, size: 20)
+                          ),
+                          onTap: _selectDate,
+                          validator: (v) => v == null || v.isEmpty ? 'Выберите дату' : null,
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
-                      items: ['Мужской', 'Женский'].map((gender) {
-                        return DropdownMenuItem(
-                          value: gender,
-                          child: Text(gender),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGender = value;
-                        });
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                Consumer<GroupsProvider>(
-                  builder: (context, groupsProvider, child) {
-                    if (groupsProvider.isLoading) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-
-                    if (groupsProvider.groups.isEmpty) {
-                      return const Text('Нет доступных групп');
-                    }
-
-                    return DropdownButtonFormField<String>(
-                      initialValue: _selectedGroupId,
-                      decoration: InputDecoration(
-                        labelText: 'Группа',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _selectedGender,
+                          style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+                          decoration: AppDecorations.inputDecoration(
+                            labelText: 'Пол', 
+                            prefixIcon: const Icon(Symbols.wc_rounded, size: 20)
+                          ),
+                          items: const ['Мужской', 'Женский'].map((g) => DropdownMenuItem(value: g, child: Text(g))).toList(),
+                          onChanged: (v) => setState(() => _selectedGender = v),
                         ),
-                        filled: true,
-                        fillColor: Colors.white,
                       ),
-                      items: groupsProvider.groups.map((group) {
-                        return DropdownMenuItem<String>(
-                          value: group.id,
-                          child: Text(group.name),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedGroupId = value;
-                        });
-                      },
-                    );
-                  },
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _addChild,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                    ],
+                  ),
+                ], index: 0),
+                const SizedBox(height: AppSpacing.lg),
+                _buildFormSection('Группа', [
+                  Consumer<GroupsProvider>(
+                    builder: (context, groupsProvider, child) {
+                      if (groupsProvider.isLoading) {
+                        return const Center(child: Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator(strokeWidth: 2)));
+                      }
+                      return DropdownButtonFormField<String>(
+                        initialValue: _selectedGroupId,
+                        isExpanded: true,
+                        style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+                        decoration: AppDecorations.inputDecoration(
+                          labelText: 'Выберите группу', 
+                          prefixIcon: const Icon(Symbols.groups_rounded, size: 20)
+                        ),
+                        items: groupsProvider.groups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name, overflow: TextOverflow.ellipsis))).toList(),
+                        onChanged: (v) => setState(() => _selectedGroupId = v),
+                      );
+                    },
+                  ),
+                ], index: 1),
+                const SizedBox(height: AppSpacing.lg),
+                _buildFormSection('Контактные данные', [
+                  TextFormField(
+                    controller: _parentNameController,
+                    style: AppTypography.bodyMedium,
+                    decoration: AppDecorations.inputDecoration(
+                      labelText: 'ФИО родителя', 
+                      prefixIcon: const Icon(Symbols.supervisor_account_rounded, size: 20)
                     ),
                   ),
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Добавить ребенка',
-                          style: TextStyle(fontSize: 16)),
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _parentPhoneController,
+                    style: AppTypography.bodyMedium,
+                    keyboardType: TextInputType.phone,
+                    decoration: AppDecorations.inputDecoration(
+                      labelText: 'Телефон родителя', 
+                      prefixIcon: const Icon(Symbols.phone_enabled_rounded, size: 20)
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  TextFormField(
+                    controller: _addressController,
+                    style: AppTypography.bodyMedium,
+                    maxLines: 2,
+                    decoration: AppDecorations.inputDecoration(
+                      labelText: 'Адрес проживания', 
+                      prefixIcon: const Icon(Symbols.home_rounded, size: 20)
+                    ),
+                  ),
+                ], index: 2),
+                const SizedBox(height: AppSpacing.xxl),
+                _buildSubmitButton(),
+                const SizedBox(height: 50),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildFormSection(String title, List<Widget> children, {required int index}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: AppSpacing.sm),
+          child: Text(title, style: AppTypography.labelLarge.copyWith(color: AppColors.primary90, fontWeight: FontWeight.bold)),
+        ),
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: AppDecorations.cardElevated1,
+          child: Column(children: children),
+        ),
+      ],
+    ).animate().fadeIn(delay: (index * 100).ms).slideY(begin: 0.1, end: 0);
+  }
+
+  Widget _buildSubmitButton() {
+    return AnimatedPress(
+      onTap: _isLoading ? null : _saveChild,
+      child: Container(
+        width: double.infinity,
+        height: 58,
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient, 
+          borderRadius: BorderRadius.circular(AppRadius.lg), 
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.3), 
+              blurRadius: 12, 
+              offset: const Offset(0, 4)
+            )
+          ]
+        ),
+        child: Center(
+          child: _isLoading 
+            ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Text(
+                widget.child != null ? 'Сохранить изменения' : 'Зарегистрировать ребенка', 
+                style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w900)
+              ),
+        ),
+      ),
+    ).animate().fadeIn(delay: 400.ms).scale(begin: const Offset(0.9, 0.9), end: const Offset(1, 1));
   }
 
   @override
@@ -363,7 +341,6 @@ class _AddChildScreenState extends State<AddChildScreen> {
     _addressController.dispose();
     _parentNameController.dispose();
     _parentPhoneController.dispose();
-
     super.dispose();
   }
 }

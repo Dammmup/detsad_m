@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../pages/login_page.dart';
-import '../../pages/home_page.dart';
-import '../../pages/mark_attendance_page.dart';
-import '../../pages/view_attendance_all_page.dart';
-import '../../pages/view_attendance_stud_page.dart';
+import '../../screens/auth/login_screen.dart';
+import '../../screens/dashboard/dashboard_screen.dart';
 import '../../pages/forgot_password_page.dart';
 import '../../screens/documents/documents_list_screen.dart';
 import '../../screens/children/children_list_screen.dart';
@@ -12,41 +9,31 @@ import '../../screens/staff/staff_profile_screen.dart';
 import '../../screens/staff/staff_schedule_screen.dart';
 import '../../screens/medical/medical_check_screen.dart';
 import '../../screens/kitchen/kitchen_menu_screen.dart';
+import '../../screens/attendance/mark_attendance_screen.dart';
+import '../../screens/attendance/view_attendance_screen.dart';
+import '../../screens/salary/salary_screen.dart';
+import '../../screens/children/add_child_screen.dart';
+import '../../screens/birthdays/birthdays_screen.dart';
+import '../../screens/staff/staff_list_screen.dart';
+import '../../screens/attendance/time_tracking_screen.dart';
+import '../../screens/accounting/payments_screen.dart';
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case '/login':
-        return MaterialPageRoute(builder: (_) => const LoginPage());
+        return MaterialPageRoute(builder: (_) => const LoginScreen());
       case '/home':
-        return MaterialPageRoute(builder: (_) => const HomePage());
+      case '/':
+        return MaterialPageRoute(builder: (_) => const DashboardScreen());
       case '/medical-check':
         return MaterialPageRoute(builder: (_) => const MedicalCheckScreen());
       case '/kitchen-menu':
         return MaterialPageRoute(builder: (_) => const KitchenMenuScreen());
       case '/mark-attendance':
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-            builder: (_) => MarkAttendance(
-                  code: args['code'],
-                  uid: args['uid'],
-                  students: args['students'],
-                ));
+        return MaterialPageRoute(builder: (_) => const MarkAttendanceScreen());
       case '/view-attendance-all':
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-            builder: (_) => ViewAttendanceAll(
-                  code: args['code'],
-                  uid: args['uid'],
-                  students: args['students'],
-                ));
-      case '/view-attendance-stud':
-        final args = settings.arguments as Map<String, dynamic>;
-        return MaterialPageRoute(
-            builder: (_) => ViewAttendanceStud(
-                  code: args['code'],
-                  uid: args['uid'],
-                ));
+        return MaterialPageRoute(builder: (_) => const ViewAttendanceScreen());
       case '/forgot-password':
         return MaterialPageRoute(builder: (_) => const ForgotPasswordPage());
       case '/children':
@@ -59,8 +46,21 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const StaffProfileScreen());
       case '/staff-schedule':
         return MaterialPageRoute(builder: (_) => const StaffScheduleScreen());
+      case '/salary':
+        return MaterialPageRoute(builder: (_) => const SalaryScreen());
+      case '/add-child':
+        return MaterialPageRoute(builder: (_) => const AddChildScreen());
+      case '/birthdays':
+        return MaterialPageRoute(builder: (_) => const BirthdaysScreen());
+      case '/staff-list':
+        return MaterialPageRoute(builder: (_) => const StaffListScreen());
+      case '/time-tracking':
+        return MaterialPageRoute(builder: (_) => const TimeTrackingScreen());
+      case '/payments':
+        return MaterialPageRoute(builder: (_) => const PaymentsScreen());
       default:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        return MaterialPageRoute(builder: (_) => const DashboardScreen());
     }
   }
 }
+

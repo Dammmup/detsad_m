@@ -1,7 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/auth_provider.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,56 +15,31 @@ class SplashScreen extends StatefulWidget {
   SplashScreenState createState() => SplashScreenState();
 }
 
-class SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  var _visible = true;
-
-  late AnimationController animationController;
-  late Animation<double> animation;
-
+class SplashScreenState extends State<SplashScreen> {
   Timer? _timer;
-
-  startTime() async {
-    var duration = const Duration(seconds: 3);
-    _timer = Timer(duration, navigationPage);
-  }
-
-  navigationPage() async {
-    if (mounted) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-      await authProvider.initialize();
-
-      while (authProvider.isLoading) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        if (!mounted) return;
-      }
-
-      if (mounted) {
-        if (authProvider.isLoggedIn) {
-          Navigator.of(context).pushReplacementNamed('home');
-        } else {
-          Navigator.of(context).pushReplacementNamed('login');
-        }
-      }
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    animationController =
-        AnimationController(vsync: this, duration: const Duration(seconds: 2));
-    animation =
-        CurvedAnimation(parent: animationController, curve: Curves.easeOut);
+    _startApp();
+  }
 
-    animation.addListener(() => setState(() {}));
-    animationController.forward();
+  Future<void> _startApp() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // Minimum 2 seconds splash
+    await Future.wait([
+      authProvider.initialize(),
+      Future.delayed(const Duration(seconds: 2)),
+    ]);
 
-    setState(() {
-      _visible = !_visible;
-    });
-    startTime();
+    if (!mounted) return;
+
+    if (authProvider.isLoggedIn) {
+      Navigator.of(context).pushReplacementNamed('home');
+    } else {
+      Navigator.of(context).pushReplacementNamed('login');
+    }
   }
 
   @override
@@ -71,34 +51,30 @@ class SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: <Widget>[
-          Column(
-            mainAxisAlignment: MainAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              Padding(
-                  padding: const EdgeInsets.only(bottom: 10.0),
-                  child: Image.asset(
-                    'assets/images/powered_by.png',
-                    height: 50.0,
-                    width: 140,
-                    fit: BoxFit.scaleDown,
-                  ))
-            ],
-          ),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Image.asset(
-                'assets/images/logo.png',
-                width: animation.value * 300,
-                height: animation.value * 300,
+      body: Container(
+        width: double.infinity,
+        decoration: AppDecorations.pageBackground,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(AppRadius.extraLarge),
+                boxShadow: const [AppColors.shadowHero],
               ),
-            ],
-          ),
-        ],
+              child: const Center(child: Icon(Symbols.child_care_rounded, color: Colors.white, size: 64)),
+            ).animate().scale(duration: 800.ms, curve: Curves.elasticOut).rotate(begin: -0.2, end: 0),
+            const SizedBox(height: AppSpacing.xl),
+            Text('ДЕТСАД', style: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.w900, color: AppColors.primary90, letterSpacing: 4))
+                .animate().fadeIn(delay: 400.ms).slideY(begin: 0.5, end: 0),
+            const SizedBox(height: AppSpacing.sm),
+            Text('Система управления обучением', style: AppTypography.bodySmall.copyWith(color: AppColors.grey500))
+                .animate().fadeIn(delay: 600.ms),
+          ],
+        ),
       ),
     );
   }

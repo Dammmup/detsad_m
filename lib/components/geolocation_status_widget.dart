@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
 import '../providers/geolocation_provider.dart';
+
+import 'package:flutter_animate/flutter_animate.dart';
 
 class GeolocationStatusWidget extends StatelessWidget {
   const GeolocationStatusWidget({super.key});
@@ -10,197 +14,180 @@ class GeolocationStatusWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final geolocationProvider = Provider.of<GeolocationProvider>(context);
-
-    if (!geolocationProvider.enabled) {
-      return const SizedBox.shrink();
-    }
+    if (!geolocationProvider.enabled) return const SizedBox.shrink();
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: AppDecorations.cardDecoration,
+      decoration: AppDecorations.cardElevated1.copyWith(
+        color: AppColors.surface,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: _buildStatus(context, geolocationProvider),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0);
   }
 
   Widget _buildStatus(BuildContext context, GeolocationProvider provider) {
     if (provider.loading) {
-      return const Row(
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: 12),
-          Text('Загрузка настроек геолокации...'),
-        ],
-      );
-    }
-
-    if (!provider.isServiceEnabled) {
       return Row(
         children: [
-          const Icon(Icons.location_disabled, color: AppColors.warning),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Службы геолокации отключены',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.warning,
-                  ),
-                ),
-                Text(
-                  'Включите службы геолокации на устройстве',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primaryContainer.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
             ),
+            child: const SizedBox(
+              width: 16, 
+              height: 16, 
+              child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary))
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Text(
+            'Загрузка настроек...', 
+            style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600)
           ),
         ],
       );
     }
 
-    if (!provider.hasPermission) {
-      return Row(
-        children: [
-          const Icon(Icons.location_off, color: AppColors.error),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Нет разрешения на геолокацию',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.error,
-                  ),
-                ),
-                Text(
-                  provider.errorMessage ??
-                      'Предоставьте разрешение на доступ к местоположению',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
+    if (!provider.isServiceEnabled || !provider.hasPermission) {
+      return _StatusRow(
+        icon: Symbols.location_off_rounded,
+        color: AppColors.error,
+        title: !provider.isServiceEnabled ? 'GPS отключен' : 'Нет доступа',
+        subtitle: 'Требуется для отметки посещения',
       );
     }
 
-    if (provider.isLocationTemporarilyUnavailable) {
-      return Row(
-        children: [
-          const Icon(Icons.location_searching, color: AppColors.info),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Поиск местоположения...',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.info,
-                  ),
-                ),
-                Text(
-                  'GPS сигнал недоступен, но разрешения предоставлены',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
+    if (provider.isLocationTemporarilyUnavailable || (!provider.isPositionLoaded && provider.enabled)) {
+      return const _StatusRow(
+        icon: Symbols.location_searching_rounded,
+        color: AppColors.secondary,
+        title: 'Определяем локацию...',
+        subtitle: 'Ожидание сигнала GPS',
+        isLoading: true,
       );
     }
 
-    if (provider.errorMessage != null && !provider.isPositionLoaded) {
-      return Row(
-        children: [
-          const Icon(Icons.location_off, color: AppColors.warning),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Геолокация недоступна',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.warning,
-                  ),
-                ),
-                Text(
-                  provider.errorMessage ?? 'Включите GPS для отметки посещения',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    } else if (!provider.isPositionLoaded && provider.enabled) {
-      return const Row(
-        children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Text('Поиск местоположения...'),
-          ),
-        ],
-      );
-    }
-
-    final position = provider.currentPosition!;
-    final isInZone =
-        provider.checkGeofence(position.latitude, position.longitude);
-    final distance =
-        provider.calculateDistance(position.latitude, position.longitude);
+    final pos = provider.currentPosition!;
+    final isInZone = provider.checkGeofence(pos.latitude, pos.longitude);
+    final distance = provider.calculateDistance(pos.latitude, pos.longitude);
 
     return Row(
       children: [
-        Icon(
-          isInZone ? Icons.check_circle : Icons.error,
-          color: isInZone ? AppColors.success : AppColors.error,
-          size: 32,
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: (isInZone ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isInZone ? Symbols.check_circle_rounded : Symbols.wrong_location_rounded,
+            color: isInZone ? AppColors.success : AppColors.error,
+            size: 28,
+          ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                isInZone ? 'В рабочей зоне' : 'Вне рабочей зоны',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                isInZone ? 'Вы в рабочей зоне' : 'Вне рабочей зоны',
+                style: AppTypography.titleSmall.copyWith(
                   color: isInZone ? AppColors.success : AppColors.error,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
+              const SizedBox(height: 2),
               Text(
-                '${distance.toStringAsFixed(0)} м от офиса (разрешено ${provider.radius.toStringAsFixed(0)} м)',
-                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                '${distance.toStringAsFixed(0)} м от офиса',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.textTertiary,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
         ),
-        IconButton(
-          icon: Icon(
-            Icons.map,
-            color: isInZone ? AppColors.success : AppColors.error,
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => Navigator.pushNamed(context, '/map'),
+            borderRadius: BorderRadius.circular(100),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Symbols.map_rounded, 
+                color: AppColors.primary,
+                size: 20
+              ),
+            ),
           ),
-          onPressed: () {
-            Navigator.pushNamed(context, '/map');
-          },
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String title;
+  final String subtitle;
+  final bool isLoading;
+
+  const _StatusRow({
+    required this.icon,
+    required this.color,
+    required this.title,
+    required this.subtitle,
+    this.isLoading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: isLoading
+            ? SizedBox(
+                width: 20, 
+                height: 20, 
+                child: CircularProgressIndicator(
+                  strokeWidth: 2, 
+                  valueColor: AlwaysStoppedAnimation<Color>(color)
+                )
+              )
+            : Icon(icon, color: color, size: 24),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title, 
+                style: AppTypography.labelLarge.copyWith(
+                  color: color, 
+                  fontWeight: FontWeight.w700
+                )
+              ),
+              Text(
+                subtitle, 
+                style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)
+              ),
+            ],
+          ),
         ),
       ],
     );

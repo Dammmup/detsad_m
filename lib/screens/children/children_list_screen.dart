@@ -1,15 +1,19 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/services.dart';
 import '../../../core/constants/api_constants.dart';
-import '../../../core/utils/logger.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_decorations.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../../models/child_model.dart';
 import '../../../models/user_model.dart';
 import '../../../core/services/children_service.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/groups_provider.dart';
+import '../../../core/widgets/shimmer_loading.dart';
 import 'add_child_screen.dart';
 
 class ChildrenListScreen extends StatefulWidget {
@@ -22,9 +26,12 @@ class ChildrenListScreen extends StatefulWidget {
 class _ChildrenListScreenState extends State<ChildrenListScreen> {
   List<Child> children = [];
   List<Child> _filteredChildren = [];
-  String _selectedFilter = 'all';
+  String _searchQuery = '';
+  String? _selectedGroupId;
+  bool? _selectedActiveStatus;
   bool isLoading = true;
   final ChildrenService _childrenService = ChildrenService();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -32,496 +39,407 @@ class _ChildrenListScreenState extends State<ChildrenListScreen> {
     _loadChildren();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadChildren() async {
-    final ctx = context;
-    if (!ctx.mounted) {
-      return;
-    }
     try {
-      final authProvider = Provider.of<AuthProvider>(ctx, listen: false);
-      final groupsProvider = Provider.of<GroupsProvider>(ctx, listen: false);
+      setState(() => isLoading = true);
+      final authProvider = context.read<AuthProvider>();
+      final groupsProvider = context.read<GroupsProvider>();
       final User? currentUser = authProvider.user;
 
       await groupsProvider.loadGroups();
-      if (!ctx.mounted) return;
       final allGroups = groupsProvider.groups;
 
-      AppLogger.info('ChildrenListScreen | Loaded ${allGroups.length} groups');
-      AppLogger.debug('ChildrenListScreen | Current user ID: ${currentUser?.id}');
-      AppLogger.debug('ChildrenListScreen | Current user role: ${currentUser?.role}');
-      for (var group in allGroups) {
-        AppLogger.debug(
-            'ChildrenListScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
-      }
-
-      bool isTeacherOrSubstitute = currentUser != null &&
-          (currentUser.role == 'teacher' || currentUser.role == 'substitute');
-
-      bool isAdmin = currentUser != null &&
-          (currentUser.role == 'admin' ||
-              currentUser.role == 'director' ||
-              currentUser.role == 'owner');
-
-      if (isAdmin) {
-        children = await _childrenService.getAllChildren();
-        if (!ctx.mounted) return;
-      } else if (isTeacherOrSubstitute) {
-        final teacherGroups = allGroups
-            .where((group) => group.teacher == currentUser.id)
+      if (currentUser != null && ['teacher', 'substitute', 'assistant'].contains(currentUser.role)) {
+        final teacherGroupIds = allGroups
+            .where((g) => g.teacher == currentUser.id || g.teacherId == currentUser.id || g.assistantId == currentUser.id)
+            .map((g) => g.id)
             .toList();
-        AppLogger.info(
-            'ChildrenListScreen | Teacher groups found: ${teacherGroups.length}');
-        for (var group in teacherGroups) {
-          AppLogger.debug('ChildrenListScreen | Teacher group: ${group.name}');
-        }
-        List<Child> teacherChildren = [];
-
-        if (teacherGroups.isNotEmpty) {
-          for (var group in teacherGroups) {
-            List<Child> childrenInGroup =
-                await _childrenService.getChildrenByGroupId(group.id);
-            AppLogger.info(
-                'ChildrenListScreen | Children in group ${group.name}: ${childrenInGroup.length}');
-            teacherChildren.addAll(childrenInGroup);
-          }
+        
+        if (teacherGroupIds.isNotEmpty) {
+          children = await _childrenService.getChildrenByGroupIds(teacherGroupIds);
         } else {
-          teacherChildren = [];
+          children = [];
         }
-
-        children = teacherChildren;
-        AppLogger.info(
-            'ChildrenListScreen | Total children for teacher: ${children.length}');
       } else {
         children = await _childrenService.getAllChildren();
-        if (!ctx.mounted) return;
       }
 
       _applyFilters();
-    } on Exception catch (e) {
-      String errorMessage = e.toString();
-
-      if (errorMessage.contains('Нет подключения к интернету')) {
-        errorMessage = 'Нет подключения к интернету';
-      } else if (errorMessage.contains('Нет прав для просмотра') ||
-          errorMessage.contains('unauthorized') ||
-          errorMessage.contains('403')) {
-        errorMessage = 'Нет прав для просмотра списка детей';
-      } else if (errorMessage.contains('Данные не найдены') ||
-          errorMessage.contains('not found') ||
-          errorMessage.contains('404')) {
-        errorMessage = 'Данные о детях не найдены';
-      } else {
-        errorMessage =
-            'Ошибка загрузки списка детей. Проверьте подключение к интернету';
-      }
-      final ctx = context;
-      if (!ctx.mounted) {
-        return;
-      }
-      if (mounted) {
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
     } catch (e) {
-      String errorMessage =
-          'Ошибка загрузки списка детей. Проверьте подключение к интернету';
-
       if (mounted) {
-        final ctx = context;
-        if (!ctx.mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(ctx).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error, behavior: SnackBarBehavior.floating)
         );
       }
     } finally {
-      if (ctx.mounted) {
-        setState(() {
-          isLoading = false;
-        });
-      }
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
   void _applyFilters() {
-    if (_selectedFilter == 'all') {
-      _filteredChildren = children;
-    } else if (_selectedFilter == 'by_group') {
-      _filteredChildren = children;
-    }
     setState(() {
-      _filteredChildren = List.from(_filteredChildren);
+      _filteredChildren = children.where((child) {
+        final matchesSearch = child.fullName.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+            (child.parentPhone?.contains(_searchQuery) ?? false);
+        
+        final matchesGroup = _selectedGroupId == null || child.groupId == _selectedGroupId;
+        
+        final matchesActive = _selectedActiveStatus == null || child.active == _selectedActiveStatus;
+        
+        return matchesSearch && matchesGroup && matchesActive;
+      }).toList();
     });
+  }
+
+  Future<void> _deleteChild(String id) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Удаление'),
+        content: const Text('Вы уверены, что хотите удалить этого ребенка?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Отмена')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true), 
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Удалить')
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        setState(() => isLoading = true);
+        await _childrenService.deleteChild(id);
+        _loadChildren();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ошибка удаления: $e'), backgroundColor: AppColors.error)
+          );
+        }
+        setState(() => isLoading = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.watch<AuthProvider>().user;
+    bool canAddChild = currentUser != null && ['admin', 'director', 'owner'].contains(currentUser.role);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Дети'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.textPrimary,
-        elevation: 0,
-        actions: [
-          Consumer<AuthProvider>(
-            builder: (context, authProvider, child) {
-              final currentUser = authProvider.user;
-              bool canAddChild = currentUser != null &&
-                  (currentUser.role == 'admin' ||
-                      currentUser.role == 'director' ||
-                      currentUser.role == 'owner');
-
-              if (canAddChild) {
-                return IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: () async {
-                    final result = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const AddChildScreen()),
-                    );
-
-                    if (result == true) {
-                      _loadChildren();
-                    }
-                  },
-                );
-              } else {
-                return Container();
-              }
-            },
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: Text(
+                'Воспитанники', 
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.primary90,
+                  fontWeight: FontWeight.w900,
+                )
+              ),
+              centerTitle: true,
+              backgroundColor: AppColors.surface.withValues(alpha: 0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Symbols.arrow_back_ios_new_rounded, color: AppColors.primary90, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+              actions: [
+                if (canAddChild)
+                  IconButton(
+                    icon: const Icon(Symbols.person_add_rounded, color: AppColors.primary90),
+                    onPressed: () async {
+                      final result = await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddChildScreen()));
+                      if (result == true) _loadChildren();
+                    },
+                  ),
+              ],
+            ),
           ),
-        ],
+        ),
       ),
       body: Container(
         decoration: AppDecorations.pageBackground,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Список детей',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[800]),
-              ),
-              const SizedBox(height: 16),
-              Consumer<AuthProvider>(
-                builder: (context, authProvider, child) {
-                  final currentUser = authProvider.user;
-                  bool isAdminOrAlternative = currentUser != null &&
-                      (currentUser.role == 'admin' ||
-                          currentUser.role == 'director' ||
-                          currentUser.role == 'owner' ||
-                          currentUser.role == 'substitute');
-
-                  if (isAdminOrAlternative) {
-                    return Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: AppDecorations.cardDecoration,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Фильтры',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.grey[700],
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              FilterChip(
-                                label: const Text('Все'),
-                                selected: _selectedFilter == 'all',
-                                onSelected: (bool selected) {
-                                  setState(() {
-                                    _selectedFilter = selected ? 'all' : 'all';
-                                  });
-                                  _applyFilters();
-                                },
-                                selectedColor: AppColors.primaryLight,
-                                backgroundColor: Colors.grey.shade200,
-                                checkmarkColor: AppColors.primary,
-                              ),
-                              FilterChip(
-                                label: const Text('По группам'),
-                                selected: _selectedFilter == 'by_group',
-                                onSelected: (bool selected) {
-                                  setState(() {
-                                    _selectedFilter =
-                                        selected ? 'by_group' : 'all';
-                                  });
-                                  _applyFilters();
-                                },
-                                selectedColor: AppColors.primaryLight,
-                                backgroundColor: Colors.grey.shade200,
-                                checkmarkColor: AppColors.primary,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  } else {
-                    return Container();
-                  }
-                },
-              ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : _filteredChildren.isEmpty
-                        ? Center(
-                            child: Container(
-                              padding: const EdgeInsets.all(24),
-                              decoration: AppDecorations.cardDecoration,
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Icon(Icons.people_outline,
-                                      size: 48, color: Colors.grey),
-                                  const SizedBox(height: 16),
-                                  const Text(
-                                    'Нет данных о детях',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        color: Colors.grey, fontSize: 16),
-                                  ),
-                                  if (children.isNotEmpty &&
-                                      _filteredChildren.isEmpty)
-                                    const SizedBox(height: 8),
-                                  if (children.isNotEmpty &&
-                                      _filteredChildren.isEmpty)
-                                    const Text(
-                                      'Попробуйте изменить фильтры',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: Colors.grey, fontSize: 14),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: _filteredChildren.length,
-                            itemBuilder: (context, index) {
-                              final child = _filteredChildren[index];
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                decoration: AppDecorations.cardDecoration,
-                                child: InkWell(
-                                  onTap: () {
-                                    // Можно добавить переход к деталям ребенка
-                                  },
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(12.0),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        _buildChildAvatar(child),
-                                        const SizedBox(width: 16),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                child.fullName,
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.grey[800],
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              if (child.birthday != null) ...[
-                                                Row(
-                                                  children: [
-                                                    const Icon(Icons.cake,
-                                                        size: 14,
-                                                        color: Colors.grey),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                        _formatBirthday(
-                                                            child.birthday!),
-                                                        style: TextStyle(
-                                                            fontSize: 13,
-                                                            color: Colors
-                                                                .grey[600])),
-                                                  ],
-                                                ),
-                                              ],
-                                              if (child.parentPhone != null) ...[
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    const Icon(Icons.phone,
-                                                        size: 14,
-                                                        color: Colors.grey),
-                                                    const SizedBox(width: 4),
-                                                    GestureDetector(
-                                                      onTap: () async {
-                                                        final ctx = context;
-                                                        await Clipboard.setData(
-                                                            ClipboardData(
-                                                                text: child
-                                                                    .parentPhone!));
-                                                        if (!ctx.mounted) {
-                                                          return;
-                                                        }
-                                                        ScaffoldMessenger.of(
-                                                                ctx)
-                                                            .showSnackBar(
-                                                          SnackBar(
-                                                            content: Text(
-                                                                'Номер скопирован: ${child.parentPhone}'),
-                                                            duration:
-                                                                const Duration(
-                                                                    seconds: 1),
-                                                          ),
-                                                        );
-                                                      },
-                                                      child: Text(
-                                                          child.parentPhone!,
-                                                          style: const TextStyle(
-                                                              fontSize: 13,
-                                                              color: AppColors
-                                                                  .primary,
-                                                              decoration:
-                                                                  TextDecoration
-                                                                      .underline)),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                              if (child.groupId != null) ...[
-                                                const SizedBox(height: 8),
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2),
-                                                  decoration: BoxDecoration(
-                                                    color: AppColors.primary
-                                                        .withAlpha(
-                                                            (0.1 * 255).round()),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                  child: Text(
-                                                    _getChildGroupInfo(child),
-                                                    style: const TextStyle(
-                                                        fontSize: 11,
-                                                        color:
-                                                            AppColors.primary,
-                                                        fontWeight:
-                                                            FontWeight.w500),
-                                                  ),
-                                                ),
-                                              ],
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-              ),
-            ],
-          ),
+        child: Column(
+          children: [
+            const SizedBox(height: 110),
+            _buildSearchAndFilters(),
+            Expanded(
+              child: isLoading
+                  ? _buildSkeletonLoading()
+                  : _filteredChildren.isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                          itemCount: _filteredChildren.length,
+                          itemBuilder: (context, index) => _buildChildCard(_filteredChildren[index], index),
+                        ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildChildAvatar(Child child) {
-    String? photoUrl = child.photo;
-    if (photoUrl != null &&
-        photoUrl.isNotEmpty &&
-        !photoUrl.startsWith('http')) {
-      photoUrl =
-          '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
-    }
+  Widget _buildSearchAndFilters() {
+    final groups = context.watch<GroupsProvider>().groups;
 
-    return CircleAvatar(
-      radius: 28,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-          ? NetworkImage(photoUrl)
-          : null,
-      child: photoUrl == null || photoUrl.isEmpty
-          ? Text(
-              child.fullName.isNotEmpty ? child.fullName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+      child: Column(
+        children: [
+          Container(
+            decoration: AppDecorations.cardElevated1,
+            child: TextField(
+              controller: _searchController,
+              onChanged: (v) {
+                setState(() => _searchQuery = v);
+                _applyFilters();
+              },
+              decoration: AppDecorations.searchInputDecoration(hintText: 'Поиск по имени или телефону...').copyWith(
+                suffixIcon: _searchQuery.isNotEmpty 
+                  ? IconButton(
+                      icon: const Icon(Symbols.close_rounded, size: 20),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                        _applyFilters();
+                      },
+                    )
+                  : null,
               ),
-            )
-          : null,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: AppDecorations.cardElevated1.copyWith(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String?>(
+                      value: _selectedGroupId,
+                      hint: Text('Все группы', style: AppTypography.bodySmall),
+                      isExpanded: true,
+                      items: [
+                        DropdownMenuItem(value: null, child: Text('Все группы', style: AppTypography.bodySmall)),
+                        ...groups.map((g) => DropdownMenuItem(
+                          value: g.id, 
+                          child: Text(g.name, style: AppTypography.bodySmall, overflow: TextOverflow.ellipsis)
+                        )),
+                      ],
+                      onChanged: (val) {
+                        setState(() => _selectedGroupId = val);
+                        _applyFilters();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: AppDecorations.cardElevated1.copyWith(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<bool?>(
+                      value: _selectedActiveStatus,
+                      hint: Text('Все статусы', style: AppTypography.bodySmall),
+                      isExpanded: true,
+                      items: [
+                        DropdownMenuItem(value: null, child: Text('Все статусы', style: AppTypography.bodySmall)),
+                        DropdownMenuItem(value: true, child: Text('Активные', style: AppTypography.bodySmall)),
+                        DropdownMenuItem(value: false, child: Text('В архиве', style: AppTypography.bodySmall)),
+                      ],
+                      onChanged: (val) {
+                        setState(() => _selectedActiveStatus = val);
+                        _applyFilters();
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              if (_searchQuery.isNotEmpty || _selectedGroupId != null || _selectedActiveStatus != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _searchController.clear();
+                      _searchQuery = '';
+                      _selectedGroupId = null;
+                      _selectedActiveStatus = null;
+                    });
+                    _applyFilters();
+                  },
+                  icon: const Icon(Symbols.filter_alt_off_rounded, color: AppColors.error),
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -0.1, end: 0);
+  }
+
+  Widget _buildSkeletonLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: 8,
+      itemBuilder: (context, index) => const Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.md),
+        child: SkeletonLoader(width: double.infinity, height: 88, borderRadius: AppRadius.lg),
+      ),
     );
   }
 
-  String _getChildGroupInfo(Child child) {
-    if (child.groupName != null && child.groupName!.isNotEmpty) {
-      return child.groupName!;
-    }
-
-    if (child.groupId == null) {
-      return 'Группа не указана';
-    }
-
-    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-    final group = groupsProvider.getGroupById(child.groupId!);
-    if (group != null) {
-      return group.name;
-    }
-
-    return child.groupId!;
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Symbols.sentiment_dissatisfied_rounded, size: 64, color: AppColors.textTertiary),
+          const SizedBox(height: AppSpacing.md),
+          Text('Никого не нашли', style: AppTypography.titleMedium.copyWith(color: AppColors.textSecondary)),
+          Text('Попробуйте другой запрос', style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)),
+        ],
+      ),
+    ).animate().fadeIn();
   }
 
-  String _formatBirthday(String birthdayString) {
-    try {
-      DateTime date = DateTime.parse(birthdayString);
+  Widget _buildChildCard(Child child, int index) {
+    final currentUser = context.read<AuthProvider>().user;
+    final bool canEdit = currentUser != null && ['admin', 'director', 'owner'].contains(currentUser.role);
 
-      const List<String> months = [
-        'января',
-        'февраля',
-        'марта',
-        'апреля',
-        'мая',
-        'июня',
-        'июля',
-        'августа',
-        'сентября',
-        'октября',
-        'ноября',
-        'декабря'
-      ];
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      decoration: AppDecorations.cardElevated1,
+      child: InkWell(
+        onTap: () async {
+          if (canEdit) {
+            final result = await Navigator.push(
+              context, 
+              MaterialPageRoute(builder: (_) => AddChildScreen(child: child))
+            );
+            if (result == true) _loadChildren();
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              _buildAvatar(child),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(child.fullName, style: AppTypography.labelLarge.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 4),
+                    if (child.parentPhone != null)
+                      GestureDetector(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: child.parentPhone!));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Номер скопирован'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1))
+                          );
+                        },
+                        child: Row(
+                          children: [
+                            const Icon(Symbols.call_rounded, size: 14, color: AppColors.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              child.parentPhone!, 
+                              style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.w600)
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1), 
+                        borderRadius: BorderRadius.circular(8)
+                      ),
+                      child: Text(
+                        child.groupName ?? 'Без группы', 
+                        style: AppTypography.bodySmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 10)
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (canEdit)
+                PopupMenuButton<String>(
+                  icon: const Icon(Symbols.more_vert_rounded, color: AppColors.textTertiary),
+                  onSelected: (val) {
+                    if (val == 'edit') {
+                      Navigator.push(
+                        context, 
+                        MaterialPageRoute(builder: (_) => AddChildScreen(child: child))
+                      ).then((res) => {if (res == true) _loadChildren()});
+                    } else if (val == 'delete') {
+                      _deleteChild(child.id);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Symbols.edit_rounded, size: 20), SizedBox(width: 8), Text('Изменить')])),
+                    const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Symbols.delete_rounded, size: 20, color: AppColors.error), SizedBox(width: 8), Text('Удалить', style: TextStyle(color: AppColors.error))])),
+                  ],
+                )
+              else
+                const Icon(Symbols.chevron_right_rounded, color: AppColors.textTertiary),
+            ],
+          ),
+        ),
+      ),
+    ).animate().fadeIn(delay: (index * 40).ms).slideX(begin: 0.05, end: 0);
+  }
 
-      int day = date.day;
-      int monthIndex = date.month - 1;
-      int year = date.year;
-
-      return '$day ${months[monthIndex]}, $year';
-    } catch (e) {
-      return birthdayString;
+  Widget _buildAvatar(Child child) {
+    String? photoUrl = child.photo;
+    if (photoUrl != null && photoUrl.isNotEmpty && !photoUrl.startsWith('http')) {
+      photoUrl = '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
     }
+
+    return Container(
+      width: 64,
+      height: 64,
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        shape: BoxShape.circle,
+        image: photoUrl != null && photoUrl.isNotEmpty 
+            ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) 
+            : null,
+      ),
+      child: photoUrl == null || photoUrl.isEmpty
+          ? Center(
+              child: Text(
+                child.fullName[0].toUpperCase(), 
+                style: AppTypography.titleLarge.copyWith(color: AppColors.primary, fontWeight: FontWeight.w900)
+              )
+            )
+          : null,
+    );
   }
 }

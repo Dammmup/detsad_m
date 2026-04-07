@@ -34,15 +34,8 @@ class PayrollProvider with ChangeNotifier {
 
       if (result.isNotEmpty) {
         _currentPayroll = result.first;
-
         if (_currentPayroll?.id != null) {
-          try {
-            final detailedPayroll = await _payrollService
-                .getPayrollWithShiftDetails(_currentPayroll!.id!);
-            _currentPayroll = detailedPayroll;
-          } catch (e) {
-            AppLogger.warning('Could not load shift details: $e');
-          }
+          await loadPayrollDetails(_currentPayroll!.id!);
         }
       } else {
         _currentPayroll = null;
@@ -56,18 +49,124 @@ class PayrollProvider with ChangeNotifier {
     }
   }
 
-  void prevMonth() {
+  Future<void> loadAllPayrolls() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final period = currentPeriod;
+      final result = await _payrollService.getAllPayrolls(period: period);
+      _payrolls = result;
+      _currentPayroll = null; // В режиме списка мы не выбираем одну зарплату сразу
+    } catch (e) {
+      _errorMessage = e.toString();
+      _payrolls = [];
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadPayrollDetails(String payrollId) async {
+    try {
+      final detailedPayroll = await _payrollService.getPayrollWithShiftDetails(payrollId);
+      _currentPayroll = detailedPayroll;
+      notifyListeners();
+    } catch (e) {
+      AppLogger.warning('Could not load shift details: $e');
+    }
+  }
+
+  void selectPayroll(Payroll payroll) {
+    _currentPayroll = payroll;
+    if (payroll.id != null) {
+      loadPayrollDetails(payroll.id!);
+    }
+    notifyListeners();
+  }
+
+  void clearSelection() {
+    _currentPayroll = null;
+    notifyListeners();
+  }
+
+  void prevMonth(bool isAdmin) {
     _currentDate = DateTime(_currentDate.year, _currentDate.month - 1);
-    loadMyPayroll();
+    if (isAdmin) {
+      loadAllPayrolls();
+    } else {
+      loadMyPayroll();
+    }
   }
 
-  void nextMonth() {
+  void nextMonth(bool isAdmin) {
     _currentDate = DateTime(_currentDate.year, _currentDate.month + 1);
-    loadMyPayroll();
+    if (isAdmin) {
+      loadAllPayrolls();
+    } else {
+      loadMyPayroll();
+    }
   }
 
-  void setCurrentDate(DateTime date) {
+  void setCurrentDate(DateTime date, bool isAdmin) {
     _currentDate = date;
-    loadMyPayroll();
+    if (isAdmin) {
+      loadAllPayrolls();
+    } else {
+      loadMyPayroll();
+    }
+  }
+
+  Future<void> addFine(String payrollId, double amount, String reason) async {
+    try {
+      await _payrollService.addFine(payrollId, amount, reason);
+      await loadPayrollDetails(payrollId);
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deleteFine(String payrollId, String fineId) async {
+    try {
+      await _payrollService.deleteFine(payrollId, fineId);
+      await loadPayrollDetails(payrollId);
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> updateStatus(String payrollId, String status) async {
+    try {
+      await _payrollService.updatePayrollStatus(payrollId, status);
+      if (_currentPayroll?.id == payrollId) {
+        await loadPayrollDetails(payrollId);
+      } else {
+        await loadAllPayrolls();
+      }
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  Future<void> deletePayroll(String payrollId) async {
+    try {
+      await _payrollService.deletePayroll(payrollId);
+      _payrolls.removeWhere((p) => p.id == payrollId);
+      if (_currentPayroll?.id == payrollId) {
+        _currentPayroll = null;
+      }
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      rethrow;
+    }
   }
 }

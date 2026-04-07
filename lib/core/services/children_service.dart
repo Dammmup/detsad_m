@@ -175,4 +175,28 @@ class ChildrenService {
       throw Exception('Ошибка удаления ребенка: $e');
     }
   }
+
+  Future<List<Child>> getChildrenByGroupIds(List<String> groupIds) async {
+    try {
+      final response = await _apiService.post(
+        '${ApiConstants.children}/bulk/groups',
+        data: {'groupIds': groupIds},
+      );
+      if (response.statusCode == 200) {
+        final dynamic data = response.data;
+        if (data is List) {
+          return data
+              .where((json) =>
+                  json is Map<String, dynamic> && json['fullName'] != null)
+              .map((json) => Child.fromJson(json as Map<String, dynamic>))
+              .toList();
+        }
+      }
+      return [];
+    } on SocketException {
+      throw Exception('Нет подключения к интернету');
+    } catch (e) {
+      throw Exception('Ошибка получения данных: $e');
+    }
+  }
 }

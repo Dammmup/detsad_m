@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/geolocation_provider.dart';
+import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
 
 class MapViewPage extends StatelessWidget {
   const MapViewPage({super.key});
@@ -11,10 +16,17 @@ class MapViewPage extends StatelessWidget {
     final geoProvider = Provider.of<GeolocationProvider>(context);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Карта геозоны'),
+        title: Text('Карта геозоны', style: AppTypography.titleLarge.copyWith(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppColors.primaryGradient)),
       ),
-      body: _buildMap(geoProvider),
+      body: Container(
+        decoration: AppDecorations.pageBackground,
+        child: _buildMap(geoProvider),
+      ),
     );
   }
 
@@ -24,11 +36,22 @@ class MapViewPage extends StatelessWidget {
     }
 
     if (!geoProvider.enabled || !geoProvider.isPositionLoaded) {
-      return const Center(
-        child: Text(
-          'Геолокация отключена или ваше местоположение не определено.',
-          textAlign: TextAlign.center,
-        ),
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Symbols.location_off_rounded, size: 64, color: AppColors.grey400),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Геолокация отключена или местоположение не определено',
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+              ),
+            ],
+          ),
+        ).animate().fadeIn(),
       );
     }
 
@@ -52,7 +75,7 @@ class MapViewPage extends StatelessWidget {
       Marker(
         markerId: const MarkerId('targetLocation'),
         position: targetPosition,
-        infoWindow: const InfoWindow(title: 'Центр геозоны'),
+        infoWindow: const InfoWindow(title: 'Детский сад'),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       ),
     };
@@ -62,8 +85,8 @@ class MapViewPage extends StatelessWidget {
         circleId: const CircleId('geofence'),
         center: targetPosition,
         radius: geoProvider.radius,
-        fillColor: Colors.green.withAlpha(77),
-        strokeColor: Colors.green,
+        fillColor: AppColors.success.withValues(alpha: 0.2),
+        strokeColor: AppColors.success,
         strokeWidth: 2,
       ),
     };
@@ -77,6 +100,9 @@ class MapViewPage extends StatelessWidget {
       circles: circles,
       myLocationEnabled: true,
       myLocationButtonEnabled: true,
-    );
+      mapType: MapType.normal,
+      zoomControlsEnabled: false,
+      padding: const EdgeInsets.only(top: 100),
+    ).animate().fadeIn();
   }
 }

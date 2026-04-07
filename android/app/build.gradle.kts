@@ -59,6 +59,7 @@ flutter {
     source = "../.."
 }
 
+// Dependencies are managed by the root project's build.gradle.kts
 dependencies {
     // Keep only the core library desugaring dependency as per Flutter requirements
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")

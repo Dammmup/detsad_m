@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import '../core/theme/app_colors.dart';
+import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
+import '../core/widgets/animated_press.dart';
 import '../providers/auth_provider.dart';
 import '../providers/shifts_provider.dart';
 import '../providers/geolocation_provider.dart';
+
+import 'package:flutter_animate/flutter_animate.dart';
 
 class StaffAttendanceButton extends StatefulWidget {
   final VoidCallback? onStatusChange;
@@ -21,10 +27,8 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final authProvider = Provider.of<AuthProvider>(context, listen: false);
-        final shiftsProvider =
-            Provider.of<ShiftsProvider>(context, listen: false);
-        final geoProvider =
-            Provider.of<GeolocationProvider>(context, listen: false);
+        final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
+        final geoProvider = Provider.of<GeolocationProvider>(context, listen: false);
 
         geoProvider.loadSettings();
 
@@ -43,103 +47,108 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     final user = authProvider.user;
 
     String buttonText = '';
+    IconData buttonIcon = Symbols.login_rounded;
     VoidCallback? buttonAction;
-    bool buttonDisabled =
-        shiftsProvider.loading || user == null || user.id.isEmpty;
+    bool buttonDisabled = shiftsProvider.loading || user == null || user.id.isEmpty;
+    List<Color> gradientColors = [AppColors.primary, AppColors.secondary];
 
-    if (shiftsProvider.status == 'scheduled' ||
-        shiftsProvider.status == 'no_record') {
+    if (shiftsProvider.status == 'scheduled' || shiftsProvider.status == 'no_record') {
       buttonText = 'Отметить приход';
-      buttonAction =
-          user != null ? () => _handleCheckIn(context, user.id) : null;
+      buttonIcon = Symbols.login_rounded;
+      buttonAction = user != null ? () => _handleCheckIn(context, user.id) : null;
+      gradientColors = [AppColors.primary, AppColors.secondary];
 
-      if (geolocationProvider.enabled &&
-          geolocationProvider.isPositionLoaded &&
-          !geolocationProvider.isWithinGeofence) {
+      if (geolocationProvider.enabled && geolocationProvider.isPositionLoaded && !geolocationProvider.isWithinGeofence) {
         buttonDisabled = true;
       }
     } else if (shiftsProvider.status == 'in_progress') {
       buttonText = 'Отметить уход';
-      buttonAction =
-          user != null ? () => _handleCheckOut(context, user.id) : null;
+      buttonIcon = Symbols.logout_rounded;
+      buttonAction = user != null ? () => _handleCheckOut(context, user.id) : null;
+      gradientColors = [AppColors.error, const Color(0xFFD32F2F)];
 
-      if (geolocationProvider.enabled &&
-          geolocationProvider.isPositionLoaded &&
-          !geolocationProvider.isWithinGeofence) {
+      if (geolocationProvider.enabled && geolocationProvider.isPositionLoaded && !geolocationProvider.isWithinGeofence) {
         buttonDisabled = true;
       }
     } else if (shiftsProvider.status == 'completed') {
-      buttonText = 'Посещение отмечено';
+      buttonText = 'Смена завершена';
+      buttonIcon = Symbols.check_circle_rounded;
       buttonAction = null;
       buttonDisabled = true;
+      gradientColors = [AppColors.success, const Color(0xFF2E7D32)];
     } else if (shiftsProvider.status == 'error') {
       buttonText = 'Ошибка';
+      buttonIcon = Symbols.error_rounded;
       buttonAction = null;
       buttonDisabled = true;
+      gradientColors = [AppColors.grey400, AppColors.grey500];
     }
-
-    final gradient = _getButtonGradient(shiftsProvider.status);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (geolocationProvider.enabled &&
-            (geolocationProvider.isPositionLoaded ||
-                geolocationProvider.isLocationTemporarilyUnavailable))
-          _buildGeolocationStatus(geolocationProvider),
-        SizedBox(
-          width: 200,
-          height: 50,
+        if (geolocationProvider.enabled) 
+          _buildGeolocationStatus(geolocationProvider)
+            .animate()
+            .fadeIn(duration: 400.ms)
+            .slideY(begin: -0.2, end: 0),
+        const SizedBox(height: AppSpacing.sm),
+        AnimatedPress(
+          onTap: buttonDisabled ? null : buttonAction,
           child: Container(
+            height: 56,
             decoration: BoxDecoration(
-              gradient: buttonDisabled ? AppColors.disabledGradient : gradient,
-              borderRadius: BorderRadius.circular(25),
-              boxShadow: buttonDisabled
-                  ? []
-                  : const [AppColors.shadowButton],
+              gradient: buttonDisabled 
+                ? AppColors.disabledGradient 
+                : LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              boxShadow: buttonDisabled ? [] : [
+                BoxShadow(
+                  color: gradientColors.first.withValues(alpha: 0.3),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                )
+              ],
             ),
-            child: ElevatedButton(
-              onPressed: buttonDisabled ? null : buttonAction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                disabledBackgroundColor: Colors.transparent,
-                disabledForegroundColor: Colors.white70,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
+            child: Center(
               child: shiftsProvider.loading
                   ? const SizedBox(
-                      width: 20,
-                      height: 20,
+                      width: 24,
+                      height: 24,
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
+                        strokeWidth: 2.5, 
                         valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
-                  : Text(
-                      buttonText,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
+                  : Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(buttonIcon, color: Colors.white, size: 22),
+                        const SizedBox(width: AppSpacing.md),
+                        Text(
+                          buttonText,
+                          style: AppTypography.titleSmall.copyWith(
+                            color: Colors.white, 
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
                     ),
             ),
           ),
         ),
         if (shiftsProvider.errorMessage != null)
           Padding(
-            padding: const EdgeInsets.only(top: 8.0),
+            padding: const EdgeInsets.only(top: AppSpacing.sm),
             child: Text(
               shiftsProvider.errorMessage!,
-              style: const TextStyle(
+              style: AppTypography.bodySmall.copyWith(
                 color: AppColors.error,
-                fontSize: 12,
+                fontWeight: FontWeight.w600,
               ),
+              textAlign: TextAlign.center,
             ),
           ),
       ],
@@ -147,159 +156,51 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
   }
 
   Widget _buildGeolocationStatus(GeolocationProvider provider) {
-    if (provider.errorMessage != null && (provider.errorMessage!.contains('отклонено') || provider.errorMessage!.contains('заблокирован'))) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.error.withAlpha((0.1 * 255).round()),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.error),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.location_off, color: AppColors.error, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    provider.errorMessage!,
-                    style: const TextStyle(color: AppColors.error, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                TextButton.icon(
-                  onPressed: () => provider.openAppSettings(),
-                  icon: const Icon(Icons.settings, size: 16),
-                  label: const Text('В настройки', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                ),
-                TextButton.icon(
-                  onPressed: () => provider.initializeLocation(),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Обновить', style: TextStyle(fontSize: 12)),
-                  style: TextButton.styleFrom(foregroundColor: AppColors.error),
-                ),
-              ],
-            ),
-          ],
-        ),
-      );
-    }
+    bool isError = provider.errorMessage != null || (provider.enabled && !provider.isServiceEnabled);
+    bool isWaiting = provider.isLocationTemporarilyUnavailable;
+    bool isInZone = provider.isWithinGeofence;
 
-    if (!provider.isServiceEnabled && provider.enabled) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppColors.warning.withAlpha((0.1 * 255).round()),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.warning),
-        ),
-        child: Column(
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.gps_off, color: AppColors.warning, size: 20),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'GPS выключен. Включите его для отметки посещаемости.',
-                    style: TextStyle(color: AppColors.warning, fontSize: 12),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () => provider.openLocationSettings(),
-              icon: const Icon(Icons.location_on, size: 16),
-              label: const Text('Включить GPS', style: TextStyle(fontSize: 12)),
-              style: TextButton.styleFrom(foregroundColor: AppColors.warning),
-            ),
-          ],
-        ),
-      );
-    }
+    Color statusColor = AppColors.success;
+    IconData statusIcon = Symbols.location_on_rounded;
+    String statusText = provider.getStatusText(provider.currentPosition?.latitude ?? 0, provider.currentPosition?.longitude ?? 0);
 
-    if (provider.isLocationTemporarilyUnavailable) {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.info.withAlpha((0.1 * 255).round()),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: AppColors.info,
-            width: 1,
-          ),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.location_searching,
-              color: AppColors.info,
-              size: 16,
-            ),
-            SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                'GPS сигнал недоступен, ожидание позиции...',
-                style: TextStyle(
-                  color: AppColors.info,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      );
+    if (isError) {
+      statusColor = AppColors.error;
+      statusIcon = Symbols.location_off_rounded;
+    } else if (isWaiting) {
+      statusColor = AppColors.primary;
+      statusIcon = Symbols.location_searching_rounded;
+      statusText = 'Определяем местоположение...';
+    } else if (!isInZone) {
+      statusColor = AppColors.error;
+      statusIcon = Symbols.wrong_location_rounded;
     }
-
-    final isInZone = provider.isWithinGeofence;
-    final statusText = provider.getStatusText(
-      provider.currentPosition!.latitude,
-      provider.currentPosition!.longitude,
-    );
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: isInZone
-            ? AppColors.success.withAlpha((0.1 * 255).round())
-            : AppColors.error.withAlpha((0.1 * 255).round()),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isInZone ? AppColors.success : AppColors.error,
-          width: 1,
-        ),
+        color: statusColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isInZone ? Icons.check_circle : Icons.error,
-            color: isInZone ? AppColors.success : AppColors.error,
-            size: 16,
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: statusColor.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(statusIcon, color: statusColor, size: 16),
           ),
-          const SizedBox(width: 6),
-          Flexible(
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
             child: Text(
               statusText,
-              style: TextStyle(
-                color: isInZone ? AppColors.success : AppColors.error,
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
+              style: AppTypography.bodySmall.copyWith(
+                color: statusColor.withValues(alpha: 0.9), 
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -309,58 +210,37 @@ class _StaffAttendanceButtonState extends State<StaffAttendanceButton> {
     );
   }
 
-  LinearGradient _getButtonGradient(String status) {
-    switch (status) {
-      case 'completed':
-        return AppColors.successGradient;
-      case 'in_progress':
-        return AppColors.dangerGradient;
-      case 'error':
-        return AppColors.disabledGradient;
-      default:
-        return AppColors.primaryGradient;
-    }
-  }
-
   Future<void> _handleCheckIn(BuildContext context, String userId) async {
     final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
-    final ctx = context;
     await shiftsProvider.checkIn(userId);
-
-    if (!ctx.mounted) return;
-
-    if (shiftsProvider.errorMessage == null) {
+    if (mounted && shiftsProvider.errorMessage == null) {
       widget.onStatusChange?.call();
-      _showSnackbar(ctx, 'Отметка о приходе успешно сохранена', AppColors.success);
-    } else {
-      _showSnackbar(ctx, shiftsProvider.errorMessage!, AppColors.error);
+      if (mounted) _showSnackbar(this.context, 'Приход успешно отмечен! Удачной смены 🌟', AppColors.success);
     }
   }
 
   Future<void> _handleCheckOut(BuildContext context, String userId) async {
     final shiftsProvider = Provider.of<ShiftsProvider>(context, listen: false);
-    final ctx = context;
-
     await shiftsProvider.checkOut(userId);
-
-    if (!ctx.mounted) return;
-
-    if (shiftsProvider.errorMessage == null) {
+    if (mounted && shiftsProvider.errorMessage == null) {
       widget.onStatusChange?.call();
-      _showSnackbar(ctx, 'Отметка об уходе успешно сохранена', AppColors.success);
-    } else {
-      _showSnackbar(ctx, shiftsProvider.errorMessage!, AppColors.error);
+      if (mounted) _showSnackbar(this.context, 'Уход отмечен. Хорошего отдыха! 👋', AppColors.success);
     }
   }
 
   void _showSnackbar(BuildContext context, String message, Color color) {
-    if (!context.mounted) return;
-    final snackBar = SnackBar(
-      content: Text(message),
-      backgroundColor: color,
-      behavior: SnackBarBehavior.floating,
-      margin: const EdgeInsets.all(16),
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: AppTypography.bodyMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        elevation: 8,
+        margin: const EdgeInsets.all(AppSpacing.md),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+      ),
     );
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 }

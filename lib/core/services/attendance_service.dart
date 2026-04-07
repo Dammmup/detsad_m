@@ -3,7 +3,7 @@ import '../../models/attendance_model.dart';
 import '../../models/attendance_record_model.dart';
 import '../../models/child_model.dart';
 import 'api_service.dart';
-import 'children_service.dart';
+// import 'children_service.dart';
 import 'dart:io';
 
 class AttendanceService {
@@ -62,32 +62,14 @@ class AttendanceService {
     }
   }
 
-  Future<List<AttendanceRecord>> getAttendanceRecords(String date) async {
+  Future<List<AttendanceRecord>> getAttendanceRecords(String date, List<Child> allChildren) async {
     try {
       final attendanceData = await getAttendanceByDate(date);
       if (attendanceData.isEmpty) {
         return [];
       }
 
-      final childrenService = ChildrenService();
-      final uniqueChildIds = attendanceData
-          .where((att) => att.childId != null)
-          .map((att) => att.childId!)
-          .toSet();
-
-      final childrenList = <Child>[];
-      for (final childId in uniqueChildIds) {
-        try {
-          final child = await childrenService.getChildById(childId);
-          if (child != null) {
-            childrenList.add(child);
-          }
-        } catch (e) {
-          // Игнорируем ошибки при получении отдельного ребенка
-        }
-      }
-
-      final childrenMap = {for (var child in childrenList) child.id: child};
+      final childrenMap = {for (var child in allChildren) child.id: child};
 
       final records = attendanceData
           .map((att) {

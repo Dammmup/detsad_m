@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_decorations.dart';
+import '../core/theme/app_typography.dart';
+import '../core/widgets/animated_press.dart';
 import '../models/task_model.dart';
 import '../providers/task_provider.dart';
 import '../providers/auth_provider.dart';
+
+import '../core/widgets/shimmer_loading.dart';
 
 class TasksWidget extends StatefulWidget {
   const TasksWidget({super.key});
@@ -18,16 +24,13 @@ class _TasksWidgetState extends State<TasksWidget> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadTasks();
-      }
+      if (mounted) _loadTasks();
     });
   }
 
   Future<void> _loadTasks() async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final taskProvider = Provider.of<TaskProvider>(context, listen: false);
-
     if (authProvider.user != null) {
       await taskProvider.loadAllTasks();
     }
@@ -36,86 +39,110 @@ class _TasksWidgetState extends State<TasksWidget> {
   @override
   Widget build(BuildContext context) {
     final taskProvider = Provider.of<TaskProvider>(context);
-
     List<Task> pendingTasks = taskProvider.tasks
         .where((task) => task.status != 'completed')
         .take(3)
         .toList();
 
     return Container(
-      decoration: AppDecorations.cardDecoration,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.task, color: AppColors.primary),
-                SizedBox(width: 8),
-                Text(
-                  'Задачи',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.grey600,
-                  ),
+      decoration: AppDecorations.cardElevated1.copyWith(
+        color: AppColors.surface,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: AppColors.primaryContainer, 
+                  shape: BoxShape.circle
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (taskProvider.isLoading)
-              const Center(child: CircularProgressIndicator())
-            else if (taskProvider.errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  taskProvider.errorMessage!,
-                  style: const TextStyle(color: AppColors.error),
-                ),
-              )
-            else if (pendingTasks.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Center(
-                  child: Text(
-                    'Нет активных задач',
-                    style: TextStyle(color: AppColors.textSecondary),
-                  ),
-                ),
-              )
-            else
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: pendingTasks.length,
-                itemBuilder: (context, index) {
-                  final task = pendingTasks[index];
-                  return _buildTaskItem(task, taskProvider);
-                },
+                child: const Icon(Symbols.task_rounded, color: AppColors.primary, size: 20),
               ),
-          ],
-        ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                'Ближайшие задачи', 
+                style: AppTypography.titleSmall.copyWith(
+                  color: AppColors.primary90,
+                  fontWeight: FontWeight.w800,
+                )
+              ),
+              const Spacer(),
+              if (pendingTasks.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary, 
+                    borderRadius: BorderRadius.circular(100),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      )
+                    ]
+                  ),
+                  child: Text(
+                    '${pendingTasks.length}', 
+                    style: AppTypography.labelSmall.copyWith(
+                      color: Colors.white, 
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    )
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (taskProvider.isLoading)
+            Column(
+              children: List.generate(3, (index) => const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: SkeletonLoader(width: double.infinity, height: 64, borderRadius: AppRadius.md),
+              )),
+            )
+          else if (taskProvider.errorMessage != null)
+            Text(taskProvider.errorMessage!, style: AppTypography.bodySmall.copyWith(color: AppColors.error))
+          else if (pendingTasks.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Center(
+                child: Text(
+                  'Все задачи выполнены ✨', 
+                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textTertiary)
+                )
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              padding: EdgeInsets.zero,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: pendingTasks.length,
+              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+              itemBuilder: (context, index) => _buildTaskItem(pendingTasks[index], taskProvider)
+                  .animate().fadeIn(delay: (index * 100).ms, duration: 400.ms).slideY(begin: 0.1, end: 0),
+            ),
+        ],
       ),
     );
   }
 
   Widget _buildTaskItem(Task task, TaskProvider taskProvider) {
-    Color statusColor = _getStatusColor(task.status);
-    IconData statusIcon = _getStatusIcon(task.status);
-
+    final isOverdue = task.dueDate != null && task.dueDate!.isBefore(DateTime.now());
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        border: Border(
-          left: BorderSide(
-            width: 4,
-            color: statusColor,
-          ),
+        color: isOverdue ? AppColors.error.withValues(alpha: 0.05) : AppColors.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: isOverdue ? AppColors.error.withValues(alpha: 0.2) : AppColors.primaryContainer,
+          width: 1,
         ),
-        color: statusColor.withAlpha((0.1 * 255).round()),
-        borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
       ),
       child: Row(
         children: [
@@ -123,116 +150,76 @@ class _TasksWidgetState extends State<TasksWidget> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Icon(statusIcon, size: 16, color: statusColor),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(
-                        task.title,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.grey600,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
+                Text(
+                  task.title, 
+                  style: AppTypography.labelLarge.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                    decoration: task.status == 'completed' ? TextDecoration.lineThrough : null
+                  ), 
+                  maxLines: 1, 
+                  overflow: TextOverflow.ellipsis
                 ),
-                if (task.description != null &&
-                    task.description!.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    task.description!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                if (task.dueDate != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time,
-                          size: 12, color: AppColors.textSecondary),
-                      const SizedBox(width: 2),
-                      Text(
-                        'До: ${_formatDate(task.dueDate!)}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: _getDueDateColor(task.dueDate!),
+                if (task.dueDate != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Symbols.schedule_rounded, 
+                          size: 14, 
+                          color: _getDueDateColor(task.dueDate!)
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 6),
+                        Text(
+                          '${task.dueDate!.day}.${task.dueDate!.month}.${task.dueDate!.year}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: _getDueDateColor(task.dueDate!), 
+                            fontWeight: isOverdue ? FontWeight.w800 : FontWeight.w500,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: () => _toggleTaskStatus(task.id, taskProvider),
-            icon: task.status == 'completed'
-                ? const Icon(Icons.check_circle, color: AppColors.success)
-                : const Icon(Icons.radio_button_unchecked, color: AppColors.textSecondary),
-            iconSize: 24,
+          const SizedBox(width: AppSpacing.md),
+          AnimatedPress(
+            onTap: () => _toggleTaskStatus(task.id, taskProvider),
+            child: Container(
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: task.status == 'completed' ? AppColors.success : Colors.white.withValues(alpha: 0.5),
+                border: Border.all(
+                  color: task.status == 'completed' ? AppColors.success : AppColors.primary30,
+                  width: 2,
+                ),
+              ),
+              child: Icon(
+                task.status == 'completed' ? Symbols.check_rounded : Symbols.circle_rounded,
+                color: task.status == 'completed' ? Colors.white : AppColors.primary30,
+                size: 22,
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'completed':
-        return AppColors.success;
-      case 'in_progress':
-        return AppColors.info;
-      case 'cancelled':
-        return AppColors.grey500;
-      default:
-        return AppColors.warning;
-    }
-  }
-
-  IconData _getStatusIcon(String status) {
-    switch (status) {
-      case 'completed':
-        return Icons.check_circle;
-      case 'in_progress':
-        return Icons.hourglass_bottom;
-      case 'cancelled':
-        return Icons.cancel;
-      default:
-        return Icons.radio_button_unchecked;
-    }
-  }
 
   Color _getDueDateColor(DateTime dueDate) {
     final now = DateTime.now();
-    final difference = dueDate.difference(now).inDays;
-
-    if (difference < 0) {
-      return const Color(0xFFdc3545);
-    } else if (difference == 0) {
-      return const Color(0xFFffc107);
-    } else if (difference <= 2) {
-      return AppColors.warning;
-    } else {
-      return AppColors.textSecondary;
-    }
+    final diff = dueDate.difference(now).inDays;
+    if (diff < 0) return AppColors.error;
+    if (diff <= 1) return AppColors.warning;
+    return AppColors.textTertiary;
   }
 
-  String _formatDate(DateTime date) {
-    return '${date.day}.${date.month}.${date.year}';
-  }
-
-  Future<void> _toggleTaskStatus(
-      String taskId, TaskProvider taskProvider) async {
+  Future<void> _toggleTaskStatus(String taskId, TaskProvider taskProvider) async {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     if (authProvider.user != null) {
       await taskProvider.toggleTaskStatus(taskId, authProvider.user!.id);

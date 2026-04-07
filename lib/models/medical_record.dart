@@ -26,7 +26,7 @@ class MedicalRecord {
   factory MedicalRecord.fromJson(Map<String, dynamic> json) {
     return MedicalRecord(
       id: (json['_id'] ?? json['id'] ?? '').toString(),
-      childId: json['childId'] ?? '',
+      childId: json['childId'] is Map ? (json['childId']['_id'] ?? '') : (json['childId'] ?? ''),
       date: json['date'] != null ? DateTime.parse(json['date']) : DateTime.now(),
       temperature: (json['temperature'] ?? 36.6).toDouble(),
       hasCough: json['hasCough'] ?? false,

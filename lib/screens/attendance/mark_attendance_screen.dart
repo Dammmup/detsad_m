@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_decorations.dart';
-import '../../../core/utils/logger.dart';
+import '../../../core/theme/app_typography.dart';
+import '../../../core/widgets/animated_press.dart';
 import '../../../models/child_model.dart';
 import '../../../models/attendance_model.dart';
 import '../../../core/services/children_service.dart';
@@ -12,6 +15,9 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/groups_provider.dart';
 import '../../../models/user_model.dart';
 import 'package:provider/provider.dart';
+
+import 'dart:ui';
+import '../../../core/widgets/shimmer_loading.dart';
 
 class MarkAttendanceScreen extends StatefulWidget {
   const MarkAttendanceScreen({super.key});
@@ -22,10 +28,11 @@ class MarkAttendanceScreen extends StatefulWidget {
 
 class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
   List<Child> children = [];
-  List<bool> present = [];
+  Map<String, bool> _attendanceState = {};
   bool isLoading = true;
   DateTime selectedDate = DateTime.now();
-  String? selectedGroupId;
+  String _searchQuery = '';
+  String? _selectedGroupId;
   final ChildrenService _childrenService = ChildrenService();
   final AttendanceService _attendanceService = AttendanceService();
 
@@ -37,59 +44,23 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
 
   Future<void> _loadChildren() async {
     try {
-      setState(() {
-        isLoading = true;
-      });
-
+      setState(() => isLoading = true);
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       final User? currentUser = authProvider.user;
-      final groupsProvider =
-          Provider.of<GroupsProvider>(context, listen: false);
+      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
 
       await groupsProvider.loadGroups();
       final allGroups = groupsProvider.groups;
 
-      AppLogger.info(
-          'MarkAttendanceScreen | Loaded ${allGroups.length} groups');
-      AppLogger.debug(
-          'MarkAttendanceScreen | Current user ID: ${currentUser?.id}');
-      AppLogger.debug(
-          'MarkAttendanceScreen | Current user role: ${currentUser?.role}');
-      for (var group in allGroups) {
-        AppLogger.debug(
-            'MarkAttendanceScreen | Group: ${group.name}, teacher: ${group.teacher}, id: ${group.id}');
-      }
-
       List<Child> fetchedChildren;
-      if (currentUser != null &&
-          (currentUser.role == 'teacher' ||
-              currentUser.role == 'assistant' ||
-              currentUser.role == 'substitute')) {
-        final teacherGroups = allGroups.where((group) {
-          final isTeacher = group.teacher == currentUser.id ||
-              group.teacherId == currentUser.id;
-          final isAssistant = group.assistantId == currentUser.id;
-          return isTeacher || isAssistant;
-        }).toList();
-        AppLogger.info(
-            'MarkAttendanceScreen | Teacher/Assistant groups found: ${teacherGroups.length}');
-        for (var group in teacherGroups) {
-          AppLogger.debug(
-              'MarkAttendanceScreen | Teacher group: ${group.name}');
-        }
-
-        if (teacherGroups.isNotEmpty) {
-          List<Child> teacherChildren = [];
-          for (var group in teacherGroups) {
-            List<Child> childrenInGroup =
-                await _childrenService.getChildrenByGroupId(group.id);
-            AppLogger.info(
-                'MarkAttendanceScreen | Children in group ${group.name}: ${childrenInGroup.length}');
-            teacherChildren.addAll(childrenInGroup);
-          }
-          fetchedChildren = teacherChildren;
-          AppLogger.info(
-              'MarkAttendanceScreen | Total children for teacher: ${fetchedChildren.length}');
+      if (currentUser != null && ['teacher', 'assistant', 'substitute'].contains(currentUser.role)) {
+        final teacherGroupIds = allGroups
+            .where((g) => g.teacher == currentUser.id || g.teacherId == currentUser.id || g.assistantId == currentUser.id)
+            .map((g) => g.id)
+            .toList();
+        
+        if (teacherGroupIds.isNotEmpty) {
+          fetchedChildren = await _childrenService.getChildrenByGroupIds(teacherGroupIds);
         } else {
           fetchedChildren = [];
         }
@@ -98,230 +69,79 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       }
 
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      List<Attendance> todaysAttendance =
-          await _attendanceService.getAttendanceByDate(date);
+      List<Attendance> todaysAttendance = await _attendanceService.getAttendanceByDate(date);
 
-      setState(() {
-        children = fetchedChildren;
-        present = List.generate(children.length, (index) {
-          final childId = children[index].id;
-
-          final attendanceRecord = todaysAttendance.firstWhere(
-            (att) => att.childId == childId || att.userId == childId,
-            orElse: () => Attendance(
-              id: '',
-              childId: childId,
-              groupId: children[index].groupId is String
-                  ? children[index].groupId as String
-                  : (children[index].groupId is Map
-                      ? (children[index].groupId as Map)['_id']?.toString() ??
-                          (children[index].groupId as Map)['id']?.toString() ??
-                          ''
-                      : ''),
-              date: date,
-              checkIn: '',
-              status: 'absent',
-            ),
-          );
-          return attendanceRecord.status == 'present';
+      if (mounted) {
+        setState(() {
+          children = fetchedChildren;
+          _attendanceState = {
+            for (var child in children) 
+              child.id: todaysAttendance.any((att) => (att.childId == child.id || att.userId == child.id) && att.status == 'present')
+          };
+          isLoading = false;
         });
-        isLoading = false;
-      });
+      }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки данных: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error));
+        setState(() => isLoading = false);
       }
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _updateLocalAttendanceState() async {
-    try {
-      String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-      List<Attendance> todaysAttendance =
-          await _attendanceService.getAttendanceByDate(date);
-
-      setState(() {
-        present = List.generate(children.length, (index) {
-          final childId = children[index].id;
-          final attendanceRecord = todaysAttendance.firstWhere(
-            (att) => att.childId == childId,
-            orElse: () => Attendance(
-                id: '',
-                childId: '',
-                groupId: '',
-                date: DateTime.now().toString(),
-                checkIn: '',
-                status: 'present',
-                notes: '',
-                markedBy: ''),
-          );
-          return attendanceRecord.status == 'present';
-        });
-      });
-    } catch (e) {
-      // Игнорируем ошибки при обновлении локального состояния посещаемости
     }
   }
 
   Future<void> _markAttendance() async {
     final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Пользователь не авторизован')),
-        );
-      }
-      return;
-    }
+    if (user == null) return;
 
     try {
-      setState(() {
-        isLoading = true;
-      });
+      setState(() => isLoading = true);
+      String dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+      List<Attendance> records = [];
 
-      String date = DateFormat('yyyy-MM-dd').format(selectedDate);
-
-      Map<String, List<Map<String, dynamic>>> groupedRecords = {};
-
-      for (int i = 0; i < children.length; i++) {
+      for (var child in children) {
+        final isPresent = _attendanceState[child.id] ?? false;
         String childGroupId = '';
-        if (children[i].groupId is String) {
-          childGroupId = children[i].groupId as String;
-        } else if (children[i].groupId is Map<String, dynamic>) {
-          final groupMap = children[i].groupId as Map<String, dynamic>;
-          childGroupId =
-              groupMap['_id']?.toString() ?? groupMap['id']?.toString() ?? '';
+        if (child.groupId is String) {
+          childGroupId = child.groupId as String;
+        } else if (child.groupId is Map) {
+          childGroupId = (child.groupId as Map)['_id']?.toString() ?? (child.groupId as Map)['id']?.toString() ?? '';
         }
 
-        if (childGroupId.isEmpty) {
-          continue;
-        }
-
-        if (!groupedRecords.containsKey(childGroupId)) {
-          groupedRecords[childGroupId] = [];
-        }
-
-        groupedRecords[childGroupId]!.add({
-          'childId': children[i].id,
-          'groupId': childGroupId,
-          'date': date,
-          'status': present[i] ? 'present' : 'absent',
-          'notes': 'Отметка от мобильного приложения',
-        });
+        if (childGroupId.isEmpty) continue;
+        records.add(Attendance(
+          id: '',
+          childId: child.id,
+          groupId: childGroupId,
+          date: dateStr,
+          checkIn: isPresent ? DateFormat('HH:mm').format(DateTime.now()) : '',
+          status: isPresent ? 'present' : 'absent',
+          notes: 'Отметка от мобильного приложения',
+        ));
       }
 
-      if (groupedRecords.isEmpty) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Не выбраны дети для отметки посещаемости')),
-          );
-        }
+      if (records.isEmpty) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Список пуст')));
+        setState(() => isLoading = false);
         return;
       }
 
-      int errorCount = 0;
-      List<String> errors = [];
-
-      for (var entry in groupedRecords.entries) {
-        final groupId = entry.key;
-        final records = entry.value;
-
-        try {
-          await _attendanceService.markAttendanceBulk(
-            records
-                .map((record) => Attendance(
-                      id: '',
-                      childId: record['childId'],
-                      groupId: groupId,
-                      date: date,
-                      checkIn: record['status'] == 'present'
-                          ? DateFormat('HH:mm').format(DateTime.now())
-                          : '',
-                      status: record['status'],
-                      notes: record['notes'],
-                    ))
-                .toList(),
-            groupId: groupId,
-          );
-        } catch (e) {
-          errorCount += records.length;
-          errors.add('Ошибка для группы $groupId: ${e.toString()}');
-        }
+      Map<String, List<Attendance>> groupedByGroup = {};
+      for (var r in records) {
+        groupedByGroup.putIfAbsent(r.groupId, () => []).add(r);
       }
 
-      if (errorCount > 0) {
-        throw Exception(errors.join('; '));
+      for (var entry in groupedByGroup.entries) {
+        await _attendanceService.markAttendanceBulk(entry.value, groupId: entry.key);
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Посещаемость успешно отмечена')),
-        );
-        await _updateLocalAttendanceState();
-      }
-
-      await _loadChildren();
-    } on Exception catch (e) {
-      String errorMessage = e.toString();
-
-      if (errorMessage.contains('Нет подключения к интернету')) {
-        errorMessage = 'Нет подключения к интернету';
-      } else if (errorMessage
-              .contains('Время для отметки посещаемости еще не наступило') ||
-          errorMessage.contains('too early') ||
-          errorMessage.contains('early')) {
-        errorMessage = 'Время для отметки посещаемости еще не наступило';
-      } else if (errorMessage
-              .contains('Время для отметки посещаемости истекло') ||
-          errorMessage.contains('too late') ||
-          errorMessage.contains('late')) {
-        errorMessage = 'Время для отметки посещаемости истекло';
-      } else if (errorMessage.contains('Неправильный сотрудник') ||
-          errorMessage.contains('invalid employee') ||
-          errorMessage.contains('unauthorized')) {
-        errorMessage = 'Неправильный сотрудник для отметки посещаемости';
-      } else if (errorMessage.contains('Дети не выбраны') ||
-          errorMessage.contains('no children') ||
-          errorMessage.contains('no selected')) {
-        errorMessage = 'Не выбраны дети для отметки посещаемости';
-      } else if (errorMessage
-          .contains('проверьте время сотрудника или выбранных детей')) {
-        errorMessage =
-            'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
-      } else if (errorMessage.contains('employee') ||
-          errorMessage.contains('time') ||
-          errorMessage.contains('сотрудника')) {
-        errorMessage =
-            'Ошибка отметки посещаемости. Проверьте время сотрудника или выбранных детей';
-      } else {
-        errorMessage =
-            'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
-      }
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Успешно сохранено'), backgroundColor: AppColors.success));
+        await _loadChildren();
       }
     } catch (e) {
-      String errorMessage =
-          'Не удалось добавить посещаемость. Проверьте время, сотрудника и выбранных детей';
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: AppColors.error));
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -330,243 +150,332 @@ class _MarkAttendanceScreenState extends State<MarkAttendanceScreen> {
       context: context,
       initialDate: selectedDate,
       firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primary, onPrimary: Colors.white, onSurface: AppColors.primary90),
+        ),
+        child: child!,
+      ),
     );
     if (picked != null && picked != selectedDate) {
-      setState(() {
-        selectedDate = picked;
-      });
+      setState(() => selectedDate = picked);
+      _loadChildren();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    int presentCount = _attendanceState.values.where((p) => p == true).length;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Отметить посещаемость'),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade50,
-              Colors.white,
-            ],
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(64),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              title: Text(
+                'Посещаемость', 
+                style: AppTypography.titleMedium.copyWith(
+                  color: AppColors.primary90,
+                  fontWeight: FontWeight.w900,
+                )
+              ),
+              centerTitle: true,
+              backgroundColor: AppColors.surface.withValues(alpha: 0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Symbols.arrow_back_ios_new_rounded, color: AppColors.primary90, size: 20),
+                onPressed: () => Navigator.pop(context),
+              ),
+              actions: [
+                IconButton(
+                  icon: const Icon(Symbols.calendar_month_rounded, color: AppColors.primary90), 
+                  onPressed: _selectDate
+                ),
+              ],
+            ),
           ),
         ),
-        child: isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withAlpha((0.1 * 255).round()),
-                            spreadRadius: 1,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Дата',
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800]),
-                            ),
-                            const SizedBox(height: 16),
-                            InkWell(
-                              onTap: _selectDate,
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey.shade100,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Row(
-                                      children: [
-                                        Icon(Icons.calendar_today,
-                                            color: Colors.blue),
-                                        SizedBox(width: 8),
-                                        Text('Выбрать дату',
-                                            style: TextStyle(fontSize: 14)),
-                                      ],
-                                    ),
-                                    Text(
-                                        DateFormat('dd.MM.yyyy')
-                                            .format(selectedDate),
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500)),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Дети',
-                      style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800]),
-                    ),
-                    const SizedBox(height: 8),
-                    Expanded(
-                      child: ListView.builder(
-                        itemCount: children.length,
-                        itemBuilder: (context, index) {
-                          final child = children[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: AppDecorations.cardDecoration,
-                            child: InkWell(
-                              onTap: () {
-                                setState(() {
-                                  present[index] = !present[index];
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(16),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                                child: Row(
-                                  children: [
-                                    _buildChildAvatar(child),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            child.fullName,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 15,
-                                            ),
-                                          ),
-                                          Text(
-                                            _getChildGroupInfo(child),
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Checkbox(
-                                      value: present[index],
-                                      onChanged: (value) {
-                                        setState(() {
-                                          present[index] = value ?? false;
-                                        });
-                                      },
-                                      activeColor: AppColors.primary,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _markAttendance,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text('Отметить посещаемость',
-                            style: TextStyle(fontSize: 16)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+      ),
+      body: Container(
+        decoration: AppDecorations.pageBackground,
+        child: Column(
+          children: [
+            const SizedBox(height: 110),
+            _buildHeaderStats(presentCount),
+            _buildFilters(),
+            Expanded(
+              child: isLoading
+                  ? _buildSkeletonLoading()
+                  : _getFilteredChildren().isEmpty
+                      ? _buildEmptyState()
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.xxxl),
+                          itemCount: _getFilteredChildren().length,
+                          itemBuilder: (context, index) => _buildChildListItem(_getFilteredChildren()[index]),
+                        ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
+            ),
+            _buildBottomAction(),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildChildAvatar(Child child) {
+  Widget _buildHeaderStats(int presentCount) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+      child: Container(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: AppDecorations.cardElevated2.copyWith(
+          gradient: LinearGradient(
+            colors: [AppColors.primary, AppColors.primary.withValues(alpha: 0.8)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          )
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat('EEEE, dd MMMM', 'ru').format(selectedDate),
+                    style: AppTypography.labelLarge.copyWith(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.normal)
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Присутствуют: $presentCount из ${children.length}',
+                    style: AppTypography.titleMedium.copyWith(color: Colors.white, fontWeight: FontWeight.w900)
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(16)
+              ),
+              child: const Icon(Symbols.people_rounded, color: Colors.white, size: 28),
+            )
+          ],
+        ),
+      ).animate().fadeIn().scale(delay: 100.ms),
+    );
+  }
+
+  Widget _buildSkeletonLoading() {
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      itemCount: 8,
+      itemBuilder: (context, index) => const Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.md),
+        child: SkeletonLoader(width: double.infinity, height: 74, borderRadius: AppRadius.lg),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Symbols.group_off_rounded, size: 64, color: AppColors.textTertiary),
+          const SizedBox(height: AppSpacing.lg),
+          Text(_searchQuery.isNotEmpty ? 'Никто не найден' : 'Нет детей в списке', style: AppTypography.titleSmall.copyWith(color: AppColors.textSecondary)),
+        ],
+      ).animate().fadeIn(),
+    );
+  }
+
+  Widget _buildFilters() {
+    final groupsProvider = Provider.of<GroupsProvider>(context);
+    final user = Provider.of<AuthProvider>(context).user;
+    
+    final teacherGroups = groupsProvider.groups.where((g) => 
+      g.teacherId == user?.id || g.assistantId == user?.id || user?.role == 'admin'
+    ).toList();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Column(
+        children: [
+           TextField(
+            decoration: AppDecorations.searchInputDecoration(hintText: 'Поиск ребенка...'),
+            onChanged: (value) => setState(() => _searchQuery = value),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          if (teacherGroups.length > 1 || user?.role == 'admin')
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.1))
+              ),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String?>(
+                  value: _selectedGroupId,
+                  hint: const Text('Все группы'),
+                  isExpanded: true,
+                  items: [
+                    const DropdownMenuItem(value: null, child: Text('Все группы')),
+                    ...teacherGroups.map((g) => DropdownMenuItem(value: g.id, child: Text(g.name))),
+                  ],
+                  onChanged: (val) => setState(() => _selectedGroupId = val),
+                ),
+              ),
+            ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+      ),
+    );
+  }
+
+  List<Child> _getFilteredChildren() {
+    return children.where((child) {
+      final matchesSearch = child.fullName.toLowerCase().contains(_searchQuery.toLowerCase());
+      
+      String childGroupId = '';
+      if (child.groupId is String) {
+        childGroupId = child.groupId as String;
+      } else if (child.groupId is Map) {
+        childGroupId = (child.groupId as Map)['_id']?.toString() ?? (child.groupId as Map)['id']?.toString() ?? '';
+      }
+      
+      final matchesGroup = _selectedGroupId == null || childGroupId == _selectedGroupId;
+      return matchesSearch && matchesGroup;
+    }).toList();
+  }
+
+  Widget _buildChildListItem(Child child) {
+    final isPresent = _attendanceState[child.id] ?? false;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      decoration: AppDecorations.cardElevated1.copyWith(
+        border: isPresent 
+            ? Border.all(color: AppColors.success.withValues(alpha: 0.15), width: 1.5)
+            : null,
+      ),
+      child: InkWell(
+        onTap: () => setState(() => _attendanceState[child.id] = !isPresent),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+          child: Row(
+            children: [
+              _buildAvatar(child, isPresent),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      child.fullName, 
+                      style: AppTypography.labelLarge.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: isPresent ? AppColors.textPrimary : AppColors.textSecondary
+                      )
+                    ),
+                    Text(
+                      child.groupName ?? 'Без группы', 
+                      style: AppTypography.bodySmall.copyWith(color: AppColors.textTertiary)
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: (isPresent ? AppColors.success : AppColors.surfaceVariant).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12)
+                ),
+                child: Icon(
+                  isPresent ? Symbols.check_circle_rounded : Symbols.cancel_rounded,
+                  color: isPresent ? AppColors.success : AppColors.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAvatar(Child child, bool isPresent) {
     String? photoUrl = child.photo;
-    if (photoUrl != null &&
-        photoUrl.isNotEmpty &&
-        !photoUrl.startsWith('http')) {
-      photoUrl =
-          '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
+    if (photoUrl != null && photoUrl.isNotEmpty && !photoUrl.startsWith('http')) {
+      photoUrl = '${ApiConstants.baseUrl.replaceAll(RegExp(r'/$'), '')}/$photoUrl';
     }
 
-    return CircleAvatar(
-      radius: 24,
-      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-      backgroundImage: photoUrl != null && photoUrl.isNotEmpty
-          ? NetworkImage(photoUrl)
-          : null,
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: isPresent ? AppColors.success : Colors.white, 
+          width: 2
+        ),
+        boxShadow: const [AppColors.shadowLevel1],
+        image: photoUrl != null && photoUrl.isNotEmpty ? DecorationImage(image: NetworkImage(photoUrl), fit: BoxFit.cover) : null,
+      ),
       child: photoUrl == null || photoUrl.isEmpty
-          ? Text(
-              child.fullName.isNotEmpty ? child.fullName[0].toUpperCase() : '?',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
-              ),
+          ? Center(
+              child: Text(
+                child.fullName[0].toUpperCase(), 
+                style: AppTypography.titleMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.w900)
+              )
             )
           : null,
     );
   }
 
-  String _getChildGroupInfo(Child child) {
-    if (child.groupName != null && child.groupName!.isNotEmpty) {
-      return child.groupName!;
-    }
-
-    if (child.groupId == null) {
-      return 'Группа не указана';
-    }
-
-    final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
-    final group = groupsProvider.getGroupById(child.groupId!);
-    if (group != null) {
-      return group.name;
-    }
-
-    return child.groupId!;
+  Widget _buildBottomAction() {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            color: AppColors.surface.withValues(alpha: 0.8),
+            border: const Border(top: BorderSide(color: AppColors.surfaceVariant, width: 0.5)),
+          ),
+          child: SafeArea(
+            child: AnimatedPress(
+              onTap: _markAttendance,
+              child: Container(
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: AppColors.primaryGradient, 
+                  borderRadius: BorderRadius.circular(AppRadius.md), 
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5)
+                    )
+                  ]
+                ),
+                child: Center(
+                  child: Text(
+                    'СОХРАНИТЬ ПОСЕЩАЕМОСТЬ', 
+                    style: AppTypography.labelLarge.copyWith(color: Colors.white, fontWeight: FontWeight.w900)
+                  )
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

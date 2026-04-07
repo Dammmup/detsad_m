@@ -2,7 +2,7 @@ class ApiConstants {
   static String get baseUrl {
     return const String.fromEnvironment(
       'API_URL',
-      defaultValue: 'https://detsad-b-git-682876035454.europe-west1.run.app/',
+      defaultValue: 'https://aldamiram.duckdns.org',
     );
   }
 
@@ -70,4 +70,15 @@ class ApiConstants {
   static String taskListToggle(String id) => '/task-list/$id/toggle';
   static String taskListComplete(String id) => '/task-list/$id/complete';
   static String taskListByUser(String userId) => '/task-list/user/$userId';
+
+  static const String dailyMenu = '/daily-menu';
+  static const String dailyMenuToday = '/daily-menu/today';
+  static String dailyMenuByDate(String date) => '/daily-menu/date/$date';
+  static String dailyMenuServe(String id, String mealType) =>
+      '/daily-menu/$id/serve/$mealType';
+  static String dailyMenuCancel(String id, String mealType) =>
+      '/daily-menu/$id/cancel/$mealType';
+
+  static const String medicalRecords = '/medical-journals';
+  // static const String medicalRecordsToday = '/medical-journals'; // Не нужно, используем основной с параметром date
 }
