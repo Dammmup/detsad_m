@@ -29,8 +29,11 @@ class ChildrenProvider with ChangeNotifier {
   }
 
   Child? getChildById(String id) {
-    return _children.firstWhere((child) => child.id == id,
-        orElse: () => _children.first);
+    try {
+      return _children.firstWhere((child) => child.id == id);
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> addChild(Child child) async {

@@ -18,6 +18,7 @@ import 'providers/payroll_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/dashboard/dashboard_screen.dart';
 import 'core/navigation/app_router.dart';
+import 'core/services/api_service.dart';
 import 'pages/splash_screen_page.dart';
 import 'firebase_options.dart';
 
@@ -70,6 +71,7 @@ class MyApp extends StatelessWidget {
         title: 'Attendance App',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        navigatorKey: ApiService.navigatorKey,
         home: const SplashScreen(),
         onGenerateRoute: AppRouter.generateRoute,
         routes: {

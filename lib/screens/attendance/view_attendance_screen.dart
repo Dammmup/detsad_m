@@ -5,11 +5,15 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../providers/children_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/groups_provider.dart';
 import '../../../core/theme/app_decorations.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/widgets/animated_press.dart';
 import '../../../models/attendance_record_model.dart';
+import '../../../models/child_model.dart';
 import '../../../core/services/attendance_service.dart';
+import '../../../core/services/children_service.dart';
 
 class ViewAttendanceScreen extends StatefulWidget {
   const ViewAttendanceScreen({super.key});
@@ -27,6 +31,8 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
   String? _selectedGroupId;
   String? _selectedStatus;
 
+  final ChildrenService _childrenService = ChildrenService();
+
   @override
   void initState() {
     super.initState();
@@ -37,11 +43,40 @@ class _ViewAttendanceScreenState extends State<ViewAttendanceScreen> {
     try {
       setState(() => isLoading = true);
       String date = DateFormat('yyyy-MM-dd').format(selectedDate);
+
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.user;
+      final groupsProvider = Provider.of<GroupsProvider>(context, listen: false);
       final childrenProvider = Provider.of<ChildrenProvider>(context, listen: false);
-      if (childrenProvider.children.isEmpty) {
-        await childrenProvider.loadChildren();
+
+      // Загружаем группы если ещё не загружены
+      if (!groupsProvider.hasLoaded) {
+        await groupsProvider.loadGroups();
       }
-      attendanceRecords = await _attendanceService.getAttendanceRecords(date, childrenProvider.children);
+
+      List<Child> relevantChildren;
+
+      if (user != null && ['teacher', 'assistant', 'substitute'].contains(user.role)) {
+        // Для воспитателя — загружаем только детей из назначенных групп
+        final teacherGroupIds = groupsProvider.groups
+            .where((g) => g.teacherId == user.id || g.assistantId == user.id)
+            .map((g) => g.id)
+            .toList();
+
+        if (teacherGroupIds.isNotEmpty) {
+          relevantChildren = await _childrenService.getChildrenByGroupIds(teacherGroupIds);
+        } else {
+          relevantChildren = [];
+        }
+      } else {
+        // Для admin и других — все дети
+        if (childrenProvider.children.isEmpty) {
+          await childrenProvider.loadChildren();
+        }
+        relevantChildren = childrenProvider.children;
+      }
+
+      attendanceRecords = await _attendanceService.getAttendanceRecords(date, relevantChildren);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error));

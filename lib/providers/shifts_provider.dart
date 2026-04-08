@@ -126,6 +126,43 @@ class ShiftsProvider with ChangeNotifier {
     }
   }
 
+  /// Валидирует геолокацию и возвращает координаты.
+  /// Возвращает null если проверка не пройдена (статус уже установлен).
+  /// Возвращает ({double? lat, double? lon}) если всё ОК.
+  ({double? lat, double? lon})? _validateAndGetLocation() {
+    if (_geolocationProvider == null || !_geolocationProvider!.enabled) {
+      return (lat: null, lon: null);
+    }
+
+    if (_geolocationProvider!.isLocationTemporarilyUnavailable) {
+      _errorMessage = 'GPS сигнал временно недоступен, отметка будет выполнена без геолокации.';
+      return (lat: null, lon: null);
+    }
+
+    if (!_geolocationProvider!.isPositionLoaded) {
+      _errorMessage = 'Не удалось определить вашу геолокацию. Попробуйте еще раз.';
+      _status = 'error';
+      notifyListeners();
+      return null;
+    }
+
+    if (!_geolocationProvider!.isWithinGeofence) {
+      final distance = _geolocationProvider!.calculateDistance(
+        _geolocationProvider!.currentPosition!.latitude,
+        _geolocationProvider!.currentPosition!.longitude,
+      );
+      _errorMessage = 'Вы находитесь вне геозоны (${distance.toStringAsFixed(0)}м от офиса).';
+      _status = 'error';
+      notifyListeners();
+      return null;
+    }
+
+    return (
+      lat: _geolocationProvider!.currentPosition!.latitude,
+      lon: _geolocationProvider!.currentPosition!.longitude,
+    );
+  }
+
   Future<void> checkIn(String userId) async {
     _loading = true;
     _errorMessage = null;
@@ -139,44 +176,17 @@ class ShiftsProvider with ChangeNotifier {
     }
 
     try {
-      double? latitude;
-      double? longitude;
-
-      if (_geolocationProvider != null && _geolocationProvider!.enabled) {
-        if (_geolocationProvider!.isLocationTemporarilyUnavailable) {
-          _errorMessage =
-              'GPS сигнал временно недоступен, отметка будет выполнена без геолокации.';
-        } else if (!_geolocationProvider!.isPositionLoaded) {
-          _errorMessage =
-              'Не удалось определить вашу геолокацию. Попробуйте еще раз.';
-          _status = 'error';
-          notifyListeners();
-          return;
-        } else if (!_geolocationProvider!.isWithinGeofence) {
-          final distance = _geolocationProvider!.calculateDistance(
-            _geolocationProvider!.currentPosition!.latitude,
-            _geolocationProvider!.currentPosition!.longitude,
-          );
-          _errorMessage =
-              'Вы находитесь вне геозоны (${distance.toStringAsFixed(0)}м от офиса).';
-          _status = 'error';
-          notifyListeners();
-          return;
-        } else {
-          latitude = _geolocationProvider!.currentPosition!.latitude;
-          longitude = _geolocationProvider!.currentPosition!.longitude;
-        }
-      }
+      final location = _validateAndGetLocation();
+      if (location == null) return; // Ошибка уже установлена
 
       if (_shiftId == null) {
         await fetchShiftStatus(userId);
       }
 
       if (_shiftId != null) {
-        // Backend handles status (late/on_time) based on actual shift settings
         await _shiftsService.checkIn(_shiftId!,
-            latitude: latitude,
-            longitude: longitude,
+            latitude: location.lat,
+            longitude: location.lon,
             deviceMetadata: deviceMetadata);
 
         await fetchShiftStatus(userId);
@@ -208,34 +218,8 @@ class ShiftsProvider with ChangeNotifier {
     }
 
     try {
-      double? latitude;
-      double? longitude;
-
-      if (_geolocationProvider != null && _geolocationProvider!.enabled) {
-        if (_geolocationProvider!.isLocationTemporarilyUnavailable) {
-          _errorMessage =
-              'GPS сигнал временно недоступен, отметка будет выполнена без геолокации.';
-        } else if (!_geolocationProvider!.isPositionLoaded) {
-          _errorMessage =
-              'Не удалось определить вашу геолокацию. Попробуйте еще раз.';
-          _status = 'error';
-          notifyListeners();
-          return;
-        } else if (!_geolocationProvider!.isWithinGeofence) {
-          final distance = _geolocationProvider!.calculateDistance(
-            _geolocationProvider!.currentPosition!.latitude,
-            _geolocationProvider!.currentPosition!.longitude,
-          );
-          _errorMessage =
-              'Вы находитесь вне геозоны (${distance.toStringAsFixed(0)}м от офиса).';
-          _status = 'error';
-          notifyListeners();
-          return;
-        } else {
-          latitude = _geolocationProvider!.currentPosition!.latitude;
-          longitude = _geolocationProvider!.currentPosition!.longitude;
-        }
-      }
+      final location = _validateAndGetLocation();
+      if (location == null) return; // Ошибка уже установлена
 
       if (_shiftId == null) {
         await fetchShiftStatus(userId);
@@ -243,8 +227,8 @@ class ShiftsProvider with ChangeNotifier {
 
       if (_shiftId != null) {
         await _shiftsService.checkOut(_shiftId!,
-            latitude: latitude,
-            longitude: longitude,
+            latitude: location.lat,
+            longitude: location.lon,
             deviceMetadata: deviceMetadata);
 
         await fetchShiftStatus(userId);

@@ -19,9 +19,7 @@ class AuthProvider with ChangeNotifier {
   bool get isLoggedIn => _isLoggedIn;
   String? get errorMessage => _errorMessage;
 
-  AuthProvider() {
-    initialize();
-  }
+  AuthProvider();
 
   Future<void> initialize() async {
     if (_isLoading) return;
@@ -101,7 +99,7 @@ class AuthProvider with ChangeNotifier {
     try {
       final token = await _notificationService.getFCMToken();
       if (token != null) {
-        AppLogger.debug('Registering FCM token: $token');
+        AppLogger.debug('Registering FCM token: ...${token.length > 10 ? token.substring(token.length - 10) : token}');
         await _authService.registerFCMToken(token);
       }
     } catch (e) {

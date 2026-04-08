@@ -143,11 +143,16 @@ class AuthService {
   Future<bool> changePassword({
     required String userId,
     required String newPassword,
+    String? currentPassword,
   }) async {
     try {
+      final data = <String, dynamic>{'newPassword': newPassword};
+      if (currentPassword != null) {
+        data['currentPassword'] = currentPassword;
+      }
       final response = await _apiService.post(
         '${ApiConstants.users}/$userId/change-password',
-        data: {'newPassword': newPassword},
+        data: data,
       );
 
       return response.statusCode == 200;

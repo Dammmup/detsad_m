@@ -8,7 +8,6 @@ import '../../core/theme/app_decorations.dart';
 import '../../core/theme/app_typography.dart';
 import '../../providers/auth_provider.dart';
 import '../../core/widgets/animated_press.dart';
-import '../dashboard/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -238,9 +237,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final authProvider = context.read<AuthProvider>();
       final success = await authProvider.login(_phoneController.text.trim(), _passwordController.text);
       if (!mounted || !success) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const DashboardScreen())
-      );
+      Navigator.of(context).pushReplacementNamed('home');
     }
   }
 }

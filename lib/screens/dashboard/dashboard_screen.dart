@@ -212,9 +212,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildGroupsSection() {
-    return Consumer<GroupsProvider>(
-      builder: (context, groupsProvider, child) {
-        if (groupsProvider.isLoading || groupsProvider.groups.isEmpty) return const SizedBox.shrink();
+    return Consumer2<GroupsProvider, AuthProvider>(
+      builder: (context, groupsProvider, authProvider, child) {
+        if (groupsProvider.isLoading) return const SizedBox.shrink();
+
+        final user = authProvider.user;
+        final role = user?.role ?? '';
+
+        // Фильтруем группы по роли пользователя
+        List<Group> userGroups;
+        if (role == 'admin' || role == 'manager') {
+          userGroups = groupsProvider.groups;
+        } else {
+          userGroups = groupsProvider.groups.where((g) =>
+            g.teacherId == user?.id || g.assistantId == user?.id
+          ).toList();
+        }
+
+        if (userGroups.isEmpty) return const SizedBox.shrink();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,9 +252,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 scrollDirection: Axis.horizontal,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(vertical: 4),
-                itemCount: groupsProvider.groups.length,
+                itemCount: userGroups.length,
                 itemBuilder: (context, index) {
-                  final group = groupsProvider.groups[index];
+                  final group = userGroups[index];
                   return Padding(
                     padding: const EdgeInsets.only(right: AppSpacing.md),
                     child: AnimatedPress(

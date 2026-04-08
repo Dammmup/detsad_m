@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/material.dart';
 import '../constants/api_constants.dart';
 import '../constants/app_constants.dart';
 import 'storage_service.dart';
@@ -7,6 +8,9 @@ import '../utils/logger.dart';
 class ApiService {
   late final Dio _dio;
   final StorageService _storageService = StorageService();
+
+  /// Глобальный ключ навигатора для редиректа при 401
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   // Singleton pattern
   static final ApiService _instance = ApiService._internal();
@@ -55,8 +59,11 @@ class ApiService {
               'ApiService | ERROR [${error.response?.statusCode}] ${error.requestOptions.path}: $errorMessage');
 
           if (error.response?.statusCode == 401) {
-            AppLogger.warning(
-                'ApiService | Unauthorized access (401). Keeping token for investigation.');
+            AppLogger.warning('ApiService | Unauthorized (401). Auto-logout.');
+            await _storageService.clearAll();
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(
+              'login', (route) => false,
+            );
           }
           
           // Пробрасываем ошибку с понятным сообщением

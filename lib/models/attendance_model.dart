@@ -59,15 +59,21 @@ class Attendance {
       }
     }
 
+    // Parse groupId properly
+    String parsedGroupId = '';
+    if (json['groupId'] != null) {
+      if (json['groupId'] is Map) {
+        parsedGroupId = (json['groupId']['_id'] ?? json['groupId']['id'])?.toString() ?? '';
+      } else {
+        parsedGroupId = json['groupId'].toString();
+      }
+    }
+
     return Attendance(
       id: json['_id'] ?? json['id'] ?? '',
-      userId: parsedUserId ?? parsedChildId ?? '',
-      childId: parsedChildId ?? parsedUserId,
-      groupId: json['groupId']?.toString() ??
-          (json['groupId'] is Map
-              ? (json['groupId']['_id'] ?? json['groupId']['id'])?.toString()
-              : '') ??
-          '',
+      userId: parsedUserId ?? '',
+      childId: parsedChildId,
+      groupId: parsedGroupId,
       date: parsedDate,
       checkIn:
           json['checkIn']?.toString() ?? json['actualStart']?.toString() ?? '',

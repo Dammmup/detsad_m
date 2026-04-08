@@ -94,12 +94,7 @@ class Child {
     }
 
     if (groupId != null) {
-      if (groupId is Map) {
-        final groupMap = groupId as Map;
-        json['groupId'] = groupMap['_id'] ?? groupMap['id'] ?? groupId;
-      } else {
-        json['groupId'] = groupId;
-      }
+      json['groupId'] = groupId;
     }
 
     return json;
