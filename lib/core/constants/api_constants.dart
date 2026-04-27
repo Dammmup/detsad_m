@@ -36,12 +36,16 @@ class ApiConstants {
 
   static const String staffShifts = '/staff-shifts';
   static const String staffShiftsBulk = '/staff-shifts/bulk';
+  static const String staffShiftsBulkUpdateStatus = '/staff-shifts/bulk-update-status';
+  static const String staffShiftsBulkDelete = '/staff-shifts/bulk-delete';
+  static String staffShiftById(String id) => '/staff-shifts/$id';
   static String staffShiftCheckin(String shiftId) =>
       '/staff-shifts/checkin/$shiftId';
   static String staffShiftCheckout(String shiftId) =>
       '/staff-shifts/checkout/$shiftId';
 
   static const String staffAttendanceTracking = '/staff-time-tracking';
+  static const String staffAttendanceTrackingBulkUpdate = '/staff-time-tracking/bulk-update';
   static String staffAttendanceTrackingByStaff(String staffId) =>
       '/staff-time-tracking/staff/$staffId';
   static String staffAttendanceTrackingById(String id) =>

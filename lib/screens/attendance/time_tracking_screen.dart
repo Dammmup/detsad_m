@@ -3,6 +3,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
+import '../../providers/auth_provider.dart';
 
 import '../../core/services/shifts_service.dart';
 import '../../core/services/api_service.dart';
@@ -126,8 +128,14 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
     }
   }
 
+  bool _isAdmin() {
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    return ['admin', 'manager'].contains(user?.role);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isAdmin = _isAdmin();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -142,6 +150,14 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
           onPressed: () => Navigator.pop(context),
         ),
       ),
+      floatingActionButton: isAdmin
+          ? FloatingActionButton.extended(
+              onPressed: _showBulkCorrectionDialog,
+              backgroundColor: AppColors.warning,
+              icon: const Icon(Symbols.swap_horiz_rounded, color: Colors.white),
+              label: Text('Корректировка', style: AppTypography.labelMedium.copyWith(color: Colors.white)),
+            )
+          : null,
       body: Container(
         height: double.infinity,
         decoration: AppDecorations.pageBackground,
@@ -164,6 +180,184 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _showBulkCorrectionDialog() async {
+    String? selectedStatus;
+    final Set<String> selectedStaffIds = {};
+    String timeStart = '';
+    String timeEnd = '';
+    
+    final startDate = DateFormat('yyyy-MM-01').format(_currentMonth);
+    final endDate = DateFormat('yyyy-MM-dd').format(DateTime(_currentMonth.year, _currentMonth.month + 1, 0));
+
+    const statuses = [
+      {'value': 'scheduled', 'label': 'Запланирована'},
+      {'value': 'completed', 'label': 'Завершена'},
+      {'value': 'in_progress', 'label': 'Пришел'},
+      {'value': 'late', 'label': 'Опоздание'},
+      {'value': 'absent', 'label': 'Отсутствует'},
+      {'value': 'vacation', 'label': 'Отпуск'},
+      {'value': 'sick_leave', 'label': 'Больничный'},
+    ];
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+              title: Row(
+                children: [
+                  const Icon(Symbols.swap_horiz_rounded, color: AppColors.warning),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: Text('Массовая корректировка', style: AppTypography.titleMedium.copyWith(fontWeight: FontWeight.w900))),
+                ],
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Период: ${DateFormat('MMMM yyyy', 'ru_RU').format(_currentMonth)}', style: AppTypography.bodySmall.copyWith(color: AppColors.grey500)),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      Text('Сотрудники:', style: AppTypography.labelMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Container(
+                        height: 150,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.grey200),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: _users.length,
+                          itemBuilder: (context, index) {
+                            final u = _users[index];
+                            if (!u.active) return const SizedBox.shrink();
+                            final isChecked = selectedStaffIds.contains(u.id);
+                            return CheckboxListTile(
+                              value: isChecked,
+                              dense: true,
+                              title: Text(u.fullName, style: AppTypography.bodySmall),
+                              onChanged: (val) => setDialogState(() {
+                                if (val == true) { selectedStaffIds.add(u.id); } else { selectedStaffIds.remove(u.id); }
+                              }),
+                              activeColor: AppColors.warning,
+                              controlAffinity: ListTileControlAffinity.leading,
+                            );
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      DropdownButtonFormField<String?>(
+                        value: selectedStatus,
+                        decoration: AppDecorations.inputDecoration(labelText: 'Изменить статус на'),
+                        items: [
+                          const DropdownMenuItem<String?>(value: null, child: Text('Не менять статус')),
+                          ...statuses.map((s) => DropdownMenuItem(value: s['value'], child: Text(s['label']!))),
+                        ],
+                        onChanged: (val) => setDialogState(() => selectedStatus = val),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              decoration: AppDecorations.inputDecoration(labelText: 'Время прихода', hintText: '09:00'),
+                              keyboardType: TextInputType.datetime,
+                              onChanged: (val) => timeStart = val,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Expanded(
+                            child: TextFormField(
+                              decoration: AppDecorations.inputDecoration(labelText: 'Время ухода', hintText: '18:00'),
+                              keyboardType: TextInputType.datetime,
+                              onChanged: (val) => timeEnd = val,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogCtx, false),
+                  child: Text('Отмена', style: AppTypography.labelLarge.copyWith(color: AppColors.textTertiary)),
+                ),
+                ElevatedButton(
+                  onPressed: (selectedStaffIds.isEmpty && selectedStatus == null && timeStart.isEmpty && timeEnd.isEmpty) 
+                      ? null 
+                      : () => Navigator.pop(dialogCtx, true),
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.warning, foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md))),
+                  child: const Text('Обновить'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == true) {
+      try {
+        setState(() => _isLoading = true);
+        
+        // Собрать ID записей для обновления
+        final List<String> idsToUpdate = [];
+        for (var record in _records) {
+          final staffId = _getStaffIdFromRecord(record);
+          if (selectedStaffIds.isEmpty || selectedStaffIds.contains(staffId)) {
+            final id = record['_id']?.toString() ?? record['id']?.toString();
+            if (id != null) idsToUpdate.add(id);
+          }
+        }
+
+        if (idsToUpdate.isEmpty) {
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Нет записей для обновления')));
+          setState(() => _isLoading = false);
+          return;
+        }
+
+        await _shiftsService.bulkUpdateAttendanceRecords(
+          ids: idsToUpdate,
+          status: selectedStatus,
+          timeStart: timeStart,
+          timeEnd: timeEnd,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Обновлено ${idsToUpdate.length} записей'),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ));
+        }
+        await _loadData();
+      } catch (e) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Ошибка: $e'),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+          ));
+        }
+      }
+    }
   }
 
   Widget _buildMonthSelector() {
@@ -392,7 +586,7 @@ class _TimeTrackingScreenState extends State<TimeTrackingScreen> {
     
     if (status == 'absent') {
       bColor = AppColors.error;
-      text = 'Неявка';
+      text = 'Отсутствует';
     } else if (isLate) {
       bColor = AppColors.warning;
       text = 'Опоздание';
